@@ -1,1 +1,6 @@
 digital-service: Employment Related Securities
+
+leakDetectionExemptions:
+ - ruleId: 'ip_addresses'
+   filePaths:
+      - '/test/controllers/ReportableEventsControllerTest.scala'
