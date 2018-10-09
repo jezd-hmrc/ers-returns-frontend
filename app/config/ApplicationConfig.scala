@@ -50,32 +50,32 @@ object ApplicationConfig extends ApplicationConfig with ServicesConfig {
   private def loadConfig(key: String) = configuration.getString(key).getOrElse(throw new Exception(s"Missing key: $key"))
 
   Logger.info("The Getting the contact host")
-  private val contactHost = configuration.getString(s"$env.microservice.services.contact-frontend.host").getOrElse("")
+  private val contactHost = configuration.getString("microservice.services.contact-frontend.host").getOrElse("")
   Logger.info("The contact host is " + contactHost)
   private val contactFormServiceIdentifier = "ERS"
 
-  override lazy val assetsPrefix: String = loadConfig(s"$env.assets.url") + loadConfig(s"$env.assets.version")
-  override lazy val analyticsToken: Option[String] = configuration.getString(s"govuk-tax.$env.google-analytics.token")
-  override lazy val analyticsHost: String = configuration.getString(s"govuk-tax.$env.google-analytics.host").getOrElse("service.gov.uk")
-  override lazy val uploadCollection: String = loadConfig(s"$env.settings.upload-collection")
+  override lazy val assetsPrefix: String = loadConfig("assets.url") + loadConfig("assets.version")
+  override lazy val analyticsToken: Option[String] = configuration.getString("govuk-tax.google-analytics.token")
+  override lazy val analyticsHost: String = configuration.getString("govuk-tax.google-analytics.host").getOrElse("service.gov.uk")
+  override lazy val uploadCollection: String = loadConfig("settings.upload-collection")
 
-  override lazy val validatorUrl: String = baseUrl("ers-file-validator") + "/ers/:empRef/" + loadConfig(s"$env.microservice.services.ers-file-validator.url")
+  override lazy val validatorUrl: String = baseUrl("ers-file-validator") + "/ers/:empRef/" + loadConfig("microservice.services.ers-file-validator.url")
 
-  private val frontendHost = loadConfig(s"$env.platform.frontend.host")
+  private val frontendHost = loadConfig("platform.frontend.host")
   override lazy val platformHostUrl = Try{baseUrl("ers-returns-frontend")}.getOrElse("")
-  override lazy val successPageUrl: String = frontendHost + loadConfig(s"$env.microservice.services.ers-returns-frontend.success-page")
-  override lazy val failurePageUrl: String = frontendHost + loadConfig(s"$env.microservice.services.ers-returns-frontend.failure-page")
-  override lazy val callbackPageUrl: String = platformHostUrl + loadConfig(s"$env.microservice.services.ers-returns-frontend.callback-page")
-  override lazy val successCsvPageUrl: String = frontendHost + loadConfig(s"$env.microservice.services.ers-returns-frontend.csv-success-page")
-  override lazy val failureCsvPageUrl: String = frontendHost + loadConfig(s"$env.microservice.services.ers-returns-frontend.csv-failure-page")
-  override lazy val callbackCsvPageUrl: String = platformHostUrl + loadConfig(s"$env.microservice.services.ers-returns-frontend.csv-callback-page")
+  override lazy val successPageUrl: String = frontendHost + loadConfig("microservice.services.ers-returns-frontend.success-page")
+  override lazy val failurePageUrl: String = frontendHost + loadConfig("microservice.services.ers-returns-frontend.failure-page")
+  override lazy val callbackPageUrl: String = platformHostUrl + loadConfig("microservice.services.ers-returns-frontend.callback-page")
+  override lazy val successCsvPageUrl: String = frontendHost + loadConfig("microservice.services.ers-returns-frontend.csv-success-page")
+  override lazy val failureCsvPageUrl: String = frontendHost + loadConfig("microservice.services.ers-returns-frontend.csv-failure-page")
+  override lazy val callbackCsvPageUrl: String = platformHostUrl + loadConfig("microservice.services.ers-returns-frontend.csv-callback-page")
 
   override lazy val urBannerToggle:Boolean = loadConfig("urBanner.toggle").toBoolean
   override lazy val urBannerLink: String = loadConfig("urBanner.link")
 
-  override val ggSignInUrl: String = configuration.getString(s"$env.government-gateway-sign-in.host").getOrElse("")
+  override val ggSignInUrl: String = configuration.getString("government-gateway-sign-in.host").getOrElse("")
 
-  override lazy val enableRetrieveSubmissionData: Boolean = Try(loadConfig(s"$env.settings.enable-retrieve-submission-data").toBoolean).getOrElse(false)
+  override lazy val enableRetrieveSubmissionData: Boolean = Try(loadConfig("settings.enable-retrieve-submission-data").toBoolean).getOrElse(false)
   override lazy val sentViaSchedulerNoOfRowsLimit: Int = {
     Logger.info("sent-via-scheduler-noofrows vakue is " + Try(loadConfig("sent-via-scheduler-noofrows").toInt).getOrElse(10000))
     Try(loadConfig("sent-via-scheduler-noofrows").toInt).getOrElse(10000)

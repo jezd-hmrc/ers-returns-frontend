@@ -19,14 +19,13 @@ package controllers.auth
 import controllers.routes
 import play.api.Play
 import play.api.Play.current
-import uk.gov.hmrc.play.config.RunMode
 
-object ExternalUrls extends RunMode {
-  val companyAuthHost = s"${Play.configuration.getString(s"$env.microservice.services.auth.company-auth.host").getOrElse("")}"
-  val loginCallback = Play.configuration.getString(s"$env.microservice.services.auth.login-callback.url").getOrElse(routes.ReturnServiceController.hmacCheck().url)
-  val loginPath = s"${Play.configuration.getString(s"$env.microservice.services.auth.login_path").getOrElse("sign-in")}"
+object ExternalUrls {
+  val companyAuthHost = s"${Play.configuration.getString(s"microservice.services.auth.company-auth.host").getOrElse("")}"
+  val loginCallback = Play.configuration.getString("microservice.services.auth.login-callback.url").getOrElse(routes.ReturnServiceController.hmacCheck().url)
+  val loginPath = s"${Play.configuration.getString("microservice.services.auth.login_path").getOrElse("sign-in")}"
   val signIn = s"$companyAuthHost/gg/$loginPath?continue=$loginCallback"
-  val signOutCallback = s"${Play.configuration.getString(s"$env.microservice.services.feedback-survey-frontend.url").getOrElse("")}"
+  val signOutCallback = s"${Play.configuration.getString("microservice.services.feedback-survey-frontend.url").getOrElse("")}"
   val signOut = s"$companyAuthHost/gg/sign-out?continue=$signOutCallback"
   val hmacToken = s"${Play.configuration.getString(s"hmac.hmac_token").getOrElse("")}"
   val hmacOnSwitch = s"${Play.configuration.getString(s"hmac.hmac_switch").getOrElse("true")}"  
