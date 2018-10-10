@@ -22,11 +22,11 @@ import play.api.mvc.Request
 import play.api.{Application, Configuration, Play}
 import play.twirl.api.Html
 import uk.gov.hmrc.crypto.ApplicationCrypto
-import uk.gov.hmrc.play.config.{AppName, ControllerConfig, RunMode}
+import uk.gov.hmrc.play.config.{AppName, ControllerConfig}
 import uk.gov.hmrc.play.frontend.bootstrap.DefaultFrontendGlobal
-import uk.gov.hmrc.play.frontend.filters.{ FrontendAuditFilter, FrontendLoggingFilter, MicroserviceFilterSupport }
+import uk.gov.hmrc.play.frontend.filters.{FrontendAuditFilter, FrontendLoggingFilter, MicroserviceFilterSupport}
 
-object ApplicationGlobal extends DefaultFrontendGlobal with RunMode {
+object ApplicationGlobal extends DefaultFrontendGlobal {
 
   override val auditConnector = ERSFileValidatorAuditConnector
   override val loggingFilter = ERSFileValidatorLoggingFilter
@@ -40,7 +40,7 @@ object ApplicationGlobal extends DefaultFrontendGlobal with RunMode {
   override def standardErrorTemplate(pageTitle: String, heading: String, message: String)(implicit request: Request[_]): Html =
     views.html.global_error(pageTitle, heading, message)
 
-  override def microserviceMetricsConfig(implicit app: Application): Option[Configuration] = app.configuration.getConfig(s"$env.microservice.metrics")
+  override def microserviceMetricsConfig(implicit app: Application): Option[Configuration] = app.configuration.getConfig("microservice.metrics")
 
 }
 
@@ -52,7 +52,7 @@ object ERSFileValidatorLoggingFilter extends FrontendLoggingFilter with Microser
   override def controllerNeedsLogging(controllerName: String): Boolean = ControllerConfiguration.paramsForController(controllerName).needsLogging
 }
 
-object ERSFileValidatorAuditFilter extends FrontendAuditFilter with RunMode with AppName with MicroserviceFilterSupport {
+object ERSFileValidatorAuditFilter extends FrontendAuditFilter with AppName with MicroserviceFilterSupport {
 
   override lazy val maskedFormFields = Seq.empty[String]
 

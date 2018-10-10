@@ -18,20 +18,19 @@ package utils
 
 import controllers.routes
 import play.api.Play
-import uk.gov.hmrc.play.config.RunMode
 import play.api.Play.current
 
-object ExternalUrls extends RunMode {
+object ExternalUrls {
 
-  val companyAuthHost = s"${Play.configuration.getString(s"$env.microservice.services.auth.company-auth.host").getOrElse("")}"
-  val loginCallback = Play.configuration.getString(s"$env.microservice.services.auth.login-callback.url").getOrElse(routes.ReturnServiceController.hmacCheck().url)
-  val loginPath = s"${Play.configuration.getString(s"$env.microservice.services.auth.login_path").getOrElse("sign-in")}"
+  val companyAuthHost = s"${Play.configuration.getString("microservice.services.auth.company-auth.host").getOrElse("")}"
+  val loginCallback = Play.configuration.getString("microservice.services.auth.login-callback.url").getOrElse(routes.ReturnServiceController.hmacCheck().url)
+  val loginPath = s"${Play.configuration.getString("microservice.services.auth.login_path").getOrElse("sign-in")}"
   
   
   val signIn = s"$companyAuthHost/gg/$loginPath" //?continue=$loginCallback"
-  val ytaUrl = s"${Play.configuration.getString(s"govuk-tax.$env.yta.url").getOrElse("/gg")}"
+  val ytaUrl = s"${Play.configuration.getString("govuk-tax.yta.url").getOrElse("/gg")}"
   val signOut = s"$companyAuthHost/gg/sign-out"
-  val ersServiceUrl = s"${Play.configuration.getString(s"govuk-tax.$env.services.ers.url").getOrElse("")}"
+  val ersServiceUrl = s"${Play.configuration.getString("govuk-tax.services.ers.url").getOrElse("")}"
   val hmacToken = s"${Play.configuration.getString(s"hmac.hmac_token").getOrElse("")}"
   val hmacOnSwitch = s"${Play.configuration.getString(s"hmac.hmac_switch").getOrElse("true")}"
   val portalDomain = s"${Play.configuration.getString(s"portal.domain").getOrElse("")}"

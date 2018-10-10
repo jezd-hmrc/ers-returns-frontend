@@ -16,39 +16,37 @@
 
 package config
 
+import play.Logger
 import play.api.Play
+import play.api.Play.current
+import play.api.libs.ws.WSRequest
 import uk.gov.hmrc.crypto.ApplicationCrypto
+import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.cache.client.{SessionCache, ShortLivedCache, ShortLivedHttpCaching}
 import uk.gov.hmrc.play.audit.http.HttpAuditing
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.play.config.{AppName, RunMode, ServicesConfig}
+import uk.gov.hmrc.play.config.{AppName, ServicesConfig}
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
+import uk.gov.hmrc.play.frontend.config.LoadAuditingConfig
 import uk.gov.hmrc.play.frontend.filters.SessionCookieCryptoFilter
 import uk.gov.hmrc.play.http.ws._
-import uk.gov.hmrc.play.partials.CachedStaticHtmlPartialRetriever
-import uk.gov.hmrc.play.partials.FormPartialRetriever
-import uk.gov.hmrc.play.partials.HeaderCarrierForPartialsConverter
-import play.Logger
-import play.api.Play.current
-import play.api.libs.ws.WSRequest
-import uk.gov.hmrc.http._
+import uk.gov.hmrc.play.partials.{CachedStaticHtmlPartialRetriever, FormPartialRetriever, HeaderCarrierForPartialsConverter}
 
 import scala.concurrent.duration._
-import uk.gov.hmrc.play.frontend.config.LoadAuditingConfig
 
 
 
-object ERSFileValidatorAuditConnector extends AuditConnector with AppName with RunMode {
-  override lazy val auditingConfig = LoadAuditingConfig(s"$env.auditing")
+object ERSFileValidatorAuditConnector extends AuditConnector {
+  override lazy val auditingConfig = LoadAuditingConfig("auditing")
 }
 
-trait WSHttp extends WSGet with HttpGet with HttpPatch with HttpPut with HttpDelete with HttpPost with WSPut with WSPost with WSDelete with WSPatch with AppName with RunMode with HttpAuditing {
+trait WSHttp extends WSGet with HttpGet with HttpPatch with HttpPut with HttpDelete with HttpPost with WSPut with WSPost with WSDelete with WSPatch with AppName with HttpAuditing {
   override val hooks = Seq(AuditingHook)
   override val auditConnector = ERSFileValidatorAuditConnector
 }
 object WSHttp extends WSHttp
 
-object WSHttpWithCustomTimeOut extends WSHttp with AppName with RunMode  with HttpAuditing {
+object WSHttpWithCustomTimeOut extends WSHttp with HttpAuditing {
   override val hooks = Seq(AuditingHook)
   override val auditConnector = ERSFileValidatorAuditConnector
 
@@ -65,8 +63,8 @@ object ERSAuthConnector extends AuthConnector with ServicesConfig {
   lazy val http = WSHttp
 }
 
-object ERSAuditConnector extends AuditConnector with AppName with RunMode {
-  override lazy val auditingConfig = LoadAuditingConfig(s"$env.auditing")
+object ERSAuditConnector extends AuditConnector with AppName {
+  override lazy val auditingConfig = LoadAuditingConfig("auditing")
 }
 
 object ERSFileValidatorAuthConnector extends AuthConnector with ServicesConfig {

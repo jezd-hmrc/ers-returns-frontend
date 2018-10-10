@@ -16,15 +16,13 @@
 
 package connectors
 
-import uk.gov.hmrc.play.config.{RunMode, AppName}
-
-import scala.concurrent.ExecutionContext
-
-
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.DataEvent
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.config.AppName
 import uk.gov.hmrc.play.frontend.config.LoadAuditingConfig
+
+import scala.concurrent.ExecutionContext
 
 
 
@@ -40,6 +38,6 @@ trait CustomAuditConnector {
     auditConnector.sendEvent(event)
 }
 
-object AuditServiceConnector extends AuditConnector with AppName with RunMode {
-  override lazy val auditingConfig = LoadAuditingConfig(s"$env.auditing")
+object AuditServiceConnector extends AuditConnector with AppName {
+  override lazy val auditingConfig = LoadAuditingConfig("auditing")
 }
