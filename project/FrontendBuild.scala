@@ -11,11 +11,11 @@ private object AppDependencies {
   import play.sbt.PlayImport._
 
 
-  private val playPartialVersion = "6.1.0"
+  private val playPartialVersion = "6.3.0"
   private val httpCachingVersion = "7.0.0"
   private val domainVersion = "4.1.0"
-  private val frontendBootstrapVersion = "8.24.0"
-  private val hmrcTestVersion = "2.4.0"
+  private val frontendBootstrapVersion = "11.3.0"
+  private val hmrcTestVersion = "3.3.0"
   private val scalaTestVersion = "2.2.6"
   private val pegdownVersion = "1.6.0"
   private val pdfboxVersion = "1.8.11"

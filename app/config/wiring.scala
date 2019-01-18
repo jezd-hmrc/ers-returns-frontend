@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package config
 
+import com.typesafe.config.Config
 import play.Logger
-import play.api.Play
+import play.api.Mode.Mode
+import play.api.{Configuration, Play}
 import play.api.Play.current
 import play.api.libs.ws.WSRequest
 import uk.gov.hmrc.crypto.ApplicationCrypto
@@ -28,7 +30,7 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.config.{AppName, ServicesConfig}
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.frontend.config.LoadAuditingConfig
-import uk.gov.hmrc.play.frontend.filters.SessionCookieCryptoFilter
+import uk.gov.hmrc.play.frontend.filters.{CookieCryptoFilter, SessionCookieCryptoFilter}
 import uk.gov.hmrc.play.http.ws._
 import uk.gov.hmrc.play.partials.{CachedStaticHtmlPartialRetriever, FormPartialRetriever, HeaderCarrierForPartialsConverter}
 
@@ -44,7 +46,11 @@ trait WSHttp extends WSGet with HttpGet with HttpPatch with HttpPut with HttpDel
   override val hooks = Seq(AuditingHook)
   override val auditConnector = ERSFileValidatorAuditConnector
 }
-object WSHttp extends WSHttp
+object WSHttp extends WSHttp {
+  override protected def configuration: Option[Config] = Some(Play.current.configuration.underlying)
+
+  override protected def appNameConfiguration: Configuration = Play.current.configuration
+}
 
 object WSHttpWithCustomTimeOut extends WSHttp with HttpAuditing {
   override val hooks = Seq(AuditingHook)
@@ -55,21 +61,34 @@ object WSHttpWithCustomTimeOut extends WSHttp with HttpAuditing {
   override def buildRequest[A](url: String)(implicit hc: HeaderCarrier): WSRequest = {
     super.buildRequest[A](url).withRequestTimeout(ersTimeOut)
   }
+
+  override protected def configuration: Option[Config] = Some(Play.current.configuration.underlying)
+
+  override protected def appNameConfiguration: Configuration = Play.current.configuration
 }
 
 object ERSAuthConnector extends AuthConnector with ServicesConfig {
   val serviceUrl: String = baseUrl("auth")
   Logger.info("got the ServiceURL " + serviceUrl)
   lazy val http = WSHttp
+
+  override protected def mode: Mode = Play.current.mode
+  override protected def runModeConfiguration: Configuration = Play.current.configuration
+
 }
 
 object ERSAuditConnector extends AuditConnector with AppName {
   override lazy val auditingConfig = LoadAuditingConfig("auditing")
+
+  override protected def appNameConfiguration: Configuration = Play.current.configuration
 }
 
 object ERSFileValidatorAuthConnector extends AuthConnector with ServicesConfig {
   val serviceUrl: String = baseUrl("auth")
   lazy val http = WSHttp
+  override protected def mode: Mode = Play.current.mode
+  override protected def runModeConfiguration: Configuration = Play.current.configuration
+
 }
 
 object FormPartialProvider extends FormPartialRetriever with SessionCookieCryptoFilterWrapper {
@@ -84,9 +103,8 @@ object ERSHeaderCarrierForPartialsConverter extends   HeaderCarrierForPartialsCo
   override val crypto = encryptCookieString _
 }
 trait SessionCookieCryptoFilterWrapper {
-
   def encryptCookieString(cookie: String) : String = {
-    SessionCookieCryptoFilter.encrypt(cookie)
+     new CookieCryptoFilter().encrypt(cookie)
   }
 }
 
@@ -95,6 +113,11 @@ object ERSFileValidatorSessionCache extends SessionCache with AppName with Servi
   override lazy val defaultSource = appName
   override lazy val baseUri = baseUrl("cachable.session-cache")
   override lazy val domain = getConfString("cachable.session-cache.domain", throw new Exception(s"Could not find config 'cachable.session-cache.domain'"))
+
+  override protected def appNameConfiguration: Configuration = Play.current.configuration
+  override protected def mode: Mode = Play.current.mode
+  override protected def runModeConfiguration: Configuration = Play.current.configuration
+
 }
 
 object ShortLivedHttpCaching extends ShortLivedHttpCaching with AppName with ServicesConfig {
@@ -102,9 +125,13 @@ object ShortLivedHttpCaching extends ShortLivedHttpCaching with AppName with Ser
   override lazy val defaultSource = appName
   override lazy val baseUri = baseUrl("cachable.short-lived-cache")
   override lazy val domain = getConfString("cachable.short-lived-cache.domain", throw new Exception(s"Could not find config 'cachable.short-lived-cache.domain'"))
+
+  override protected def appNameConfiguration: Configuration = Play.current.configuration
+  override protected def mode: Mode = Play.current.mode
+  override protected def runModeConfiguration: Configuration = Play.current.configuration
 }
 
 object ShortLivedCache extends ShortLivedCache {
-  override implicit lazy val crypto = ApplicationCrypto.JsonCrypto
+  override implicit lazy val crypto = Play.current.injector.instanceOf(classOf[ApplicationCrypto]).JsonCrypto
   override lazy val shortLiveCache = ShortLivedHttpCaching
 }

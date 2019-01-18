@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,9 @@ package config
 import play.api.Play._
 import uk.gov.hmrc.play.config.ServicesConfig
 import play.Logger
+import play.api.Mode.Mode
+import play.api.{Configuration, Play}
+
 import scala.util.Try
 
 trait ApplicationConfig {
@@ -46,6 +49,9 @@ trait ApplicationConfig {
 }
 
 object ApplicationConfig extends ApplicationConfig with ServicesConfig {
+
+  override protected def mode: Mode = Play.current.mode
+  override protected def runModeConfiguration: Configuration = Play.current.configuration
 
   private def loadConfig(key: String) = configuration.getString(key).getOrElse(throw new Exception(s"Missing key: $key"))
 
