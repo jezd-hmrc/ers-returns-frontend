@@ -36,8 +36,6 @@ import uk.gov.hmrc.play.partials.{CachedStaticHtmlPartialRetriever, FormPartialR
 
 import scala.concurrent.duration._
 
-
-
 object ERSFileValidatorAuditConnector extends AuditConnector {
   override lazy val auditingConfig = LoadAuditingConfig("auditing")
 }
@@ -79,7 +77,6 @@ object ERSAuthConnector extends AuthConnector with ServicesConfig {
 
 object ERSAuditConnector extends AuditConnector with AppName {
   override lazy val auditingConfig = LoadAuditingConfig("auditing")
-
   override protected def appNameConfiguration: Configuration = Play.current.configuration
 }
 
@@ -104,7 +101,7 @@ object ERSHeaderCarrierForPartialsConverter extends   HeaderCarrierForPartialsCo
 }
 trait SessionCookieCryptoFilterWrapper {
   def encryptCookieString(cookie: String) : String = {
-     new CookieCryptoFilter().encrypt(cookie)
+    new SessionCookieCryptoFilter(new ApplicationCrypto(Play.current.configuration.underlying)).encrypt(cookie)
   }
 }
 

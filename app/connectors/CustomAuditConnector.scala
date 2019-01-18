@@ -21,6 +21,7 @@ import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.DataEvent
 import uk.gov.hmrc.play.config.AppName
 import uk.gov.hmrc.play.frontend.config.LoadAuditingConfig
+import play.api._
 
 import scala.concurrent.ExecutionContext
 
@@ -39,5 +40,7 @@ trait CustomAuditConnector {
 }
 
 object AuditServiceConnector extends AuditConnector with AppName {
+  override def appName: String = AppName(Play.current.configuration).appName
+  override protected def appNameConfiguration: Configuration = Play.current.configuration
   override lazy val auditingConfig = LoadAuditingConfig("auditing")
 }

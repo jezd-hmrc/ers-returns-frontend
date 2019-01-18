@@ -20,7 +20,8 @@ import java.net.URLEncoder
 
 import config.{ApplicationConfig, WSHttp}
 import controllers.routes
-import play.api.Logger
+import play.api.Mode.Mode
+import play.api.{Configuration, Logger, Play}
 import play.api.mvc.Request
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http._
@@ -52,7 +53,10 @@ trait UploadConfig extends ServicesConfig {
 
 }
 
-object UploadConfig extends UploadConfig
+object UploadConfig extends UploadConfig{
+  override protected def mode: Mode = Play.current.mode
+  override protected def runModeConfiguration: Configuration = Play.current.configuration
+}
 
 trait UploadCsvConfig extends ServicesConfig {
 
@@ -74,7 +78,10 @@ trait UploadCsvConfig extends ServicesConfig {
 
 }
 
-object UploadCsvConfig extends UploadCsvConfig
+object UploadCsvConfig extends UploadCsvConfig{
+  override protected def mode: Mode = Play.current.mode
+  override protected def runModeConfiguration: Configuration = Play.current.configuration
+}
 
 
 trait AttachmentsConnector {

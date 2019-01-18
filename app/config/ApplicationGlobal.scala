@@ -18,10 +18,11 @@ package config
 
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
+import play.api.Mode.Mode
 import play.api.mvc.Request
 import play.api.{Application, Configuration, Play}
 import play.twirl.api.Html
-import uk.gov.hmrc.crypto.{ApplicationCrypto}
+import uk.gov.hmrc.crypto.ApplicationCrypto
 import uk.gov.hmrc.play.config.{AppName, ControllerConfig}
 import uk.gov.hmrc.play.frontend.bootstrap.DefaultFrontendGlobal
 import uk.gov.hmrc.play.frontend.filters.{FrontendAuditFilter, FrontendLoggingFilter, MicroserviceFilterSupport}
@@ -34,8 +35,9 @@ object ApplicationGlobal extends DefaultFrontendGlobal {
 
   override def onStart(app: Application) {
     super.onStart(app)
-  //  ApplicationCrypto.verifyConfiguration()
-    Play.current.injector.instanceOf(classOf[ApplicationCrypto]).verifyConfiguration()
+    //  ApplicationCrypto.verifyConfiguration()
+    // Play.current.injector.instanceOf(classOf[ApplicationCrypto]).verifyConfiguration()
+    new ApplicationCrypto(Play.current.configuration.underlying).verifyConfiguration()
   }
 
   override def standardErrorTemplate(pageTitle: String, heading: String, message: String)(implicit request: Request[_]): Html =
@@ -54,6 +56,9 @@ object ERSFileValidatorLoggingFilter extends FrontendLoggingFilter with Microser
 }
 
 object ERSFileValidatorAuditFilter extends FrontendAuditFilter with AppName with MicroserviceFilterSupport {
+
+  override def appName: String = AppName(Play.current.configuration).appName
+  override protected def appNameConfiguration: Configuration = Play.current.configuration
 
   override lazy val maskedFormFields = Seq.empty[String]
 
