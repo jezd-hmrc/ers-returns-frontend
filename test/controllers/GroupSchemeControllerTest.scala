@@ -81,7 +81,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
 
   "showManualCompanyDetailsPage" should {
     "display company details page for correct scheme" in {
-      val result = await(testGroupSchemeController.showManualCompanyDetailsPage(0)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET")))
+      val result = await(testGroupSchemeController.showManualCompanyDetailsPage(1)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET")))
       status(result) shouldBe OK
       bodyOf(result).contains(Messages("ers_manual_company_details.csop.title"))
     }
