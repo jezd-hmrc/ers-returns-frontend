@@ -129,6 +129,6 @@ object ShortLivedHttpCaching extends ShortLivedHttpCaching with AppName with Ser
 }
 
 object ShortLivedCache extends ShortLivedCache {
-  override implicit lazy val crypto = Play.current.injector.instanceOf(classOf[ApplicationCrypto]).JsonCrypto
+  override implicit lazy val crypto = new ApplicationCrypto(Play.current.configuration.underlying).JsonCrypto
   override lazy val shortLiveCache = ShortLivedHttpCaching
 }
