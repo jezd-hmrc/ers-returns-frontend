@@ -35,8 +35,6 @@ object ApplicationGlobal extends DefaultFrontendGlobal {
 
   override def onStart(app: Application) {
     super.onStart(app)
-    //  ApplicationCrypto.verifyConfiguration()
-    // Play.current.injector.instanceOf(classOf[ApplicationCrypto]).verifyConfiguration()
     new ApplicationCrypto(Play.current.configuration.underlying).verifyConfiguration()
   }
 
