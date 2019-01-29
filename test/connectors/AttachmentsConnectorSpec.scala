@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,14 @@ package connectors
 import java.util.UUID
 
 import akka.stream.Materializer
+import com.typesafe.config.Config
 import config.{ERSFileValidatorAuditConnector, WSHttp}
 import org.mockito.Matchers
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.{OneServerPerSuite, PlaySpec}
-import play.api.{Application, Play}
+import play.api.{Application, Configuration, Play}
 import play.api.http.HeaderNames
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.{FakeApplication, FakeRequest}
@@ -40,6 +41,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import uk.gov.hmrc.http.{HeaderCarrier, HttpPut, HttpResponse}
 import uk.gov.hmrc.http.logging.{RequestId, SessionId}
+import uk.gov.hmrc.play.config.AppName
 
 class AttachmentsConnectorSpec extends PlaySpec with OneServerPerSuite with ERSFakeApplicationConfig with MockitoSugar with BeforeAndAfterEach {
 
@@ -47,9 +49,11 @@ class AttachmentsConnectorSpec extends PlaySpec with OneServerPerSuite with ERSF
   implicit lazy val mat: Materializer = app.materializer
 
   class MockHttp extends WSHttp with WSGet with WSPost with HttpAuditing {
-    override val hooks = Seq(AuditingHook)
 
-    override def appName = Play.configuration.getString("appName").getOrElse("submit-your-ers-annual-return")
+    override def appName: String = AppName(Play.current.configuration).appName
+    override protected def appNameConfiguration: Configuration = Play.current.configuration
+
+    protected def configuration: Option[Config] = Some(Play.current.configuration.underlying)
   }
 
   lazy implicit val hcfp = HeaderCarrierForPartials(HeaderCarrier(), "encodedCookies")
