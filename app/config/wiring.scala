@@ -16,6 +16,7 @@
 
 package config
 
+import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import play.Logger
 import play.api.Mode.Mode
@@ -41,6 +42,7 @@ object ERSFileValidatorAuditConnector extends AuditConnector {
 }
 
 trait WSHttp extends WSGet with HttpGet with HttpPatch with HttpPut with HttpDelete with HttpPost with WSPut with WSPost with WSDelete with WSPatch with AppName with HttpAuditing {
+  override protected def actorSystem: ActorSystem = Play.current.actorSystem
   override val hooks = Seq(AuditingHook)
   override val auditConnector = ERSFileValidatorAuditConnector
 }
