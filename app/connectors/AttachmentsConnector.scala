@@ -19,17 +19,15 @@ package connectors
 import java.net.URLEncoder
 
 import config.{ApplicationConfig, WSHttp}
-import controllers.routes
 import play.api.Mode.Mode
-import play.api.{Configuration, Logger, Play}
 import play.api.mvc.Request
+import play.api.{Configuration, Logger, Play}
+import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.config.ServicesConfig
-import uk.gov.hmrc.play.http._
 import uk.gov.hmrc.play.partials.HeaderCarrierForPartials
 
+import scala.concurrent.ExecutionContext.global
 import scala.concurrent.Future
-import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpPost, HttpReads, HttpResponse, Upstream4xxResponse, Upstream5xxResponse}
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext
 
 trait UploadConfig extends ServicesConfig {
 
@@ -94,7 +92,7 @@ trait AttachmentsConnector {
     Logger.warn("Connecting to attachments SessionId before Get /uploader --> " + hc.sessionId)
     val newHc = hc.withExtraHeaders(("x-ersfe-session-id",hc.sessionId.map(_.toString).getOrElse("Not Provided")))
     Logger.warn(s"""Headers carrier now: ${newHc}""")
-    http.GET(uploadurl)(handleResponse(uploadurl),newHc, MdcLoggingExecutionContext.fromLoggingDetails(newHc))
+    http.GET(uploadurl)(handleResponse(uploadurl),newHc, global)
   }
 
   def getCsvFileUploadPartial()(implicit request: Request[_], hc: HeaderCarrier): Future[HttpResponse] = {
@@ -102,7 +100,7 @@ trait AttachmentsConnector {
     Logger.warn("Connecting to attachments SessionId before Get /uploader --> " + hc.sessionId)
     val newHc = hc.withExtraHeaders(("x-ersfe-session-id",hc.sessionId.map(_.toString).getOrElse("Not Provided")))
     Logger.warn(s"""Headers carrier now: ${newHc}""")
-    http.GET(uploadurl)(handleResponse(uploadurl),newHc, MdcLoggingExecutionContext.fromLoggingDetails(newHc))
+    http.GET(uploadurl)(handleResponse(uploadurl),newHc, global)
   }
 
   private def failureMessage(status: Int, url: String): String = s" returned status $status on URL: $url"
