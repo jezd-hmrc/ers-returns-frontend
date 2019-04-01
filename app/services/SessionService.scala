@@ -25,7 +25,6 @@ import play.api.mvc.Request
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext
 
 object SessionService extends SessionService
 
@@ -40,7 +39,7 @@ trait SessionService extends SessionCacheWiring {
 
     implicit val callbackDataReads: Reads[CallbackData] = Json.format[CallbackData]
 
-    sessionCache.fetchAndGetEntry(CALLBACK_DATA_KEY)(hc, callbackDataReads, MdcLoggingExecutionContext.fromLoggingDetails(hc))
+    sessionCache.fetchAndGetEntry(CALLBACK_DATA_KEY)(hc, callbackDataReads, global)
 
   }
 
