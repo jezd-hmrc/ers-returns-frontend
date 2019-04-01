@@ -91,7 +91,8 @@ trait AttachmentsConnector {
     val uploadurl = UploadConfig()
     Logger.warn("Connecting to attachments SessionId before Get /uploader --> " + hc.sessionId)
     val newHc = hc.withExtraHeaders(("x-ersfe-session-id",hc.sessionId.map(_.toString).getOrElse("Not Provided")))
-    Logger.warn(s"""Headers carrier now: ${newHc}""")
+    val loggerHc = newHc.copy(authorization = None)
+    Logger.warn(s"""Headers carrier now: ${loggerHc}""")
     http.GET(uploadurl)(handleResponse(uploadurl),newHc, global)
   }
 
@@ -99,7 +100,8 @@ trait AttachmentsConnector {
     val uploadurl = UploadCsvConfig()
     Logger.warn("Connecting to attachments SessionId before Get /uploader --> " + hc.sessionId)
     val newHc = hc.withExtraHeaders(("x-ersfe-session-id",hc.sessionId.map(_.toString).getOrElse("Not Provided")))
-    Logger.warn(s"""Headers carrier now: ${newHc}""")
+    val loggerHc = newHc.copy(authorization = None)
+    Logger.warn(s"""Headers carrier now: ${loggerHc}""")
     http.GET(uploadurl)(handleResponse(uploadurl),newHc, global)
   }
 
