@@ -424,7 +424,8 @@ ers_signed_out.link = Sign back in to your HMRC Online services account
 
 file_upload.title = Upload your ODS file
 file_upload.contact_us = Contact us on our feedback page
-file_upload.size_warning = If your file is larger than 10MB, you can’t use this service. Email <a href="mailto:shareschemes@hmrc.gsi.gov.uk">shareschemes@hmrc.gsi.gov.uk</a> and we’ll help you with your submission.
+file_upload.size_warning.link.before = If your file is larger than 10MB, you can’t use this service. Email
+file_upload.size_warning.link.after = and we’ll help you with your submission.
 file_upload.file_size = if your .ods file is larger than 10MB.
 file_upload.csop.info = Choose the {0} file you want to upload as part of your Company Share Option Plan annual return.
 file_upload.emi.info = Choose the {0} file you want to upload as part of your Enterprise Management Incentives annual return.
@@ -451,7 +452,8 @@ ers_upload_successful.page_title = Successful upload
 csv_file_upload.file_title = Upload your CSV file
 csv_file_upload.first_file_title = Upload your first CSV file
 csv_file_upload.next_file_title = Upload your next CSV file
-CSV_file_upload.size_warning = If your file is larger than 100MB, you can’t use this service. Email <a href="mailto:shareschemes@hmrc.gsi.gov.uk">shareschemes@hmrc.gsi.gov.uk</a> and we’ll help you with your submission.
+CSV_file_upload.size_warning.link.before = If your file is larger than 100MB, you can’t use this service. Email
+CSV_file_upload.size_warning.link.after = and we’ll help you with your submission.
 
 csv_file_upload.contact_us = Contact us on our feedback page
 csv_file_upload.file_size = if any of your files are larger than 100MB.

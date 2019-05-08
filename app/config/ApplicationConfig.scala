@@ -21,8 +21,10 @@ import uk.gov.hmrc.play.config.ServicesConfig
 import play.Logger
 import play.api.Mode.Mode
 import play.api.{Configuration, Play}
-
+import play.api.i18n.Lang
+import play.api.mvc.Call
 import scala.util.Try
+import controllers.routes
 
 trait ApplicationConfig {
 
@@ -42,10 +44,13 @@ trait ApplicationConfig {
   val callbackCsvPageUrl: String
   val enableRetrieveSubmissionData: Boolean
   val sentViaSchedulerNoOfRowsLimit: Int
+  val languageTranslationEnabled: Boolean
   val urBannerToggle:Boolean
   val urBannerLink: String
 
   val ggSignInUrl: String
+  def languageMap: Map[String, Lang]
+  def routeToSwitchLanguage: String => Call
 }
 
 object ApplicationConfig extends ApplicationConfig with ServicesConfig {
@@ -87,4 +92,10 @@ object ApplicationConfig extends ApplicationConfig with ServicesConfig {
     Try(loadConfig("sent-via-scheduler-noofrows").toInt).getOrElse(10000)
   }
 
+  override lazy val languageTranslationEnabled = runModeConfiguration.getBoolean("microservice.services.features.welsh-translation").getOrElse(true)
+
+  def languageMap: Map[String, Lang] = Map(
+    "english" -> Lang("en"),
+    "welsh" -> Lang("cy"))
+  def routeToSwitchLanguage = (lang: String) => routes.LanguageSwitchController.switchToLanguage(lang)
 }
