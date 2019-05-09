@@ -392,3 +392,7 @@ table th, table td {
 }
 
 #errors:focus, #fileToUpload:focus {outline: 3px solid #ffbf47;}
+
+.langToggle {
+    text-align: right;
+}

@@ -53,7 +53,7 @@ trait ApplicationConfig {
   def routeToSwitchLanguage: String => Call
 }
 
-object ApplicationConfig extends ApplicationConfig with ServicesConfig {
+class ApplicationConfigImpl extends ApplicationConfig with ServicesConfig {
 
   override protected def mode: Mode = Play.current.mode
   override protected def runModeConfiguration: Configuration = Play.current.configuration
@@ -96,6 +96,8 @@ object ApplicationConfig extends ApplicationConfig with ServicesConfig {
 
   def languageMap: Map[String, Lang] = Map(
     "english" -> Lang("en"),
-    "welsh" -> Lang("cy"))
+    "cymraeg" -> Lang("cy"))
   def routeToSwitchLanguage = (lang: String) => routes.LanguageSwitchController.switchToLanguage(lang)
 }
+
+object ApplicationConfig extends ApplicationConfigImpl
