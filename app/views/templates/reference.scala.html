@@ -14,9 +14,7 @@
  * limitations under the License.
  *@
 
-@import play.api.Play.current
-@import play.api.i18n.Messages.Implicits._
-@(screenSchemeInfo: Option[String] = None)(implicit request: Request[AnyRef])
+@(screenSchemeInfo: Option[String] = None)(implicit request: Request[AnyRef], messages: Messages)
 <div class="reference">
     <p class="font-xsmall">
         <span class="visuallyhidden">@Html(Messages("ers.reference.info"))</span>

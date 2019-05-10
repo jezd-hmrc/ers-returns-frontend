@@ -14,10 +14,8 @@
  * limitations under the License.
  *@
 
-@(groupSchemeActivity: String, index: Int, trusteeDetails: Form[models.TrusteeDetails])(implicit request: Request[AnyRef], flash: Flash, context: config.ErsContext)
+@(groupSchemeActivity: String, index: Int, trusteeDetails: Form[models.TrusteeDetails])(implicit request: Request[AnyRef], flash: Flash, context: config.ErsContext, messages: Messages)
 
-@import play.api.Play.current
-@import play.api.i18n.Messages.Implicits._
 @import uk.gov.hmrc.play.views.html.helpers
 @import utils.PageBuilder._
 @import views.html.helpers.error_overview

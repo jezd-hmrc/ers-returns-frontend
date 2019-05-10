@@ -321,7 +321,8 @@ ers_signed_out.info = Er eich diogelwch, cawsoch eich allgofnodi gan na ddefnydd
 ers_signed_out.link = Mewngofnodi’n ôl i’ch cyfrif Gwasanaethau ar-lein CThEM
 file_upload.title = Uwchlwythwch eich ffeil ODS
 file_upload.contact_us = Cysylltwch â ni ar ein tudalen adborth
-file_upload.size_warning =Os yw’ch ffeil yn fwy na 10MB, ni allwch ddefnyddio’r gwasanaeth hwn. E-bostiwch <a href="mailto:shareschemes@hmrc.gsi.gov.uk">shareschemes@hmrc.gsi.gov.uk</a> a byddwn yn eich helpu gyda’ch cyflwyniad.
+file_upload.size_warning.link.before =Os yw’ch ffeil yn fwy na 10MB, ni allwch ddefnyddio’r gwasanaeth hwn. E-bostiwch
+file_upload.size_warning.link.after = a byddwn yn eich helpu gyda’ch cyflwyniad.
 file_upload.file_size = os yw’ch ffeil ODS yn fwy na 10MB.
 file_upload.csop.info = Dewiswch y ffeil {0} rydych am ei huwchlwytho fel rhan o’ch Datganiad Blynyddol ar gyfer Cynllun Opsiwn Prynu Cyfranddaliadau Cwmni.
 file_upload.emi.info = Dewiswch y ffeil {0} rydych am ei huwchlwytho fel rhan o’ch Datganiad Blynyddol ar gyfer Cymhellion Rheoli Mentrau.
@@ -344,7 +345,8 @@ ers_upload_successful.page_title = Uwchlwytho llwyddiannus
 csv_file_upload.file_title = Uwchlwythwch eich ffeil CSV
 csv_file_upload.first_file_title = Uwchlwythwch eich ffeil CSV cyntaf
 csv_file_upload.next_file_title = Uwchlwythwch eich ffeil CSV nesaf
-CSV_file_upload.size_warning = Os yw’ch ffeil yn fwy na 100MB, ni allwch ddefnyddio’r gwasanaeth hwn. E-bostiwch <a href="mailto:shareschemes@hmrc.gsi.gov.uk">shareschemes@hmrc.gsi.gov.uk</a> a byddwn yn eich helpu gyda’ch cyflwyniad.
+CSV_file_upload.size_warning.link.before =Os yw’ch ffeil yn fwy na 10MB, ni allwch ddefnyddio’r gwasanaeth hwn. E-bostiwch
+CSV_file_upload.size_warning.link.after = a byddwn yn eich helpu gyda’ch cyflwyniad.
 csv_file_upload.contact_us = Cysylltwch â ni ar ein tudalen adborth
 csv_file_upload.file_size = os yw unrhyw un o’ch ffeiliau’n fwy na 100MB.
 csv_file_upload.file_to_upload_title = Dyma’r ffeil y rhoesoch wybod fod angen i chi ei huwchlwytho:

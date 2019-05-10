@@ -14,12 +14,11 @@
  * limitations under the License.
  *@
 
-@(fileNames : Option[CsvFilesCallbackList], ODSFileName: Option[String])(implicit request: Request[AnyRef], context: config.ErsContext)
+@(fileNames : Option[CsvFilesCallbackList], ODSFileName: Option[String])(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
 @schemeId = @{request.session.get("screenSchemeInfo").get.split(" - ").head}
 @import views.html.templates._
 @import utils.PageBuilder._
-@import play.api.Play.current
-@import play.api.i18n.Messages.Implicits._
+
 
 @scripts = {
 <script src='@routes.AssetsController.at("javascripts/ers_scripts.js")'> </script>

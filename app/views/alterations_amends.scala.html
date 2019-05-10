@@ -14,10 +14,9 @@
  * limitations under the License.
  *@
 
-@(altAmends: AltAmends)(implicit request: Request[AnyRef], flash: Flash, context: config.ErsContext)
+@(altAmends: AltAmends)(implicit request: Request[AnyRef], flash: Flash, context: config.ErsContext, messages: Messages)
 
-@import play.api.Play.current
-@import play.api.i18n.Messages.Implicits._
+
 @import utils.PageBuilder._
 @import views.html.templates._
 

@@ -14,13 +14,12 @@
  * limitations under the License.
  *@
 
-@(screenSchemeInfo:String)(implicit request: Request[AnyRef], context: config.ErsContext)
+@(screenSchemeInfo:String)(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
 @schemeId = @{screenSchemeInfo.split(" - ").head}
 @import views.html.templates._
 @import utils.PageBuilder._
 @import utils.ContentUtil._
-@import play.api.Play.current
-@import play.api.i18n.Messages.Implicits._
+
 
 @ers_main(title = Messages("ers.start.page_title")) {
 

@@ -15,12 +15,10 @@
  *@
 
 @(title: String, scripts: Html = Html(""), showSignOutLink: Boolean = true,
-showUserResearchBanner: Boolean = false)(mainContent: Html)(implicit request: Request[AnyRef], context: config.ErsContext)
+showUserResearchBanner: Boolean = false)(mainContent: Html)(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
 
 @import play.api.Play
 @import play.api.Play.current
-@import play.api.i18n.Messages
-@import play.api.i18n.Messages.Implicits._
 @import uk.gov.hmrc.play.config.RunMode._
 
 @commonLinkElement = {

@@ -19,7 +19,7 @@
 @import scala.concurrent.Await
 @import scala.concurrent.duration._
 
-@(supportLinkEnabled: Boolean)(implicit request: Request[_], context: config.ErsContext)
+@(supportLinkEnabled: Boolean)(implicit request: Request[_], context: config.ErsContext, messages: Messages)
 
 @if(supportLinkEnabled) {
     @Html(Await.result(context.getPageHelpPartial()(HeaderCarrierConverter.fromHeadersAndSession(request.headers)), 5 seconds))

@@ -14,10 +14,8 @@
  * limitations under the License.
  *@
 
-@(uploadForm: Html)(implicit request: Request[AnyRef], context: config.ErsContext)
+@(uploadForm: Html)(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
 @schemeId = @{request.session.get("screenSchemeInfo").get.split(" - ").head}
-@import play.api.Play.current
-@import play.api.i18n.Messages.Implicits._
 @import views.html.templates._
 
 @scripts = {

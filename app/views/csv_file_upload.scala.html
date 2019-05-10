@@ -14,10 +14,8 @@
  * limitations under the License.
  *@
 
-@(uploadForm: Html, csvFilesCallback: List[CsvFilesCallback])(implicit request: Request[AnyRef], context: config.ErsContext)
+@(uploadForm: Html, csvFilesCallback: List[CsvFilesCallback])(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
 @schemeId = @{request.session.get("screenSchemeInfo").get.split(" - ").head}
-@import play.api.Play.current
-@import play.api.i18n.Messages.Implicits._
 @import utils.PageBuilder._
 @import views.html.templates._
 

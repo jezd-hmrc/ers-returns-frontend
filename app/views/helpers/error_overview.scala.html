@@ -14,9 +14,7 @@
  * limitations under the License.
  *@
 
-@(form: Form[_], OptionalErrMsg:Option[String] = None)
-@import play.api.Play.current
-@import play.api.i18n.Messages.Implicits._
+@(form: Form[_], OptionalErrMsg:Option[String] = None)(implicit messages: Messages)
 @if(form.hasErrors) {
         <div id="errors" class="validation-summary" role="group" aria-labelledby="summary-heading" tabindex="-1">
             <h1 id="summary-heading" class="heading-medium error-summary-heading">@Messages("validation.summary.heading")</h1>

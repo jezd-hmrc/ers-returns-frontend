@@ -15,12 +15,11 @@
  *@
 
 @import utils.CacheUtil
-@(dateSubmitted: String, bundle: String, taxYear: String, url: String)(implicit request: Request[AnyRef], context: config.ErsContext)
+@(dateSubmitted: String, bundle: String, taxYear: String, url: String)(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
 @schemeId = @{request.session.get("screenSchemeInfo").get.split(" - ").head}
 @schemeRef = @{CacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get("screenSchemeInfo"))}
 
 @import play.api.Play.current
-@import play.api.i18n.Messages.Implicits._
 @import utils.ContentUtil
 @import utils.PageBuilder._
 @import views.html.templates._
