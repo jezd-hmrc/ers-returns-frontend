@@ -35,8 +35,8 @@ object RsFormMappings {
    * activity type Form definition
    */
   val chooseForm = Form(mapping(reportableEventsFields.isNilReturn -> optional(text)
-    .verifying(Messages("ers_choose.err.message"), _.nonEmpty)
-    .verifying(Messages("ers.invalidCharacters"), so => validInputCharacters(so.getOrElse("1"),
+    .verifying("ers_choose.err.message", _.nonEmpty)
+    .verifying("ers.invalidCharacters", so => validInputCharacters(so.getOrElse("1"),
       fieldValidationPatterns.yesNoRegPattern)))(ReportableEvents.apply)(ReportableEvents.unapply))
 
   /*
