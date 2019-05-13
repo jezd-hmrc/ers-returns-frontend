@@ -21,7 +21,7 @@
 
 .clear {clear:both;}
 
-#content article {width:100%;}
+
 
 
 .ers-service-info {
@@ -395,4 +395,5 @@ table th, table td {
 
 .langToggle {
     text-align: right;
+    margin-top: 1em;
 }

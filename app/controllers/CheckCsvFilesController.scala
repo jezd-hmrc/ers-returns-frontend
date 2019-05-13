@@ -110,12 +110,12 @@ trait CheckCsvFilesController extends ERSReturnBaseController with Authenticator
     }
   }
 
-  def reloadWithError(): Future[Result] = {
+  def reloadWithError()(implicit messages: Messages): Future[Result] = {
     Future.successful(
-      Redirect(routes.CheckCsvFilesController.checkCsvFilesPage()).flashing("csv-file-not-selected-error" -> Messages(PageBuilder.PAGE_CHECK_CSV_FILE + ".err.message"))
+      Redirect(routes.CheckCsvFilesController.checkCsvFilesPage()).flashing("csv-file-not-selected-error" -> messages(PageBuilder.PAGE_CHECK_CSV_FILE + ".err.message"))
     )
   }
 
-  def getGlobalErrorPage = Ok(views.html.global_error(Messages("ers.global_errors.title"), Messages("ers.global_errors.heading"), Messages("ers.global_errors.message")))
+  def getGlobalErrorPage(implicit messages: Messages) = Ok(views.html.global_error(messages("ers.global_errors.title"), messages("ers.global_errors.heading"), messages("ers.global_errors.message")))
 
 }
