@@ -27,6 +27,7 @@ import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
 import play.api.http.Status
+import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -42,6 +43,7 @@ class GeneratePdfControllerSpec extends UnitSpec with ERSFakeApplicationConfig w
 
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val mat: Materializer = app.materializer
+  implicit lazy val messages: Messages = Messages(Lang("en"), app.injector.instanceOf[MessagesApi])
 
   lazy val pdfBuilderMock = mock[ErsReceiptPdfBuilderService]
   lazy val cache = mock[CacheUtil]

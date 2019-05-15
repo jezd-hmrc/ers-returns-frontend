@@ -29,6 +29,7 @@ import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
 import play.api.http.Status
+import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.JsValue
 import play.api.mvc.{Request, Result, Session}
@@ -46,6 +47,7 @@ class ConfirmationPageControllerTest extends UnitSpec with ERSFakeApplicationCon
 
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val mat: Materializer = app.materializer
+  implicit lazy val messages: Messages = Messages(Lang("en"), app.injector.instanceOf[MessagesApi])
 
   lazy val mockMetrics: Metrics = mock[Metrics]
 
@@ -131,7 +133,7 @@ class ConfirmationPageControllerTest extends UnitSpec with ERSFakeApplicationCon
 
     "show user panel for confirmation page" in {
       val controllerUnderTest = buildFakeConfirmationPageController()
-      val result = confirmation("", "", "", "")(Fixtures.buildFakeRequestWithSessionId("GET"), ErsContextImpl)
+      val result = confirmation("", "", "", "")(Fixtures.buildFakeRequestWithSessionId("GET"), ErsContextImpl, messages)
       contentAsString(result)  should include("Help improve digital services by joining the HMRC user panel (opens in new window)")
       contentAsString(result)  should include("No thanks")
 
