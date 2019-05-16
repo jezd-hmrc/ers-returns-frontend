@@ -18,15 +18,12 @@ package models
 
 import models.RsFormMappings._
 import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
-import play.api.i18n.Messages
-import play.api.i18n.Messages.Implicits._
+import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.libs.json.Json
 import utils.Fixtures
 
 class RsFormMappingsSpec extends PlaySpec with OneAppPerSuite /*with ERSFakeApplicationConfig*/ {
 
-  //override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
-  //implicit lazy val mat: Materializer = app.materializer
 
   "companyDetailsForm" must {
     "return no errors with valid data" in {
@@ -47,7 +44,7 @@ class RsFormMappingsSpec extends PlaySpec with OneAppPerSuite /*with ERSFakeAppl
       )
       val validatedForm = companyDetailsForm.bind(postData)
       assert(validatedForm.errors.head.key == companyDetailsFields.companyName)
-      assert(validatedForm.errors.head.messages.head == Messages("ers_manual_company_details.err.summary.company_name_required"))
+      assert(validatedForm.errors.head.messages.head == "ers_manual_company_details.err.summary.company_name_required")
     }
 
     "return an error if companyName size too large" in {
@@ -57,7 +54,7 @@ class RsFormMappingsSpec extends PlaySpec with OneAppPerSuite /*with ERSFakeAppl
       )
       val validatedForm = companyDetailsForm.bind(postData)
       assert(validatedForm.errors.head.key == companyDetailsFields.companyName)
-      assert(validatedForm.errors.head.messages.head == Messages("ers_manual_company_details.err.company_name"))
+      assert(validatedForm.errors.head.messages.head == "ers_manual_company_details.err.company_name")
     }
 
     "return an error if companyName contains invalid chars" in {
@@ -67,7 +64,7 @@ class RsFormMappingsSpec extends PlaySpec with OneAppPerSuite /*with ERSFakeAppl
       )
       val validatedForm = companyDetailsForm.bind(postData)
       assert(validatedForm.errors.head.key == companyDetailsFields.companyName)
-      assert(validatedForm.errors.head.messages.head == Messages("ers_manual_company_details.err.invalidChars.company_name"))
+      assert(validatedForm.errors.head.messages.head == "ers_manual_company_details.err.invalidChars.company_name")
     }
   }
 
@@ -79,7 +76,7 @@ class RsFormMappingsSpec extends PlaySpec with OneAppPerSuite /*with ERSFakeAppl
       )
       val validatedForm = companyDetailsForm.bind(postData)
       assert(validatedForm.errors.head.key == companyDetailsFields.addressLine1)
-      assert(validatedForm.errors.head.messages.head == Messages("ers_manual_company_details.err.summary.address_line1_required"))
+      assert(validatedForm.errors.head.messages.head == "ers_manual_company_details.err.summary.address_line1_required")
     }
 
     "return an error if addressLine1 size too large" in {
@@ -89,7 +86,7 @@ class RsFormMappingsSpec extends PlaySpec with OneAppPerSuite /*with ERSFakeAppl
       )
       val validatedForm = companyDetailsForm.bind(postData)
       assert(validatedForm.errors.head.key == companyDetailsFields.addressLine1)
-      assert(validatedForm.errors.head.messages.head == Messages("ers_manual_company_details.err.address_line1"))
+      assert(validatedForm.errors.head.messages.head == "ers_manual_company_details.err.address_line1")
     }
 
     "return an error if addressLine1 contains invalid chars" in {
@@ -99,7 +96,7 @@ class RsFormMappingsSpec extends PlaySpec with OneAppPerSuite /*with ERSFakeAppl
       )
       val validatedForm = companyDetailsForm.bind(postData)
       assert(validatedForm.errors.head.key == companyDetailsFields.addressLine1)
-      assert(validatedForm.errors.head.messages.head == Messages("ers_manual_company_details.err.invalidChars.address_line1"))
+      assert(validatedForm.errors.head.messages.head == "ers_manual_company_details.err.invalidChars.address_line1")
     }
   }
 
@@ -112,7 +109,7 @@ class RsFormMappingsSpec extends PlaySpec with OneAppPerSuite /*with ERSFakeAppl
       )
       val validatedForm = companyDetailsForm.bind(postData)
       assert(validatedForm.errors.head.key == companyDetailsFields.addressLine2)
-      assert(validatedForm.errors.head.messages.head == Messages("ers_manual_company_details.err.address_line2"))
+      assert(validatedForm.errors.head.messages.head == "ers_manual_company_details.err.address_line2")
     }
 
     "return an error if addressLine2 contains invalid chars" in {
@@ -123,7 +120,7 @@ class RsFormMappingsSpec extends PlaySpec with OneAppPerSuite /*with ERSFakeAppl
       )
       val validatedForm = companyDetailsForm.bind(postData)
       assert(validatedForm.errors.head.key == companyDetailsFields.addressLine2)
-      assert(validatedForm.errors.head.messages.head == Messages("ers_manual_company_details.err.invalidChars.address_line2"))
+      assert(validatedForm.errors.head.messages.head == "ers_manual_company_details.err.invalidChars.address_line2")
     }
   }
 
@@ -137,7 +134,7 @@ class RsFormMappingsSpec extends PlaySpec with OneAppPerSuite /*with ERSFakeAppl
       )
       val validatedForm = companyDetailsForm.bind(postData)
       assert(validatedForm.errors.head.key == companyDetailsFields.addressLine3)
-      assert(validatedForm.errors.head.messages.head == Messages("ers_manual_company_details.err.address_line3"))
+      assert(validatedForm.errors.head.messages.head == "ers_manual_company_details.err.address_line3")
     }
 
     "return an error if addressLine3 contains invalid chars" in {
@@ -149,7 +146,7 @@ class RsFormMappingsSpec extends PlaySpec with OneAppPerSuite /*with ERSFakeAppl
       )
       val validatedForm = companyDetailsForm.bind(postData)
       assert(validatedForm.errors.head.key == companyDetailsFields.addressLine3)
-      assert(validatedForm.errors.head.messages.head == Messages("ers_manual_company_details.err.invalidChars.address_line3"))
+      assert(validatedForm.errors.head.messages.head == "ers_manual_company_details.err.invalidChars.address_line3")
     }
   }
 
@@ -164,7 +161,7 @@ class RsFormMappingsSpec extends PlaySpec with OneAppPerSuite /*with ERSFakeAppl
       )
       val validatedForm = companyDetailsForm.bind(postData)
       assert(validatedForm.errors.head.key == companyDetailsFields.addressLine4)
-      assert(validatedForm.errors.head.messages.head == Messages("ers_manual_company_details.err.address_line4"))
+      assert(validatedForm.errors.head.messages.head == "ers_manual_company_details.err.address_line4")
     }
 
     "return an error if addressLine4 contains invalid chars" in {
@@ -178,8 +175,8 @@ class RsFormMappingsSpec extends PlaySpec with OneAppPerSuite /*with ERSFakeAppl
       val validatedForm = companyDetailsForm.bind(postData)
       assert(validatedForm.errors.head.key == companyDetailsFields.addressLine4)
       val errors = validatedForm.errors.map(formError => formError.messages.head)
-      assert(errors.contains(Messages("ers_manual_company_details.err.invalidChars.address_line4")))
-      assert(errors.contains(Messages("ers_manual_company_details.err.address_line4")))
+      assert(errors.contains("ers_manual_company_details.err.invalidChars.address_line4"))
+      assert(errors.contains("ers_manual_company_details.err.address_line4"))
     }
   }
 
@@ -195,7 +192,7 @@ class RsFormMappingsSpec extends PlaySpec with OneAppPerSuite /*with ERSFakeAppl
       )
       val validatedForm = companyDetailsForm.bind(postData)
       assert(validatedForm.errors.head.key == companyDetailsFields.postcode)
-      assert(validatedForm.errors.head.messages.head == Messages("ers_manual_company_details.err.postcode"))
+      assert(validatedForm.errors.head.messages.head == "ers_manual_company_details.err.postcode")
     }
 
     "return an error if postCode contains invalid chars" in {
@@ -209,7 +206,7 @@ class RsFormMappingsSpec extends PlaySpec with OneAppPerSuite /*with ERSFakeAppl
       )
       val validatedForm = companyDetailsForm.bind(postData)
       assert(validatedForm.errors.head.key == companyDetailsFields.postcode)
-      assert(validatedForm.errors.head.messages.head == Messages("ers_manual_company_details.err.postcode"))
+      assert(validatedForm.errors.head.messages.head == "ers_manual_company_details.err.postcode")
     }
   }
 
