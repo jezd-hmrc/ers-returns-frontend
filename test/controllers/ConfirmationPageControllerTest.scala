@@ -179,20 +179,9 @@ class ConfirmationPageControllerTest extends UnitSpec with ERSFakeApplicationCon
     }
 
     "returns OK for NilReturn if there are no exceptions thrown" in {
-      val mockedSession = mock[Session]
-      val mockedRequest = mock[Request[AnyRef]]
-      when(
-        mockedSession.get(anyString())
-      ).thenReturn(
-        Some("10 MAR 2016")
-      )
-      when(
-        mockedRequest.session
-      ).thenReturn(
-        mockedSession
-      )
+      val request = FakeRequest().withSession("screenSchemeInfo" -> "10 MAR 2016")
       val controllerUnderTest = buildFakeConfirmationPageController(isNilReturn = "2")
-      val result = controllerUnderTest.showConfirmationPage()(Fixtures.buildFakeUser, mockedRequest, hc)
+      val result = controllerUnderTest.showConfirmationPage()(Fixtures.buildFakeUser, request, hc)
       status(result) shouldBe Status.OK
     }
 
