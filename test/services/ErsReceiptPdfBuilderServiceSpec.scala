@@ -26,6 +26,7 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
+import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.inject.guice.GuiceApplicationBuilder
 import services.pdf.{DecoratorController, ErsContentsStreamer, ErsReceiptPdfBuilderService}
 import uk.gov.hmrc.play.test.UnitSpec
@@ -35,6 +36,7 @@ class ErsReceiptPdfBuilderServiceSpec extends UnitSpec with MockitoSugar with Be
 
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val mat: Materializer = app.materializer
+  implicit lazy val messages: Messages = Messages(Lang("en"), app.injector.instanceOf[MessagesApi])
 
   def verifyBlankBlock(streamer: ErsContentsStreamer) {
     verify(streamer, VerificationModeFactory.times(4)).drawText(org.mockito.Matchers.eq("": String), org.mockito.Matchers.eq(36.0F: Float))

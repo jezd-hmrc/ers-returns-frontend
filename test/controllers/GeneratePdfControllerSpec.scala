@@ -111,7 +111,7 @@ class GeneratePdfControllerSpec extends UnitSpec with ERSFakeApplicationConfig w
     val csvFilesCallbackList: CsvFilesCallbackList = new CsvFilesCallbackList(List(csvFilesCallBack))
     val byteArrayOutputStream = mock[ByteArrayOutputStream]
 
-    when(pdfBuilderMock.createPdf(any[ErsContentsStreamer], any[ErsSummary], any(), any())).thenReturn(byteArrayOutputStream)
+    when(pdfBuilderMock.createPdf(any[ErsContentsStreamer], any[ErsSummary], any(), any())(any())).thenReturn(byteArrayOutputStream)
     when(cache.fetch[ErsMetaData](refEq(CacheUtil.ersMetaData), anyString())(any(), any(), any())).thenReturn(Future.successful(rsc))
     when(cacheMap.getEntry[CsvFilesCallbackList](refEq(CacheUtil.CHECK_CSV_FILES))(any())).thenReturn(Future.successful(Some(csvFilesCallbackList)))
     when(cacheMap.getEntry[String](refEq(CacheUtil.FILE_NAME_CACHE))(any())).thenReturn(Future.successful(Some("test.ods")))

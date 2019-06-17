@@ -21,7 +21,7 @@ import models._
 import play.api.Play.current
 import play.api.i18n.Messages
 import play.api.i18n.Messages.Implicits._
-import play.api.mvc.{Action, AnyContent, Request, Result}
+import play.api.mvc.{Action, AnyContent, LegacyI18nSupport, Request, Result}
 import play.api.{Configuration, Logger, Play}
 import services.SessionService
 import services.pdf.{ApachePdfContentsStreamer, ErsReceiptPdfBuilderService}
@@ -32,7 +32,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
 import uk.gov.hmrc.http.HeaderCarrier
 
-trait PdfGenerationController extends ERSReturnBaseController with Authenticator {
+trait PdfGenerationController extends ERSReturnBaseController with Authenticator with LegacyI18nSupport {
   val cacheUtil: CacheUtil
   val pdfBuilderService: ErsReceiptPdfBuilderService
 
