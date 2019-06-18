@@ -16,13 +16,22 @@
 
 package services.pdf
 
+import org.mockito.{Matchers, Mock}
 import org.scalatest.mock.MockitoSugar
 import uk.gov.hmrc.play.test.UnitSpec
 import org.mockito.Mockito._
 import org.mockito.internal.verification.VerificationModeFactory
+import org.scalatestplus.play.OneAppPerSuite
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.i18n.{Lang, Messages, MessagesApi}
+import play.api.inject.Injector
 import utils.Fixtures
 
-class GroupSummaryDecoratorSpec extends UnitSpec with MockitoSugar{
+
+class GroupSummaryDecoratorSpec extends UnitSpec with MockitoSugar  {
+
+  implicit val messages: Messages = mock[Messages]
+
   val decorator = new GroupSummaryDecorator("title", Fixtures.ersSummary.companies, 1.0F, 2.0F, 3.0F, 4.0F)
 
   "GroupSummary Decorator" should {
@@ -32,30 +41,31 @@ class GroupSummaryDecoratorSpec extends UnitSpec with MockitoSugar{
       val streamer = mock[ErsContentsStreamer]
       decorator.decorate(streamer)
 
-      verify(streamer, VerificationModeFactory.times(0)).drawText(org.mockito.Matchers.eq("title": String), org.mockito.Matchers.eq(1.0F: Float))
-      verify(streamer, VerificationModeFactory.times(0)).drawText(org.mockito.Matchers.eq("": String), org.mockito.Matchers.eq(3.0F: Float))
+      verify(streamer, VerificationModeFactory.times(0)).drawText(
+        org.mockito.Matchers.eq("title": String), org.mockito.Matchers.eq(1.0F: Float))(Matchers.any())
+      verify(streamer, VerificationModeFactory.times(0)).drawText(org.mockito.Matchers.eq("": String), org.mockito.Matchers.eq(3.0F: Float))(Matchers.any())
 
     }
     "add title to section" in {
       val streamer = mock[ErsContentsStreamer]
       decorator.decorate(streamer)
 
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("title": String), org.mockito.Matchers.eq(1.0F: Float))
+      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("title": String), org.mockito.Matchers.eq(1.0F: Float))(Matchers.any())
      }
 
     "add company name to section" in {
       val streamer = mock[ErsContentsStreamer]
       decorator.decorate(streamer)
 
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("testCompany": String), org.mockito.Matchers.eq(2.0F: Float))
+      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("testCompany": String), org.mockito.Matchers.eq(2.0F: Float))(Matchers.any())
      }
 
     "add block spacer at the end of the section" in {
       val streamer = mock[ErsContentsStreamer]
       decorator.decorate(streamer)
 
-      verify(streamer, VerificationModeFactory.times(3)).drawText(org.mockito.Matchers.eq("": String), org.mockito.Matchers.eq(3.0F: Float))
-      verify(streamer, VerificationModeFactory.times(2)).drawText(org.mockito.Matchers.eq("": String), org.mockito.Matchers.eq(4.0F: Float))
+      verify(streamer, VerificationModeFactory.times(3)).drawText(org.mockito.Matchers.eq("": String), org.mockito.Matchers.eq(3.0F: Float))(Matchers.any())
+      verify(streamer, VerificationModeFactory.times(2)).drawText(org.mockito.Matchers.eq("": String), org.mockito.Matchers.eq(4.0F: Float))(Matchers.any())
       verify(streamer, VerificationModeFactory.times(1)).drawLine()
 
     }

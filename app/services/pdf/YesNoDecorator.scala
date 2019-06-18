@@ -16,21 +16,22 @@
 
 package services.pdf
 
+import play.api.i18n.Messages
 import utils.PageBuilder
 
 
 
 class YesNoDecorator(headingTitle: String, isNilReturn: String, headingFontSize: Float, answerFontSize: Float, lineSpacer: Float, blockSpacer: Float) extends Decorator {
 
-  def decorate(streamer: ErsContentsStreamer): Unit = {
+  def decorate(streamer: ErsContentsStreamer)(implicit messages: Messages): Unit = {
 
     streamer.drawText(headingTitle, headingFontSize)
 
     streamer.drawText("", lineSpacer)
 
     streamer.drawText(isNilReturn match {
-      case PageBuilder.OPTION_YES => "Yes"
-      case PageBuilder.OPTION_NO => "No"
+      case PageBuilder.OPTION_YES => Messages("ers.yes")
+      case PageBuilder.OPTION_NO => Messages("ers.no")
     }, answerFontSize)
 
     streamer.drawText("", blockSpacer)

@@ -568,3 +568,5 @@ ers.global_errors.heading = Nid yw’r gwasanaeth ar gael
 ers.global_errors.title = Nid yw’r gwasanaeth ar gael
 urbanner.message.text =Helpwch i wella gwasanaethau digidol drwy ymuno â phanel defnyddwyr CThEM (yn agor ffenestr newydd)
 urbanner.message.reject = Dim diolch
+
+ers.taxYear.text =' i '

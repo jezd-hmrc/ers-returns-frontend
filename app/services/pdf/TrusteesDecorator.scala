@@ -17,13 +17,11 @@
 package services.pdf
 
 import models.TrusteeDetailsList
-import play.api.Play.current
 import play.api.i18n.Messages
-import play.api.i18n.Messages.Implicits._
 
 class TrusteesDecorator(trusteesList: Option[TrusteeDetailsList], headingFontSize: Float, answerFontSize: Float, lineSpacer: Float, blockSpacer: Float) extends Decorator {
 
-  def decorate(streamer: ErsContentsStreamer): Unit = {
+  def decorate(streamer: ErsContentsStreamer)(implicit messages: Messages): Unit = {
 
     if (!trusteesList.isDefined)
       return

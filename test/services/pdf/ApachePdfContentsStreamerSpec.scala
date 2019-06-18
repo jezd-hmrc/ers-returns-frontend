@@ -16,10 +16,20 @@
 
 package services.pdf
 
+import akka.stream.Materializer
+import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.play.OneAppPerSuite
+import play.api.Application
+import play.api.Play.current
+import play.api.i18n.Messages.Implicits._
+import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.play.test.UnitSpec
-import utils.Fixtures
+import utils.{ERSFakeApplicationConfig, Fixtures}
 
-class ApachePdfContentsStreamerSpec extends UnitSpec {
+class ApachePdfContentsStreamerSpec extends UnitSpec with MockitoSugar with ERSFakeApplicationConfig with OneAppPerSuite {
+
+  override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
+  implicit lazy val mat: Materializer = app.materializer
 
   val ersSummary = Fixtures.ersSummary
   val streamer = new ApachePdfContentsStreamer(ersSummary)

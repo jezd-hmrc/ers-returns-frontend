@@ -17,9 +17,10 @@
 package services.pdf
 
 import models.CompanyDetailsList
+import play.api.i18n.Messages
 
 class GroupSummaryDecorator(headingTitle: String, companiesList: Option[CompanyDetailsList], headingFontSize: Float, answerFontSize: Float, lineSpacer: Float, blockSpacer: Float) extends Decorator {
-  def decorate(streamer: ErsContentsStreamer): Unit = {
+  def decorate(streamer: ErsContentsStreamer)(implicit messages: Messages): Unit = {
     if(!companiesList.isDefined)
       return
 

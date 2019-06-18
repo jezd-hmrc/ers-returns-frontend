@@ -22,7 +22,7 @@ import models.ErsSummary
 import org.joda.time.format.DateTimeFormat
 import play.api.Logger
 import play.api.i18n.Messages
-import utils.{ContentUtil, ErsMetaDataHelper}
+import utils.{ContentUtil, DateUtils, ErsMetaDataHelper}
 
 import scala.collection.mutable.ListBuffer
 
@@ -74,20 +74,20 @@ trait ErsReceiptPdfBuilderService {
     streamer.drawText("", blockSpacer)
     streamer.drawText(Messages("ers.pdf.date_and_time"), headingFontSize)
     streamer.drawText("", lineSpacer)
-    streamer.drawText(dateSubmitted, answerFontSize)
+    streamer.drawText(DateUtils.convertDate(dateSubmitted), answerFontSize)
 
     Logger.info("Save page content")
     streamer.savePageContent
   }
 
-  private def addSummary(ersSummary: ErsSummary, filesUploaded: Option[ListBuffer[String]])(implicit streamer: ErsContentsStreamer, decorator: DecoratorController): Unit = {
+  private def addSummary(ersSummary: ErsSummary, filesUploaded: Option[ListBuffer[String]])(implicit streamer: ErsContentsStreamer, decorator: DecoratorController, messages: Messages): Unit = {
     val blockSpacer = 20
 
     Logger.info("Adding ERS Summary")
 
     val pos = streamer.createNewPage
 
-    streamer.drawText("Summary information", 18)
+    streamer.drawText(Messages("ers.pdf.summary_information"), 18)
     streamer.drawText("", blockSpacer)
     streamer.drawLine()
     streamer.drawText("", blockSpacer)

@@ -17,11 +17,12 @@
 package services.pdf
 
 import models.SchemeOrganiserDetails
+import play.api.i18n.Messages
 import utils.CountryCodes
 
 class SchemeOrganiserDetailseDecorator(title: String, schemeOrganiser: SchemeOrganiserDetails, headingFontSize: Float, answerFontSize: Float, lineSpacer: Float, blockSpacer: Float) extends Decorator{
 
-  def decorate(streamer: ErsContentsStreamer): Unit = {
+  def decorate(streamer: ErsContentsStreamer)(implicit messages: Messages): Unit = {
     streamer.drawText(title, headingFontSize)
     streamer.drawText("", blockSpacer)
     streamer.drawText(schemeOrganiser.companyName, answerFontSize)

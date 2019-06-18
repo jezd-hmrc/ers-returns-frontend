@@ -23,6 +23,9 @@ import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.play.test.UnitSpec
 import utils.{ERSFakeApplicationConfig, Fixtures}
+import play.api.Play.current
+import play.api.i18n.Messages
+import play.api.i18n.Messages.Implicits._
 
 class PdfDecoratorContorllerFactorySpec extends UnitSpec with OneAppPerSuite with ERSFakeApplicationConfig {
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()

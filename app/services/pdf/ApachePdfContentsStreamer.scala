@@ -17,8 +17,8 @@
 package services.pdf
 
 import java.io.ByteArrayOutputStream
-import javax.imageio.ImageIO
 
+import javax.imageio.ImageIO
 import models.ErsSummary
 import org.apache.pdfbox.pdmodel.common.PDMetadata
 import org.apache.pdfbox.pdmodel.edit.PDPageContentStream
@@ -29,13 +29,14 @@ import org.apache.pdfbox.pdmodel.{PDDocument, PDPage}
 import org.apache.xmpbox.XMPMetadata
 import org.apache.xmpbox.xml.{XmpSerializationException, XmpSerializer}
 import play.api.Logger
+import play.api.i18n.Messages
 import utils.ErsMetaDataHelper
 
 trait ErsContentsStreamer {
   def saveErsSummary() : ByteArrayOutputStream
   def savePageContent() : Boolean
-  def drawText(string : String, fontSize : Float) : Boolean
-  def createNewPage() : Boolean
+  def drawText(string : String, fontSize : Float)(implicit messages: Messages) : Boolean
+  def createNewPage()(implicit messages: Messages) : Boolean
   def drawLine() : Boolean
 }
 
@@ -108,7 +109,7 @@ class ApachePdfContentsStreamer(ersSummary : ErsSummary) extends ErsContentsStre
     false
   }
 
-  def createNewPage : Boolean = {
+  def createNewPage()(implicit messages: Messages) : Boolean = {
      Logger.debug("ers-returns-frontend creating new pdf page")
      savePageContent()
 
@@ -127,7 +128,7 @@ class ApachePdfContentsStreamer(ersSummary : ErsSummary) extends ErsContentsStre
     true
   }
 
-  def drawText(string: String, fontSize: Float) : Boolean = {
+  def drawText(string: String, fontSize: Float)(implicit messages: Messages) : Boolean = {
 
     cursorPositioner.get.fontSize = fontSize
     val lines = getLines(string, 530, font.get, fontSize)
@@ -193,7 +194,7 @@ class ApachePdfContentsStreamer(ersSummary : ErsSummary) extends ErsContentsStre
 
   }
 
-  private def addHMlogo(cursorPositioner: CursorPositioner) : Boolean = {
+  private def addHMlogo(cursorPositioner: CursorPositioner)(implicit messages: Messages) : Boolean = {
 
      Logger.debug("ers-returns-frontend adding hm logo")
      cursorPositioner.beginHeader()
@@ -218,10 +219,10 @@ class ApachePdfContentsStreamer(ersSummary : ErsSummary) extends ErsContentsStre
     true
   }
 
-  private def addPageHeaderText(cursorPositioner: CursorPositioner) {
+  private def addPageHeaderText(cursorPositioner: CursorPositioner)(implicit messages: Messages) {
 
     var pos = cursorPositioner.getHeaderRelativeStart()
-    drawText("HM Revenue & Customs", pos._1, pos._2, 16)
+    drawText(Messages("ers.pdf.header"), pos._1, pos._2, 16)
 
     pos = cursorPositioner.getIndentedHeaderPos()
     drawText(s"${ersSummary.metaData.schemeInfo.schemeType} - ${ersSummary.metaData.schemeInfo.schemeRef} - ${ErsMetaDataHelper.getFullTaxYear(ersSummary.metaData.schemeInfo.taxYear)}", pos._1, pos._2, 12)

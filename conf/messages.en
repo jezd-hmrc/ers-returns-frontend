@@ -743,3 +743,6 @@ ers.pdf.confirmation.submitted=Your {0} annual return has been submitted for tax
 ers.pdf.scheme=Scheme name:
 ers.pdf.refcode=Reference code:
 ers.pdf.date_and_time=Date and time submitted:
+ers.pdf.summary_information=Summary information
+ers.taxYear.text=' to '
+ers.pdf.header=HM Revenue & Customs
