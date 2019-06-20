@@ -71,10 +71,14 @@ trait ErsReceiptPdfBuilderService {
     streamer.drawText("", lineSpacer)
     streamer.drawText(ersSummary.bundleRef, answerFontSize)
 
+    Logger.info("Writing Date")
+    val convertedDate = DateUtils.convertDate(dateSubmitted)
+
     streamer.drawText("", blockSpacer)
     streamer.drawText(Messages("ers.pdf.date_and_time"), headingFontSize)
     streamer.drawText("", lineSpacer)
-    streamer.drawText(DateUtils.convertDate(dateSubmitted), answerFontSize)
+    streamer.drawText(convertedDate, answerFontSize)
+    Logger.info("Date Wrote:" + convertedDate)
 
     Logger.info("Save page content")
     streamer.savePageContent

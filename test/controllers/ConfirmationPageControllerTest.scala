@@ -133,7 +133,7 @@ class ConfirmationPageControllerTest extends UnitSpec with ERSFakeApplicationCon
 
     "show user panel for confirmation page" in {
       val controllerUnderTest = buildFakeConfirmationPageController()
-      val result = confirmation("", "", "", "")(Fixtures.buildFakeRequestWithSessionId("GET"), ErsContextImpl, messages)
+      val result = confirmation("8 April 2016, 4:50pm", "", "", "")(Fixtures.buildFakeRequestWithSessionId("GET"), ErsContextImpl, messages)
       contentAsString(result)  should include("Help improve digital services by joining the HMRC user panel (opens in new window)")
       contentAsString(result)  should include("No thanks")
 

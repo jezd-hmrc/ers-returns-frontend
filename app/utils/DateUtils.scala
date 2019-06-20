@@ -16,9 +16,13 @@
 
 package utils
 
+
+import java.text.SimpleDateFormat
+
 import com.ibm.icu.util.ULocale
 import org.joda.time.DateTime
 import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
+import play.api.Logger
 import play.api.i18n.Messages
 import uk.gov.hmrc.time.DateTimeUtils
 
@@ -32,12 +36,15 @@ object DateUtils {
     str
   }
 
-  def convertDate(date: String, format: String = "dd MMMM yyyy, HH:mma")(implicit messages: Messages): String = {
-    val locale: ULocale = new ULocale(messages.lang.code)
-    val dateOut = new com.ibm.icu.text.SimpleDateFormat(format, locale)
+  def convertDate(date: String, format: String = "dd MMMM yyyy, hh:mma")(implicit messages: Messages): String = {
 
-    val dateIn = new java.text.SimpleDateFormat(format)
-    val originalDate = dateIn.parse(date)
+    Logger.debug("Converting date : " + date)
+    val locale: ULocale = new ULocale(messages.lang.code)
+    val dateOut = new com.ibm.icu.text.SimpleDateFormat("d MMMM yyyy, h:mma", locale)
+    val dateFrm = new  SimpleDateFormat(format)
+    val originalDate = dateFrm.parse(date)
+
+    Logger.debug("The output is " + dateOut.format(originalDate))
     dateOut.format(originalDate)
   }
 }

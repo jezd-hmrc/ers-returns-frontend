@@ -24,6 +24,7 @@
 @import utils.PageBuilder._
 @import views.html.templates._
 
+
 @ers_main(title = Messages("ers.confirmation.page_title"), showUserResearchBanner = true) {
 
 	@reference()
@@ -31,7 +32,7 @@
 		<p>
 			<span class="heading-xlarge"><img src="assets/images/tick.png" alt="tick.">&nbsp;@Html(Messages("ers_confirmation.submitted",ContentUtil.getSchemeName(schemeId)))<br></span>
 		</p>
-		<p class="font-medium">@Html(Messages("ers_confirmation.submission_ref"))<br>@bundle<br>@dateSubmitted</p>
+		<p class="font-medium">@Html(Messages("ers_confirmation.submission_ref"))<br>@bundle<br>@{utils.DateUtils.convertDate(dateSubmitted)}</p>
 	</div>
 	<p>@Html(Messages("ers_confirmation.pdf_info"))</p>
 	<div>
