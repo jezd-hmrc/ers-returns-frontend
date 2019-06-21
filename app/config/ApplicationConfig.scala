@@ -23,8 +23,10 @@ import play.api.Mode.Mode
 import play.api.{Configuration, Play}
 import play.api.i18n.Lang
 import play.api.mvc.Call
+
 import scala.util.Try
 import controllers.routes
+import uk.gov.hmrc.play.partials.CachedStaticHtmlPartialRetriever
 
 trait ApplicationConfig {
 
@@ -51,9 +53,16 @@ trait ApplicationConfig {
   val ggSignInUrl: String
   def languageMap: Map[String, Lang]
   def routeToSwitchLanguage: String => Call
+
+  def reportAProblemPartialSecureUrl: String
 }
 
 class ApplicationConfigImpl extends ApplicationConfig with ServicesConfig {
+
+  val contactHost = baseUrl("contact-frontend")
+  private lazy val _reportAProblemPartialSecureUrl = s"$contactHost/contact/problem_reports?secure=true"
+
+  override def reportAProblemPartialSecureUrl: String = _reportAProblemPartialSecureUrl
 
   override protected def mode: Mode = Play.current.mode
   override protected def runModeConfiguration: Configuration = Play.current.configuration
@@ -61,7 +70,7 @@ class ApplicationConfigImpl extends ApplicationConfig with ServicesConfig {
   private def loadConfig(key: String) = configuration.getString(key).getOrElse(throw new Exception(s"Missing key: $key"))
 
   Logger.info("The Getting the contact host")
-  private val contactHost = configuration.getString("microservice.services.contact-frontend.host").getOrElse("")
+
   Logger.info("The contact host is " + contactHost)
   private val contactFormServiceIdentifier = "ERS"
 
@@ -101,3 +110,4 @@ class ApplicationConfigImpl extends ApplicationConfig with ServicesConfig {
 }
 
 object ApplicationConfig extends ApplicationConfigImpl
+
