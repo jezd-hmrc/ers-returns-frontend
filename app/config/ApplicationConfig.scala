@@ -54,15 +54,15 @@ trait ApplicationConfig {
   def languageMap: Map[String, Lang]
   def routeToSwitchLanguage: String => Call
 
-  def reportAProblemPartialSecureUrl: String
+  def reportAProblemPartialUrl: String
 }
 
 class ApplicationConfigImpl extends ApplicationConfig with ServicesConfig {
 
   val contactHost = baseUrl("contact-frontend")
-  private lazy val _reportAProblemPartialSecureUrl = s"$contactHost/contact/problem_reports?secure=false"
+  private lazy val _reportAProblemPartialUrl = s"$contactHost/contact/problem_reports?secure=false"
 
-  override def reportAProblemPartialSecureUrl: String = _reportAProblemPartialSecureUrl
+  override def reportAProblemPartialUrl: String = _reportAProblemPartialUrl
 
   override protected def mode: Mode = Play.current.mode
   override protected def runModeConfiguration: Configuration = Play.current.configuration
