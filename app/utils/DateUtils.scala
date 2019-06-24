@@ -26,9 +26,11 @@ import play.api.Logger
 import play.api.i18n.Messages
 import uk.gov.hmrc.time.DateTimeUtils
 
+
 object DateUtils {
 
   def getCurrentDateTime(): String = {
+    uk.gov.hmrc.play.views.html.helpers.reportAProblemLink
 
     val date: DateTime = DateTimeUtils.now
     val fmt: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")

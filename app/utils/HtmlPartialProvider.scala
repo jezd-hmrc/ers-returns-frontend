@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package controllers.utils
+package utils
 
 import config.{ApplicationConfig, WSHttp}
 import play.api.http.HeaderNames

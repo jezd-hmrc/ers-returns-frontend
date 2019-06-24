@@ -60,7 +60,7 @@ trait ApplicationConfig {
 class ApplicationConfigImpl extends ApplicationConfig with ServicesConfig {
 
   val contactHost = baseUrl("contact-frontend")
-  private lazy val _reportAProblemPartialSecureUrl = s"$contactHost/contact/problem_reports?secure=true"
+  private lazy val _reportAProblemPartialSecureUrl = s"$contactHost/contact/problem_reports?secure=false"
 
   override def reportAProblemPartialSecureUrl: String = _reportAProblemPartialSecureUrl
 
