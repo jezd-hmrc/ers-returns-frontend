@@ -29,4 +29,7 @@ object ErsMetaDataHelper {
     taxYear.take(4) + Messages("ers.taxYear.text") + taxYear.take(2) + taxYear.takeRight(2)
   }
 
+  def rewriteSchemeInfo(schemeInfo: String)(implicit messages: Messages): String = {
+      schemeInfo.replaceAll("([0-9]{4}) (to|i) ([0-9]{4})", "$1" + Messages("ers.taxYear.text") + "$3")
+  }
 }
