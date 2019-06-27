@@ -69,9 +69,6 @@ class ApplicationConfigImpl extends ApplicationConfig with ServicesConfig {
 
   private def loadConfig(key: String) = configuration.getString(key).getOrElse(throw new Exception(s"Missing key: $key"))
 
-  Logger.info("The Getting the contact host")
-
-  Logger.info("The contact host is " + contactHost)
   private val contactFormServiceIdentifier = "ERS"
 
   override lazy val assetsPrefix: String = loadConfig("assets.url") + loadConfig("assets.version")
