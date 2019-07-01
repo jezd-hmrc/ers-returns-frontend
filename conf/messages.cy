@@ -570,3 +570,9 @@ urbanner.message.text =Helpwch i wella gwasanaethau digidol drwy ymuno â phanel
 urbanner.message.reject = Dim diolch
 
 ers.taxYear.text =' i '
+ers.pdf.confirmation.submitted=Mae eich datganiad blynyddol ar gyfer {0} wedi’i gyflwyno ar gyfer blwyddyn dreth {1}.
+ers.pdf.scheme=Enw’r cynllun:
+ers.pdf.refcode=Cyfeirnod:
+ers.pdf.date_and_time=Dyddiad ac amser cyflwyno:
+ers.pdf.summary_information=Gwybodaeth gryno
+ers.pdf.header=Cyllid a Thollau EM
