@@ -15,7 +15,6 @@
  *@
 
 @(uploadForm: Html)(implicit request: Request[AnyRef], context: config.ErsContext)
-@schemeId = @{request.session.get("screenSchemeInfo").get.split(" - ").head}
 @import play.api.Play.current
 @import play.api.i18n.Messages.Implicits._
 @import views.html.templates._
