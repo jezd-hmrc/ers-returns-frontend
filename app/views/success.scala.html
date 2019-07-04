@@ -56,11 +56,11 @@
 	<p>
 		@if(fileNames.isDefined) {
 			@for(fileName <- fileNames.get.files){
-				@Html(getPageElement(schemeId, PAGE_CHECK_CSV_FILE, fileName.fileId + ".description")) - UPLOADED<br>
+				@Html(getPageElement(schemeId, PAGE_CHECK_CSV_FILE, fileName.fileId + ".description")) - @Messages("ers.uploaded")<br>
 			}
 		}
 		@if(ODSFileName.isDefined) {
-			@ODSFileName - UPLOADED
+			@ODSFileName - @Messages("ers.uploaded")
 		}
 	</p>
 
