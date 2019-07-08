@@ -25,6 +25,8 @@ import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
 import play.api.http.Status
+import play.api.i18n.{Lang, Messages, MessagesApi}
+import play.api.inject.Injector
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -35,6 +37,10 @@ import scala.concurrent.Future
 
 class CheckFileTypeControllerTest extends UnitSpec with OneAppPerSuite with ERSFakeApplicationConfig with MockitoSugar {
 
+  def injector: Injector = app.injector
+  def messagesApi: MessagesApi = injector.instanceOf[MessagesApi]
+  implicit val messages: Messages = messagesApi.preferred(Seq(Lang.get("en").get))
+  
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val mat: Materializer = app.materializer
 
