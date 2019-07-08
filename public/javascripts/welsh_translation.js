@@ -6,12 +6,14 @@ function initLocalisedContent() {
     "en" : {
       "ogl.pt.1" : "All content is available under the",
       "ogl.link.text" : "Open Government Licence v3.0",
-      "ogl.pt.2" : ", except where otherwise stated"
+      "ogl.pt.2" : ", except where otherwise stated",
+      "crown.copyright" : "© Crown Copyright"
     },
     "cy" : {
-      "ogl.pt.1" : "WELSH All content is available under the",
-      "ogl.link.text" : "WELSH Open Government Licence v3.0",
-      "ogl.pt.2" : ", WELSH except where otherwise stated"
+      "ogl.pt.1" : "Mae'r holl gynnwys ar gael dan y",
+      "ogl.link.text" : "Drwydded Llywodraeth Agored, fersiwn 3.0",
+      "ogl.pt.2" : ", oni nodir yn wahanol",
+      "crown.copyright" : "© Hawlfraint y Goron"
     }
   }
 
@@ -46,15 +48,17 @@ $(document).ready(function () {
 
   initLocalisedContent();
 
-  // Switch out OGL footer if welsh language
+  // Switch out OGL footer and Crown Copyright if welsh language
   if (GOVUK.playLanguage === "cy") {
-    $("div.open-government-licence > p").remove();
-    $("div.open-government-licence").append('<p>' +
+    $(".footer-meta-inner .open-government-licence > p").remove();
+    $(".footer-meta-inner .open-government-licence").append('<p>' +
       GOVUK.getLocalisedContent("ogl.pt.1") +
       ' <a href="http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3" target="_blank">' +
       GOVUK.getLocalisedContent("ogl.link.text") +
       '</a>' +
       GOVUK.getLocalisedContent("ogl.pt.2") +
       '</p>');
+
+    $(".footer-meta .copyright > a").text(GOVUK.getLocalisedContent("crown.copyright"));
   }
 });
