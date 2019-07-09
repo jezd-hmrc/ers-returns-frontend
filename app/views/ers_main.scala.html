@@ -49,6 +49,7 @@ showUserResearchBanner: Boolean = false)(mainContent: Html)(implicit request: Re
         }
         case _ => {}
     }
+    <script src='@routes.AssetsController.at("javascripts/welsh_translation.js")'> </script>
     <script src='@routes.AssetsController.at("javascripts/ers_scripts.js")'> </script>
     <script src='@routes.AssetsController.at("javascripts/urBanner.js")'> </script>
 	@scripts
