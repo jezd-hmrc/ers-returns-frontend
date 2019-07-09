@@ -16,15 +16,15 @@
 
 package models
 
-import play.api.Play.current
 import play.api.data.Forms._
 import play.api.data._
 import play.api.data.validation.Constraints._
 import play.api.i18n.Messages
-import play.api.mvc.LegacyI18nSupport
 
 object RsFormMappings {
 
+  val postcodeMinLength: Int = 6
+  val postcodeMaxLength: Int = 8
   /*
   * scheme type Form definition.
   */
@@ -146,56 +146,46 @@ object RsFormMappings {
     mapping("schemeType" -> text)(RS_schemeType.apply)(RS_schemeType.unapply))
 
 
-  def checklength(so: String, field: String) = {
-    field match {
-      case "schemeOrganiserFields.companyName" => {
-        so.length match {
-          case x => if (x <= 35) true else false
-        }
+  def checklength(so: String, field: String) = field match {
+    case "schemeOrganiserFields.companyName" =>
+      so.length match {
+        case x => if (x <= 35) true else false
       }
-      case "companyDetailsFields.companyName" | "trusteeDetailsFields.name" => {
-        so.length match {
-          case x => if (x <= 120) true else false
-        }
+    case "companyDetailsFields.companyName" | "trusteeDetailsFields.name" =>
+      so.length match {
+        case x => if (x <= 120) true else false
       }
-      case "schemeOrganiserFields.addressLine1" | "schemeOrganiserFields.addressLine2" | "schemeOrganiserFields.addressLine3" => {
-        so.length match {
-          case x => if (x <= 27) true else false
-        }
+    case "schemeOrganiserFields.addressLine1" | "schemeOrganiserFields.addressLine2" | "schemeOrganiserFields.addressLine3" =>
+      so.length match {
+        case x => if (x <= 27) true else false
       }
-      case "companyDetailsFields.addressLine1" | "companyDetailsFields.addressLine2" | "companyDetailsFields.addressLine3" => {
-        so.length match {
-          case x => if (x <= 27) true else false
-        }
+    case "companyDetailsFields.addressLine1" | "companyDetailsFields.addressLine2" | "companyDetailsFields.addressLine3" =>
+      so.length match {
+        case x => if (x <= 27) true else false
       }
-      case "trusteeDetailsFields.addressLine1" | "trusteeDetailsFields.addressLine2" | "trusteeDetailsFields.addressLine3" => {
-        so.length match {
-          case x => if (x <= 27) true else false
-        }
+    case "trusteeDetailsFields.addressLine1" | "trusteeDetailsFields.addressLine2" | "trusteeDetailsFields.addressLine3" =>
+      so.length match {
+        case x => if (x <= 27) true else false
       }
-      case "schemeOrganiserFields.addressLine4" | "companyDetailsFields.addressLine4" | "trusteeDetailsFields.addressLine4" => {
-        so.length match {
-          case x => if (x <= 18) true else false
-        }
+    case "schemeOrganiserFields.addressLine4" | "companyDetailsFields.addressLine4" | "trusteeDetailsFields.addressLine4" =>
+      so.length match {
+        case x => if (x <= 18) true else false
       }
-      case "schemeOrganiserFields.postcode" | "companyDetailsFields.postcode" | "trusteeDetailsFields.postcode" => {
-        so.length match {
-          case x => if (x <= 8) true else false
-        }
+    case "schemeOrganiserFields.postcode" | "companyDetailsFields.postcode" | "trusteeDetailsFields.postcode" =>
+      so.length match {
+        case x => if (x <= 8) true else false
       }
-      case _ => true
-    }
+    case _ => true
   }
 
-  def validInputCharacters(field: String, regXValue: String) = {
-    if (field.matches(regXValue)) true else false
+  def validInputCharacters(field: String, regXValue: String): Boolean = field.matches(regXValue)
+
+  def isValidPostcode(input: Option[String]): Boolean = input match {
+    case Some(postcode) => postcode.matches(fieldValidationPatterns.postCodeRegx) && isValidLengthIfPopulated(postcode, postcodeMinLength, postcodeMaxLength)
+    case None => true //Postcode is assumed to be optional so return true if missing
   }
 
-  def isValidPostcode(input: Option[String]) = {
-    input.fold(true)(_.trim.matches(fieldValidationPatterns.postCodeRegx)) && isValidLengthIfPopulated(input, 6, 8)
-  }
-
-  def isValidLengthIfPopulated(input: Option[String], minSize: Int, maxSize: Int) = input.fold(true)(s => s.trim.size >= minSize && s.trim.size <= maxSize)
+  def isValidLengthIfPopulated(input: String, minSize: Int, maxSize: Int): Boolean = input.trim.length >= minSize && input.trim.length <= maxSize
 
 }
 
@@ -242,11 +232,12 @@ object schemeOrganiserFields {
 }
 
 object fieldValidationPatterns {
+
   def companyRegPattern = "(^[a-zA-Z0-9]{1,10})$"
 
   def corporationRefPattern = "^([0-9]{10})$"
 
-  def addresssRegx = """^[A-Za-zÀ-ÿ0-9 &'(),-./]{0,}$"""
+  def addresssRegx = """^[A-Za-zÂ-ȳ0-9 &'(),-./]{0,}$"""
 
   def postCodeRegx = """(GIR 0AA)|((([A-Z-[QVX]][0-9][0-9]?)|(([A-Z-[QVX]][A-Z-[IJZ]][0-9][0-9]?)|(([A-Z-[QVX‌​]][0-9][A-HJKSTUW])|([A-Z-[QVX]][A-Z-[IJZ]][0-9][ABEHMNPRVWXY]))))\s?[0-9][A-Z-[C‌​IKMOV]]{2})"""
 
