@@ -41,16 +41,16 @@
 						// file ok
 				    	removeErrorMsg();						
 					} else {
-						showODSErrorMsg("This file is larger than "+(MAX_FILESIZE/1000000)+"MB &ndash; choose a different file or email <a href='mailto:shareschemes@hmrc.gsi.gov.uk'>shareschemes@hmrc.gsi.gov.uk</a> and we’ll help you submit your return");
+						showODSErrorMsg(GOVUK.getLocalisedContent("ers.file.upload.ods.large"));
 					}
 				} else {
-			    	showODSErrorMsg("This file isn’t a .ods file, choose a different file");
-				}				
+			    	showODSErrorMsg(GOVUK.getLocalisedContent("ers.file.upload.ods.wrong.type"));
+				}
 			} else {
-		    	showODSErrorMsg("The filename must contain "+ MAX_FILENAME_LENGTH +" characters or less");
+		    	showODSErrorMsg(GOVUK.getLocalisedContent("ers.file.upload.ods.too.long"));
 		    }
 		} else {
-	    	showODSErrorMsg("The filename contains invalid characters");
+	    	showODSErrorMsg(GOVUK.getLocalisedContent("ers.file.upload.ods.invalid.characters"));
 		}		
 				
 		// extract filename for display 
