@@ -15,7 +15,7 @@
  *@
 
 @(uploadForm: Html)(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
-@schemeId = @{request.session.get("screenSchemeInfo").get.split(" - ").head}
+
 @import views.html.templates._
 
 @scripts = {
