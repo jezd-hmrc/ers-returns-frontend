@@ -14,47 +14,84 @@
  * limitations under the License.
  *@
 
-@(pageTitle: String, heading: String, message: String, applicationConfig: config.ApplicationConfig = config.ApplicationConfig)
+@(pageTitle: String, heading: String, message: String, applicationConfig: config.ApplicationConfig = config.ApplicationConfig)(implicit messages: Messages)
 
 @import layouts.{govuk_template => hmrcGovUkTemplate}
 @import play.api.Play.current
-@import play.api.i18n.Messages.Implicits._
 @import uk.gov.hmrc.play.views.html.{layouts => uiLayouts}
 
+@commonLinkElement = {
+    <link rel="stylesheet" href='@routes.AssetsController.at("stylesheets/ers_styles.css")' media="screen" type="text/css" />
+    <link rel="stylesheet" href='@routes.AssetsController.at("stylesheets/urBanner.css")' media="screen" type="text/css" />
+    <!--[if IE 7]><link href='@routes.AssetsController.at("stylesheets/ers_styles_ie7.css")' media="screen" rel="stylesheet" type="text/css" /><![endif]-->
+    <META HTTP-EQUIV='Pragma' CONTENT='no-cache'>
+    <META HTTP-EQUIV='Cache-Control' CONTENT='no-cache, no-store, must-revalidate, private'>
+}
+
+@commonScriptElement = {
+
+    @applicationConfig.analyticsToken match {
+        case Some(token) => {
+
+            <script type="text/javascript">
+                            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+                            (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+                            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+                            })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+                           ga('create', '@applicationConfig.analyticsToken', 'auto');
+                            ga('send', 'pageview', { 'anonymizeIp': true });
+                        </script>
+
+
+        }
+        case _ => {}
+        }
+    <script src='@routes.AssetsController.at("javascripts/welsh_translation.js")'> </script>
+    <script src='@routes.AssetsController.at("javascripts/ers_scripts.js")'> </script>
+    <script src='@routes.AssetsController.at("javascripts/urBanner.js")'> </script>
+}
+
 @contentHeader = {
-<h1>@heading</h1>
+    @if(applicationConfig.languageTranslationEnabled) {
+        @views.html.language_selection(
+            applicationConfig.languageMap,
+            applicationConfig.routeToSwitchLanguage,
+            Some("langToggle"))
+    }
+
 }
 
 @mainContent = {
-<p>@message</p>
+    <h1>@message</h1>
+
+    <p>@Messages("ers.global.errors.try.later")</p>
 }
 
 @head = {
-@uiLayouts.head(
-linkElem = None,
-headScripts = None)
-<meta name="format-detection" content="telephone=no" />
+    @uiLayouts.head(
+        linkElem = Some(commonLinkElement),
+        headScripts = None)
+    <meta name="format-detection" content="telephone=no" />
 }
 
 @content = {
-@uiLayouts.main_content(
-article = uiLayouts.article(mainContent),
-mainContentHeader = contentHeader)
+    @uiLayouts.main_content(
+        article = uiLayouts.article(mainContent),
+        mainContentHeader = contentHeader)
 }
 
 @bodyEnd = {
-@uiLayouts.footer(
-analyticsToken = applicationConfig.analyticsToken,
-analyticsHost = applicationConfig.analyticsHost,
-ssoUrl = None,
-scriptElem = None,
-gaCalls = None)
+    @uiLayouts.footer(
+        analyticsToken = applicationConfig.analyticsToken,
+        analyticsHost = applicationConfig.analyticsHost,
+        ssoUrl = None,
+        scriptElem = Some(commonScriptElement),
+        gaCalls = None)
 }
 
 @footerTop = {}
-@footerLinks = {}
 
-@insideHeader = {}
+@insideHeader = @{uiLayouts.header_nav(navTitle = Some(Messages("ers.header")),None,None,None)}
 @afterHeader = {}
 
 

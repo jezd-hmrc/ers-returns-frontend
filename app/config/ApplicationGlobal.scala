@@ -18,16 +18,18 @@ package config
 
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
+import play.api.Play.current
 import play.api.Mode.Mode
+import play.api.i18n.Messages.Implicits._
 import play.api.mvc.Request
 import play.api.{Application, Configuration, Play}
 import play.twirl.api.Html
 import uk.gov.hmrc.crypto.ApplicationCrypto
 import uk.gov.hmrc.play.config.{AppName, ControllerConfig}
-import uk.gov.hmrc.play.frontend.bootstrap.DefaultFrontendGlobal
+import uk.gov.hmrc.play.frontend.bootstrap.{DefaultFrontendGlobal, ShowErrorPage}
 import uk.gov.hmrc.play.frontend.filters.{FrontendAuditFilter, FrontendLoggingFilter, MicroserviceFilterSupport}
 
-object ApplicationGlobal extends DefaultFrontendGlobal {
+object ApplicationGlobal extends DefaultFrontendGlobal{
 
   override val auditConnector = ERSFileValidatorAuditConnector
   override val loggingFilter = ERSFileValidatorLoggingFilter
@@ -39,7 +41,7 @@ object ApplicationGlobal extends DefaultFrontendGlobal {
   }
 
   override def standardErrorTemplate(pageTitle: String, heading: String, message: String)(implicit request: Request[_]): Html =
-    views.html.global_error(pageTitle, heading, message)
+    views.html.global_error(pageTitle, heading, message)(applicationMessages)
 
   override def microserviceMetricsConfig(implicit app: Application): Option[Configuration] = app.configuration.getConfig("microservice.metrics")
 
