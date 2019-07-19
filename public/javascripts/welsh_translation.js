@@ -7,13 +7,29 @@ function initLocalisedContent() {
       "ogl.pt.1" : "All content is available under the",
       "ogl.link.text" : "Open Government Licence v3.0",
       "ogl.pt.2" : ", except where otherwise stated",
-      "crown.copyright" : "© Crown Copyright"
+      "crown.copyright" : "© Crown Copyright",
+      "ers.file.upload.wrong.file" : "This is not a file that you said you needed to upload, choose a different file",
+      "ers.file.upload.csv.file.large" : "This file is larger than 100MB – choose a different file or email <a href='mailto:shareschemes@hmrc.gsi.gov.uk'>shareschemes@hmrc.gsi.gov.uk</a> and we will help you submit your return",
+      "ers.file.upload.csv.wrong.type" : "This file is not a .csv file, choose a different file",
+      "ers.file.upload.csv.choose.other" : "Choose a different file – the file's name cannot contain invalid characters",
+      "ers.file.upload.ods.large" : "This file is larger than 10MB – choose a different file or email <a href='mailto:shareschemes@hmrc.gsi.gov.uk'>shareschemes@hmrc.gsi.gov.uk</a> and we will help you submit your return",
+      "ers.file.upload.ods.wrong.type" : "This file is not a .ods file, choose a different file",
+      "ers.file.upload.ods.too.long" : "The filename must contain 240 characters or less",
+      "ers.file.upload.ods.invalid.characters" : "The filename contains invalid characters"
     },
     "cy" : {
       "ogl.pt.1" : "Mae'r holl gynnwys ar gael dan y",
       "ogl.link.text" : "Drwydded Llywodraeth Agored, fersiwn 3.0",
       "ogl.pt.2" : ", oni nodir yn wahanol",
-      "crown.copyright" : "© Hawlfraint y Goron"
+      "crown.copyright" : "© Hawlfraint y Goron",
+       "ers.file.upload.wrong.file" : "Nid yw hon yn ffeil y rhoesoch wybod fod angen i chi ei huwchlwytho – dewiswch ffeil wahanol",
+       "ers.file.upload.csv.file.large" : "Mae’r ffeil hon yn fwy na 100MB – dewiswch ffeil wahanol, neu e-bostiwch <a href=’mailto:gwasanaeth.cymraeg@hmrc.gsi.gov.uk’>gwasanaeth.cymraeg@hmrc.gsi.gov.uk</a> a byddwn yn eich helpu i gyflwyno’ch datganiad",
+       "ers.file.upload.csv.wrong.type" : "Nid ffeil .csv yw hon – dewiswch ffeil wahanol",
+       "ers.file.upload.csv.choose.other" : "Dewiswch ffeil wahanol – ni all enw’r ffeil gynnwys cymeriadau annilys",
+       "ers.file.upload.ods.large" : "Mae’r ffeil hon yn fwy na 10MB – dewiswch ffeil wahanol, neu e-bostiwch <a href=’mailto:gwasanaeth.cymraeg@hmrc.gsi.gov.uk’>gwasanaeth.cymraeg@hmrc.gsi.gov.uk</a> a byddwn yn eich helpu i gyflwyno’ch datganiad",
+       "ers.file.upload.ods.wrong.type" : "Nid ffeil .ods yw hon – dewiswch ffeil wahanol",
+       "ers.file.upload.ods.too.long" : "Rhaid i enw’r ffeil gynnwys 240 o gymeriadau neu lai",
+        "ers.file.upload.ods.invalid.characters" : "Mae enw’r ffeil yn cynnwys cymeriadau annilys"
     }
   }
 
