@@ -25,6 +25,7 @@ import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
+import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.mvc.{Request, Result}
@@ -39,13 +40,14 @@ import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import play.api.test.Helpers._
-import uk.gov.hmrc.http.{ HeaderCarrier, HttpResponse }
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 
 class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSFakeApplicationConfig with ERSUsers with MockitoSugar {
 
 
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val mat: Materializer = app.materializer
+  implicit lazy val messages: Messages = Messages(Lang("en"), app.injector.instanceOf[MessagesApi])
 
   val mockAuthConnector = mock[AuthConnector]
 

@@ -109,7 +109,7 @@ trait ConfirmationPageController extends ERSReturnBaseController with Authentica
       val url: String = ExternalUrls.portalDomain
       cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, schemeRef).flatMap { all =>
         Logger.info(s"Preventing resubmission of confirmation page, timestamp: ${System.currentTimeMillis()}.")
-        Future(Ok(views.html.confirmation(sessionDateTimeSubmitted, sessionBundelRef, all.schemeInfo.taxYear, url)(request, context)))
+        Future(Ok(views.html.confirmation(sessionDateTimeSubmitted, sessionBundelRef, all.schemeInfo.taxYear, url)(request, context, implicitly)))
       } recover {
         case e: Throwable => {
           Logger.error(s"Get ersMetaData with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
@@ -154,7 +154,7 @@ trait ConfirmationPageController extends ERSReturnBaseController with Authentica
 
           Logger.warn(s"Submission completed for schemeInfo: ${all.schemeInfo.toString}, bundle: ${bundle} ")
           val url: String = ExternalUrls.portalDomain
-          Ok(views.html.confirmation(dateTimeSubmitted, bundle, all.schemeInfo.taxYear, url)(request, context)).withSession(request.session + ("bundelRef" -> bundle) + ("dateTimeSubmitted" -> dateTimeSubmitted))
+          Ok(views.html.confirmation(dateTimeSubmitted, bundle, all.schemeInfo.taxYear, url)(request, context, implicitly)).withSession(request.session + ("bundelRef" -> bundle) + ("dateTimeSubmitted" -> dateTimeSubmitted))
         }
         case _ => {
           Logger.info(s"Save meta data to backend returned status ${res.status}, timestamp: ${System.currentTimeMillis()}.")
@@ -169,6 +169,7 @@ trait ConfirmationPageController extends ERSReturnBaseController with Authentica
 
   }
 
-  def getGlobalErrorPage = Ok(views.html.global_error(Messages("ers.global_errors.title"), Messages("ers.global_errors.heading"), Messages("ers.global_errors.message")))
+  def getGlobalErrorPage(implicit messages: Messages) =
+    Ok(views.html.global_error(messages("ers.global_errors.title"), messages("ers.global_errors.heading"), messages("ers.global_errors.message")))
 
 }

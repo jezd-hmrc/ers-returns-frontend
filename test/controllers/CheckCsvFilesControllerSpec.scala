@@ -23,6 +23,7 @@ import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
+import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc.{Request, Result}
 import play.api.test.FakeRequest
@@ -39,6 +40,7 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
 
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val materializer: Materializer = app.materializer
+  implicit lazy val messages: Messages = Messages(Lang("en"), app.injector.instanceOf[MessagesApi])
 
   "calling checkCsvFilesPage" should {
 
@@ -161,8 +163,6 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
       override val cacheUtil: CacheUtil = mock[CacheUtil]
       override val pageBuilder: PageBuilder = mock[PageBuilder]
 
-      override def reloadWithError(): Future[Result] = Future.successful(SeeOther(""))
-
       override def performCsvFilesPageSelected(formData: CsvFilesList)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future.successful(Ok)
     }
 
@@ -194,7 +194,7 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
       val request = Fixtures.buildFakeRequestWithSessionIdCSOP("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
       val result = await(checkCsvFilesController.validateCsvFilesPageSelected()(Fixtures.buildFakeUser, request, hc))
       status(result) shouldBe SEE_OTHER
-      result.header.headers("Location") shouldBe ""
+      result.header.headers("Location") shouldBe "/submit-your-ers-annual-return/choose-csv-files"
     }
 
   }
@@ -210,7 +210,6 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
 
       override def createCacheData(csvFilesList: List[CsvFiles]): List[CsvFilesCallback] = mockListCsvFilesCallback
 
-      override def reloadWithError(): Future[Result] = Future.successful(SeeOther(""))
     }
 
     val formData: CsvFilesList = CsvFilesList(
@@ -235,7 +234,7 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
 
       val result = await(checkCsvFilesController.performCsvFilesPageSelected(formData)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("POST"), hc))
       status(result) shouldBe SEE_OTHER
-      result.header.headers("Location") shouldBe ""
+      result.header.headers("Location") shouldBe "/submit-your-ers-annual-return/choose-csv-files"
     }
 
     "redirect to next page if createCacheData returns list with data and caching is successful" in {

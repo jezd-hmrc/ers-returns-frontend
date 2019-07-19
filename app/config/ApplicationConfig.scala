@@ -21,8 +21,12 @@ import uk.gov.hmrc.play.config.ServicesConfig
 import play.Logger
 import play.api.Mode.Mode
 import play.api.{Configuration, Play}
+import play.api.i18n.Lang
+import play.api.mvc.Call
 
 import scala.util.Try
+import controllers.routes
+import uk.gov.hmrc.play.partials.CachedStaticHtmlPartialRetriever
 
 trait ApplicationConfig {
 
@@ -42,22 +46,29 @@ trait ApplicationConfig {
   val callbackCsvPageUrl: String
   val enableRetrieveSubmissionData: Boolean
   val sentViaSchedulerNoOfRowsLimit: Int
+  val languageTranslationEnabled: Boolean
   val urBannerToggle:Boolean
   val urBannerLink: String
 
   val ggSignInUrl: String
+  def languageMap: Map[String, Lang]
+  def routeToSwitchLanguage: String => Call
+
+  def reportAProblemPartialUrl: String
 }
 
-object ApplicationConfig extends ApplicationConfig with ServicesConfig {
+class ApplicationConfigImpl extends ApplicationConfig with ServicesConfig {
+
+  val contactHost = baseUrl("contact-frontend")
+  private lazy val _reportAProblemPartialUrl = s"$contactHost/contact/problem_reports?secure=false"
+
+  override def reportAProblemPartialUrl: String = _reportAProblemPartialUrl
 
   override protected def mode: Mode = Play.current.mode
   override protected def runModeConfiguration: Configuration = Play.current.configuration
 
   private def loadConfig(key: String) = configuration.getString(key).getOrElse(throw new Exception(s"Missing key: $key"))
 
-  Logger.info("The Getting the contact host")
-  private val contactHost = configuration.getString("microservice.services.contact-frontend.host").getOrElse("")
-  Logger.info("The contact host is " + contactHost)
   private val contactFormServiceIdentifier = "ERS"
 
   override lazy val assetsPrefix: String = loadConfig("assets.url") + loadConfig("assets.version")
@@ -87,4 +98,13 @@ object ApplicationConfig extends ApplicationConfig with ServicesConfig {
     Try(loadConfig("sent-via-scheduler-noofrows").toInt).getOrElse(10000)
   }
 
+  override lazy val languageTranslationEnabled = runModeConfiguration.getBoolean("microservice.services.features.welsh-translation").getOrElse(true)
+
+  def languageMap: Map[String, Lang] = Map(
+    "english" -> Lang("en"),
+    "cymraeg" -> Lang("cy"))
+  def routeToSwitchLanguage = (lang: String) => routes.LanguageSwitchController.switchToLanguage(lang)
 }
+
+object ApplicationConfig extends ApplicationConfigImpl
+

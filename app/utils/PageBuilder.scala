@@ -20,7 +20,6 @@ import controllers.routes
 import models.CsvFiles
 import play.api.Play.current
 import play.api.i18n.Messages
-import play.api.i18n.Messages.Implicits._
 import play.api.mvc.LegacyI18nSupport
 
 object PageBuilder extends PageBuilder
@@ -165,7 +164,7 @@ trait PageBuilder extends LegacyI18nSupport {
     CSVFilesList.get(scheme).getOrElse(List[CsvFiles]())
   }
 
-  def getPageElement(scheme: String, pageId: String, element: String, para: String = ""): String = {
+  def getPageElement(scheme: String, pageId: String, element: String, para: String = "")(implicit messages: Messages): String = {
     val pageElement: String = scheme match {
       case SCHEME_CSOP => Messages(pageId + MSG_CSOP + element, para)
       case SCHEME_EMI => Messages(pageId + MSG_EMI + element, para)

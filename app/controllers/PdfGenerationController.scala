@@ -21,7 +21,7 @@ import models._
 import play.api.Play.current
 import play.api.i18n.Messages
 import play.api.i18n.Messages.Implicits._
-import play.api.mvc.{Action, AnyContent, Request, Result}
+import play.api.mvc.{Action, AnyContent, LegacyI18nSupport, Request, Result}
 import play.api.{Configuration, Logger, Play}
 import services.SessionService
 import services.pdf.{ApachePdfContentsStreamer, ErsReceiptPdfBuilderService}
@@ -32,7 +32,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
 import uk.gov.hmrc.http.HeaderCarrier
 
-trait PdfGenerationController extends ERSReturnBaseController with Authenticator {
+trait PdfGenerationController extends ERSReturnBaseController with Authenticator with LegacyI18nSupport {
   val cacheUtil: CacheUtil
   val pdfBuilderService: ErsReceiptPdfBuilderService
 
@@ -62,7 +62,7 @@ trait PdfGenerationController extends ERSReturnBaseController with Authenticator
             if (fileType == PageBuilder.OPTION_CSV) {
               val csvFilesCallback: List[CsvFilesCallback] = all.getEntry[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES).get.files
               for (file <- csvFilesCallback if file.callbackData.isDefined) {
-                filesUploaded += Messages(PageBuilder.getPageElement(schemeId, PageBuilder.PAGE_CHECK_CSV_FILE, file.fileId + ".file_name"))
+                filesUploaded += PageBuilder.getPageElement(schemeId, PageBuilder.PAGE_CHECK_CSV_FILE, file.fileId + ".file_name")
               }
             } else {
               filesUploaded += all.getEntry[String](CacheUtil.FILE_NAME_CACHE).get
@@ -85,8 +85,8 @@ trait PdfGenerationController extends ERSReturnBaseController with Authenticator
     }
   }
 
-  def getGlobalErrorPage = Ok(views.html.global_error(Messages("ers.global_errors.title"),
-    Messages("ers.global_errors.heading"), Messages("ers.global_errors.message")))
+  def getGlobalErrorPage(implicit messages: Messages) = Ok(views.html.global_error(messages("ers.global_errors.title"),
+    messages("ers.global_errors.heading"), messages("ers.global_errors.message")))
 }
 
 object PdfGenerationController extends PdfGenerationController {

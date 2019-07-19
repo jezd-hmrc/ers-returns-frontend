@@ -84,23 +84,23 @@
 							// file ok
 							return true;
 						} else {
-							var filesListMsg = "This isn’t a file that you said you needed to upload, choose a different file"
+							var filesListMsg = GOVUK.getLocalisedContent("ers.file.upload.wrong.file");
 							showCSVErrorMsg(e, filesListMsg);
 					    	errors++;
 							return false;
 						}
 					} else {
-						showCSVErrorMsg(e, "This file is larger than "+(MAX_CSV_FILESIZE/1000000)+"MB &ndash; choose a different file or email <a href='mailto:shareschemes@hmrc.gsi.gov.uk'>shareschemes@hmrc.gsi.gov.uk</a> and we’ll help you submit your return");
+						showCSVErrorMsg(e, GOVUK.getLocalisedContent("ers.file.upload.csv.file.large"));
 						errors++;
 						return false;
 					}
 				} else {
-					showCSVErrorMsg(e, "This file isn’t a .csv file, choose a different file");
+					showCSVErrorMsg(e, GOVUK.getLocalisedContent("ers.file.upload.csv.wrong.type"));
 					errors++;
 					return false;
 				}
 		} else {
-			showCSVErrorMsg(e, "Choose a different file &ndash; the file's name can't contain invalid characters");
+			showCSVErrorMsg(e, GOVUK.getLocalisedContent("ers.file.upload.csv.choose.other"));
 			errors++;
 			return false;
 		}

@@ -125,7 +125,8 @@ trait ReturnServiceController extends ERSReturnBaseController with Authenticator
   }
 
   def showInitialStartPage(metaData: ErsMetaData)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Result = {
-    Ok(views.html.start(ErsMetaDataHelper.getScreenSchemeInfo(metaData))).withSession(request.session + (screenSchemeInfo -> ErsMetaDataHelper.getScreenSchemeInfo(metaData)) - "bundelRef" - "dateTimeSubmitted")
+    Ok(views.html.start(ErsMetaDataHelper.getScreenSchemeInfo(metaData))).
+      withSession(request.session + (screenSchemeInfo -> ErsMetaDataHelper.getScreenSchemeInfo(metaData)) - "bundelRef" - "dateTimeSubmitted")
   }
 
   def startPage(): Action[AnyContent] = AuthenticatedBy(ERSGovernmentGateway, pageVisibility = AllowAll).async {

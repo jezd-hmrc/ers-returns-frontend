@@ -16,14 +16,16 @@
 
 package services.pdf
 
+import play.api.i18n.Messages
+
 class AlterationsAmendsDecorator(map: Map[String, String], headingFontSize: Float, answerFontSize: Float, lineSpacer: Float, blockSize: Float) extends Decorator {
 
-  private def addTextToPdf(streamer: ErsContentsStreamer, text: String, fontSize: Float, lineSpacer: Float): Unit = {
+  private def addTextToPdf(streamer: ErsContentsStreamer, text: String, fontSize: Float, lineSpacer: Float)(implicit messages: Messages): Unit = {
     streamer.drawText(text, fontSize)
     streamer.drawText("", lineSpacer)
   }
 
-  def decorate(streamer: ErsContentsStreamer): Unit = {
+  def decorate(streamer: ErsContentsStreamer)(implicit messages: Messages): Unit = {
 
     if(map.isEmpty)
       return

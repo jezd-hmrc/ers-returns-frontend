@@ -16,6 +16,8 @@
 
 package services.pdf
 
+import play.api.i18n.Messages
+
 trait Decorator {
-  def decorate(ersContentsStreamer: ErsContentsStreamer) : Unit
+  def decorate(ersContentsStreamer: ErsContentsStreamer)(implicit messages: Messages): Unit
 }

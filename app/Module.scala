@@ -1,4 +1,4 @@
-@*
+/*
  * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,18 +12,17 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *@
+ */
 
-@import utils.ErsMetaDataHelper
+import com.google.inject.AbstractModule
+import config.{ApplicationConfig, ApplicationConfigImpl}
 
-@(screenSchemeInfo: Option[String] = None)(implicit request: Request[AnyRef], messages: Messages)
-<div class="reference">
-    <p class="font-xsmall">
-        <span class="visuallyhidden">@Html(Messages("ers.reference.info"))</span>
-        @if(screenSchemeInfo.isDefined) {
-            @Html(ErsMetaDataHelper.rewriteSchemeInfo(screenSchemeInfo.get).drop(3).take(100))
-        } else {
-            @Html(ErsMetaDataHelper.rewriteSchemeInfo(request.session.get("screenSchemeInfo").get).drop(3).take(100))
-        }
-    </p>
-</div>
+class Module extends AbstractModule {
+
+  override def configure(): Unit = {
+    // Bind the actions for DI
+    bind(classOf[ApplicationConfig]).to(classOf[ApplicationConfigImpl])
+  }
+
+
+}

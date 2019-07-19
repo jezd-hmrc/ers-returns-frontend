@@ -14,18 +14,16 @@
  * limitations under the License.
  *@
 
-@(form: Form[_], OptionalErrMsg:Option[String] = None)
-@import play.api.Play.current
-@import play.api.i18n.Messages.Implicits._
+@(form: Form[_], OptionalErrMsg:Option[String] = None)(implicit messages: Messages)
 @if(form.hasErrors) {
         <div id="errors" class="validation-summary" role="group" aria-labelledby="summary-heading" tabindex="-1">
-            <h1 id="summary-heading" class="heading-medium error-summary-heading">@Messages("validation.summary.heading")</h1>
-            <!--p>@Messages("validation.summary.info")</p-->
+            <h1 id="summary-heading" class="heading-medium error-summary-heading">@messages("validation.summary.heading")</h1>
+            @messages("validation.summary.info")
             <ul>
                 @form.errors.map { error =>
                 <li class="validation-summary-message" id='@error.key.replaceAll("""[\.\[\]]""", "_")Error'>
                     <a href='#@error.key.replaceAll("""[\.\[\]]""", "_")Lbl' data-focuses='@error.key.replaceAll("""[\.\[\]]""", "_")Lbl'>
-                        @Messages(if (OptionalErrMsg.isDefined) OptionalErrMsg.get else error.message, error.args : _*)
+                        @messages(if (OptionalErrMsg.isDefined) OptionalErrMsg.get else error.message, error.args : _*)
                     </a>
                 </li>
                 }

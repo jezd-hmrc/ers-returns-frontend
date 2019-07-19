@@ -14,10 +14,7 @@
  * limitations under the License.
  *@
 
-@(loginScreenUrl: String)(implicit request: Request[AnyContent], context: config.ErsContext)
-
-@import play.api.Play.current
-@import play.api.i18n.Messages.Implicits._
+@(loginScreenUrl: String)(implicit request: Request[AnyContent], context: config.ErsContext, messages: Messages)
 
 @ers_main(title = Messages("ers.app_title"), scripts=Html(""), showSignOutLink = false){
 	<p>@Html(Messages("ers_signed_out.info"))</p>

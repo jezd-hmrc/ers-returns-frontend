@@ -21,7 +21,9 @@ import scala.concurrent.Future
 import connectors.AuthenticationConnector
 import uk.gov.hmrc.play.frontend.auth.Actions
 import utils.ExternalUrls
-
+import play.api.Play.current
+import play.api.i18n.Messages
+import play.api.i18n.Messages.Implicits._
 // $COVERAGE-OFF$
 object AuthorizationController extends AuthorizationController {
 }

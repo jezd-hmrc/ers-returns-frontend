@@ -21,7 +21,8 @@ import java.io.ByteArrayOutputStream
 import models.ErsSummary
 import org.joda.time.format.DateTimeFormat
 import play.api.Logger
-import utils.{ContentUtil, ErsMetaDataHelper}
+import play.api.i18n.Messages
+import utils.{ContentUtil, DateUtils, ErsMetaDataHelper}
 
 import scala.collection.mutable.ListBuffer
 
@@ -30,7 +31,8 @@ object ErsReceiptPdfBuilderService extends ErsReceiptPdfBuilderService {
 
 trait ErsReceiptPdfBuilderService {
 
-  def createPdf(contentStreamer: ErsContentsStreamer, ersSummary: ErsSummary, filesUpoladed: Option[ListBuffer[String]], dateSubmitted: String): ByteArrayOutputStream = {
+  def createPdf(contentStreamer: ErsContentsStreamer, ersSummary: ErsSummary,
+                filesUpoladed: Option[ListBuffer[String]], dateSubmitted: String)(implicit messages: Messages): ByteArrayOutputStream = {
     implicit val streamer : ErsContentsStreamer = contentStreamer
     implicit val decorator = PdfDecoratorControllerFactory.createPdfDecoratorControllerForScheme(ersSummary.metaData.schemeInfo.schemeType, ersSummary, filesUpoladed)
 
@@ -39,7 +41,7 @@ trait ErsReceiptPdfBuilderService {
     streamer.saveErsSummary()
   }
 
-  def addMetaData(ersSummary : ErsSummary, dateSubmitted: String)(implicit streamer: ErsContentsStreamer, decorator: DecoratorController): Unit = {
+  def addMetaData(ersSummary : ErsSummary, dateSubmitted: String)(implicit streamer: ErsContentsStreamer, decorator: DecoratorController, messages: Messages): Unit = {
 
     val headingFontSize = 16
     val answerFontSize = 12
@@ -53,40 +55,43 @@ trait ErsReceiptPdfBuilderService {
     Logger.info("Adding metadata")
     streamer.drawText("", blockSpacer)
 
-    val confirmationMessage = s"Your ${ContentUtil.getSchemeAbbreviation(ersMetaData.schemeInfo.schemeType)} " +
-                              s"annual return has been submitted for tax year " +
-                              s"${ErsMetaDataHelper.getFullTaxYear(ersSummary.metaData.schemeInfo.taxYear)}."
+    val confirmationMessage = Messages("ers.pdf.confirmation.submitted",
+      ContentUtil.getSchemeAbbreviation(ersMetaData.schemeInfo.schemeType),ErsMetaDataHelper.getFullTaxYear(ersSummary.metaData.schemeInfo.taxYear))
 
     streamer.drawText(confirmationMessage, headingFontSize)
     streamer.drawText("", lineSpacer)
 
     streamer.drawText("", blockSpacer)
-    streamer.drawText("Scheme name:", headingFontSize)
+    streamer.drawText(Messages("ers.pdf.scheme"), headingFontSize)
     streamer.drawText("", lineSpacer)
     streamer.drawText(ersMetaData.schemeInfo.schemeName, answerFontSize)
 
     streamer.drawText("", blockSpacer)
-    streamer.drawText("Reference code:", headingFontSize)
+    streamer.drawText(Messages("ers.pdf.refcode"), headingFontSize)
     streamer.drawText("", lineSpacer)
     streamer.drawText(ersSummary.bundleRef, answerFontSize)
 
+    Logger.info("Writing Date")
+    val convertedDate = DateUtils.convertDate(dateSubmitted)
+
     streamer.drawText("", blockSpacer)
-    streamer.drawText("Date and time submitted:", headingFontSize)
+    streamer.drawText(Messages("ers.pdf.date_and_time"), headingFontSize)
     streamer.drawText("", lineSpacer)
-    streamer.drawText(dateSubmitted, answerFontSize)
+    streamer.drawText(convertedDate, answerFontSize)
+    Logger.info("Date Wrote:" + convertedDate)
 
     Logger.info("Save page content")
     streamer.savePageContent
   }
 
-  private def addSummary(ersSummary: ErsSummary, filesUploaded: Option[ListBuffer[String]])(implicit streamer: ErsContentsStreamer, decorator: DecoratorController): Unit = {
+  private def addSummary(ersSummary: ErsSummary, filesUploaded: Option[ListBuffer[String]])(implicit streamer: ErsContentsStreamer, decorator: DecoratorController, messages: Messages): Unit = {
     val blockSpacer = 20
 
     Logger.info("Adding ERS Summary")
 
     val pos = streamer.createNewPage
 
-    streamer.drawText("Summary information", 18)
+    streamer.drawText(Messages("ers.pdf.summary_information"), 18)
     streamer.drawText("", blockSpacer)
     streamer.drawLine()
     streamer.drawText("", blockSpacer)

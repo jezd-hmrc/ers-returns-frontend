@@ -14,11 +14,10 @@
  * limitations under the License.
  *@
 
-@(implicit request: Request[AnyRef], context: config.ErsContext)
+@(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
 
 @import views.html.templates._
-@import play.api.Play.current
-@import play.api.i18n.Messages.Implicits._
+
 
 @ers_main(title = Messages("ers.app_title")) {	
 	@header(Messages("ers_file_format_successful.page_title"))	

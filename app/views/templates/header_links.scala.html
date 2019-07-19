@@ -14,10 +14,8 @@
  * limitations under the License.
  *@
 
-@(showSignOutLink: Boolean)
+@(showSignOutLink: Boolean)(implicit request: Request[AnyRef], messages: Messages)
 
 @import controllers.auth.ExternalUrls
-@import play.api.Play.current
-@import play.api.i18n.Messages.Implicits._
 
 @if(showSignOutLink) {<li><a href="@ExternalUrls.signOut" id="sign-out">@Html(Messages("ers.signout"))</a></li>}

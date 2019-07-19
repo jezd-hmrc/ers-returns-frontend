@@ -17,15 +17,19 @@
 package utils
 
 import models.ErsMetaData
+import play.api.i18n.Messages
 
 object ErsMetaDataHelper {
-  def getScreenSchemeInfo(metaData: ErsMetaData) = {
+  def getScreenSchemeInfo(metaData: ErsMetaData)(implicit messages: Messages) = {
     val taxYear = getFullTaxYear(metaData.schemeInfo.taxYear)
     metaData.schemeInfo.schemeId + " - " +metaData.schemeInfo.schemeType + " - " + metaData.schemeInfo.schemeName + " - " + metaData.schemeInfo.schemeRef + " - " + taxYear
   }
 
-  def getFullTaxYear(taxYear : String) : String = {
-    taxYear.take(4) + " to " + taxYear.take(2) + taxYear.takeRight(2)
+  def getFullTaxYear(taxYear : String)(implicit messages: Messages) : String = {
+    taxYear.take(4) + Messages("ers.taxYear.text") + taxYear.take(2) + taxYear.takeRight(2)
   }
 
+  def rewriteSchemeInfo(schemeInfo: String)(implicit messages: Messages): String = {
+      schemeInfo.replaceAll("([0-9]{4}) (to|i) ([0-9]{4})", "$1" + Messages("ers.taxYear.text") + "$3")
+  }
 }

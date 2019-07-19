@@ -21,7 +21,7 @@
 
 .clear {clear:both;}
 
-#content article {width:100%;}
+
 
 
 .ers-service-info {
@@ -392,3 +392,8 @@ table th, table td {
 }
 
 #errors:focus, #fileToUpload:focus {outline: 3px solid #ffbf47;}
+
+.langToggle {
+    text-align: right;
+    margin-top: 1em;
+}

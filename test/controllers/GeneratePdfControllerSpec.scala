@@ -27,6 +27,7 @@ import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
 import play.api.http.Status
+import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -42,6 +43,7 @@ class GeneratePdfControllerSpec extends UnitSpec with ERSFakeApplicationConfig w
 
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val mat: Materializer = app.materializer
+  implicit lazy val messages: Messages = Messages(Lang("en"), app.injector.instanceOf[MessagesApi])
 
   lazy val pdfBuilderMock = mock[ErsReceiptPdfBuilderService]
   lazy val cache = mock[CacheUtil]
@@ -109,7 +111,7 @@ class GeneratePdfControllerSpec extends UnitSpec with ERSFakeApplicationConfig w
     val csvFilesCallbackList: CsvFilesCallbackList = new CsvFilesCallbackList(List(csvFilesCallBack))
     val byteArrayOutputStream = mock[ByteArrayOutputStream]
 
-    when(pdfBuilderMock.createPdf(any[ErsContentsStreamer], any[ErsSummary], any(), any())).thenReturn(byteArrayOutputStream)
+    when(pdfBuilderMock.createPdf(any[ErsContentsStreamer], any[ErsSummary], any(), any())(any())).thenReturn(byteArrayOutputStream)
     when(cache.fetch[ErsMetaData](refEq(CacheUtil.ersMetaData), anyString())(any(), any(), any())).thenReturn(Future.successful(rsc))
     when(cacheMap.getEntry[CsvFilesCallbackList](refEq(CacheUtil.CHECK_CSV_FILES))(any())).thenReturn(Future.successful(Some(csvFilesCallbackList)))
     when(cacheMap.getEntry[String](refEq(CacheUtil.FILE_NAME_CACHE))(any())).thenReturn(Future.successful(Some("test.ods")))

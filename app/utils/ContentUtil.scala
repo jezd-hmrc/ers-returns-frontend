@@ -16,16 +16,13 @@
 
 package utils
 
-import play.api.Play.current
 import play.api.i18n.Messages
-import play.api.i18n.Messages.Implicits._
-import play.api.mvc.LegacyI18nSupport
 
 object ContentUtil extends ContentUtil
 
-trait ContentUtil extends LegacyI18nSupport {
+trait ContentUtil {
 
-  def getSchemeName(schemeType: String): String = {
+  def getSchemeName(schemeType: String)(implicit messages: Messages): String = {
     schemeType match {
       case "1" => Messages("ers_pdf_error_report.csop")
       case "2" => Messages("ers_pdf_error_report.emi")
@@ -36,7 +33,7 @@ trait ContentUtil extends LegacyI18nSupport {
     }
   }
 
-  def getSchemeAbbreviation(schemeType: String): String = {
+  def getSchemeAbbreviation(schemeType: String)(implicit messages: Messages): String = {
     schemeType.toLowerCase match {
       case "1" => Messages("ers.csop")
       case "2" => Messages("ers.emi")

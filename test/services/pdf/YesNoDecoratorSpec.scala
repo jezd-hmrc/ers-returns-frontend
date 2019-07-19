@@ -16,12 +16,27 @@
 
 package services.pdf
 
+import akka.stream.Materializer
+import org.mockito.Matchers
 import org.scalatest.mock.MockitoSugar
 import uk.gov.hmrc.play.test.UnitSpec
 import org.mockito.Mockito._
 import org.mockito.internal.verification.VerificationModeFactory
+import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.play.OneAppPerSuite
+import play.api.Application
+import play.api.Play.current
+import play.api.i18n.Messages
+import play.api.i18n.Messages.Implicits._
+import play.api.inject.guice.GuiceApplicationBuilder
+import utils.ERSFakeApplicationConfig
 
-class YesNoDecoratorSpec extends UnitSpec with MockitoSugar{
+class YesNoDecoratorSpec extends UnitSpec with MockitoSugar with ERSFakeApplicationConfig with OneAppPerSuite {
+
+
+  override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
+  implicit lazy val mat: Materializer = app.materializer
+
 
   "nil returns decorator" should {
     "show Yes if there is nil return" in {
@@ -30,8 +45,8 @@ class YesNoDecoratorSpec extends UnitSpec with MockitoSugar{
 
       decorator.decorate(streamer)
 
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("title": String), org.mockito.Matchers.eq(1.0F: Float))
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("Yes": String), org.mockito.Matchers.eq(2.0F: Float))
+      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("title": String), org.mockito.Matchers.eq(1.0F: Float))(Matchers.any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("Yes": String), org.mockito.Matchers.eq(2.0F: Float))(Matchers.any())
     }
 
     "show No if there is no nil return" in {
@@ -40,8 +55,8 @@ class YesNoDecoratorSpec extends UnitSpec with MockitoSugar{
 
       decorator.decorate(streamer)
 
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("title": String), org.mockito.Matchers.eq(1.0F: Float))
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("No": String), org.mockito.Matchers.eq(2.0F: Float))
+      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("title": String), org.mockito.Matchers.eq(1.0F: Float))(Matchers.any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("No": String), org.mockito.Matchers.eq(2.0F: Float))(Matchers.any())
     }
 
     "show section divider after the block is rendered" in {
@@ -50,8 +65,8 @@ class YesNoDecoratorSpec extends UnitSpec with MockitoSugar{
 
       decorator.decorate(streamer)
 
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("": String), org.mockito.Matchers.eq(3.0F: Float))
-      verify(streamer, VerificationModeFactory.times(2)).drawText(org.mockito.Matchers.eq("": String), org.mockito.Matchers.eq(4.0F: Float))
+      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("": String), org.mockito.Matchers.eq(3.0F: Float))(Matchers.any())
+      verify(streamer, VerificationModeFactory.times(2)).drawText(org.mockito.Matchers.eq("": String), org.mockito.Matchers.eq(4.0F: Float))(Matchers.any())
       verify(streamer, VerificationModeFactory.times(1)).drawLine()
     }
    }

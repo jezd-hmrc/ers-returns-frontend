@@ -14,11 +14,9 @@
  * limitations under the License.
  *@
 
-@(invalidChars: String)(implicit request: Request[AnyRef], flash: Flash, context: config.ErsContext)
+@(invalidChars: String)(implicit request: Request[AnyRef], flash: Flash, context: config.ErsContext, messages: Messages)
 @* check return file Template *@
 @schemeId = @{request.session.get("screenSchemeInfo").get.split(" - ").head}
-@import play.api.Play.current
-@import play.api.i18n.Messages.Implicits._
 @import utils.PageBuilder._
 @import views.html.templates._
 @scripts = {

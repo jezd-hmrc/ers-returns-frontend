@@ -14,10 +14,8 @@
  * limitations under the License.
  *@
 
-@(uploadForm: Html, csvFilesCallback: List[CsvFilesCallback])(implicit request: Request[AnyRef], context: config.ErsContext)
+@(uploadForm: Html, csvFilesCallback: List[CsvFilesCallback])(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
 @schemeId = @{request.session.get("screenSchemeInfo").get.split(" - ").head}
-@import play.api.Play.current
-@import play.api.i18n.Messages.Implicits._
 @import utils.PageBuilder._
 @import views.html.templates._
 
@@ -77,7 +75,7 @@
     </p>
 
     <div class="panel-indent">
-        <p>@Html(Messages("CSV_file_upload.size_warning"))</p>
+        <p>@Messages("CSV_file_upload.size_warning.link.before") <a href="mailto:shareschemes@@hmrc.gsi.gov.uk">shareschemes@@hmrc.gsi.gov.uk</a> @Messages("CSV_file_upload.size_warning.link.after")</p>
     </div>
 
     <label for="fileToUpload" class="visuallyhidden">

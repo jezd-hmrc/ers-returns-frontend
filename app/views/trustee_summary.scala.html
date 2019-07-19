@@ -14,14 +14,13 @@
  * limitations under the License.
  *@
 
-@(trustees: TrusteeDetailsList)(implicit request: Request[AnyRef], flash: Flash, context: config.ErsContext)
+@(trustees: TrusteeDetailsList)(implicit request: Request[AnyRef], flash: Flash, context: config.ErsContext, messages: Messages)
 
 @import views.html.templates._
 @import utils.PageBuilder._
 @schemeId = @{request.session.get("screenSchemeInfo").get.split(" - ").head}
 @import utils.CountryCodes._
-@import play.api.Play.current
-@import play.api.i18n.Messages.Implicits._
+
 
 @ers_main(title = Messages("ers.trustees.page_title")) {
 

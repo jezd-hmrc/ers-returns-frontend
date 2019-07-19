@@ -14,16 +14,16 @@
  * limitations under the License.
  *@
 
-@import utils.ErsMetaDataHelper
+@(supportLinkEnabled: Boolean = true, includeGridWrapper: Boolean = false)(implicit request: Request[_])
+@if(supportLinkEnabled) {
 
-@(screenSchemeInfo: Option[String] = None)(implicit request: Request[AnyRef], messages: Messages)
-<div class="reference">
-    <p class="font-xsmall">
-        <span class="visuallyhidden">@Html(Messages("ers.reference.info"))</span>
-        @if(screenSchemeInfo.isDefined) {
-            @Html(ErsMetaDataHelper.rewriteSchemeInfo(screenSchemeInfo.get).drop(3).take(100))
-        } else {
-            @Html(ErsMetaDataHelper.rewriteSchemeInfo(request.session.get("screenSchemeInfo").get).drop(3).take(100))
-        }
-    </p>
+@if( includeGridWrapper ) {
+<div class="grid-wrapper">
+    }
+
+    @utils.HtmlPartialProvider.getHelpForm(config.ApplicationConfig.reportAProblemPartialUrl)(request)
+
+    @if( includeGridWrapper ) {
 </div>
+}
+}

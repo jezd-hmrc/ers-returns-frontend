@@ -14,12 +14,10 @@
  * limitations under the License.
  *@
 
-@(checkFileType: Option[String], checkFileTypeForm: Form[models.CheckFileType])(implicit request: Request[AnyRef], flash: Flash, context: config.ErsContext)
+@(checkFileType: Option[String], checkFileTypeForm: Form[models.CheckFileType])(implicit request: Request[AnyRef], flash: Flash, context: config.ErsContext, messages: Messages)
 @* type of activity template *@
 @schemeId = @{request.session.get("screenSchemeInfo").get.split(" - ").head}
 
-@import play.api.Play.current
-@import play.api.i18n.Messages.Implicits._
 @import utils.PageBuilder._
 @import views.html.helpers.error_overview
 @import views.html.templates._

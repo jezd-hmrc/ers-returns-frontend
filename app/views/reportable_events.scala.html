@@ -14,11 +14,9 @@
  * limitations under the License.
  *@
 
-@(activity: Option[String], reportableEvents: Form[models.ReportableEvents])(implicit request: Request[AnyRef], flash: Flash, context: config.ErsContext)
+@(activity: Option[String], reportableEvents: Form[models.ReportableEvents])(implicit request: Request[AnyRef], flash: Flash, context: config.ErsContext, messages: Messages)
 @* type of activity template *@
 @schemeId = @{request.session.get("screenSchemeInfo").get.split(" - ").head}
-@import play.api.Play.current
-@import play.api.i18n.Messages.Implicits._
 @import uk.gov.hmrc.play.views.html.helpers
 @import utils.PageBuilder._
 @import views.html.helpers.error_overview

@@ -17,21 +17,18 @@
 package services.pdf
 
 import models.ErsSummary
-import play.api.Play.current
 import play.api.i18n.Messages
-import play.api.i18n.Messages.Implicits._
-import play.api.mvc.LegacyI18nSupport
 import utils.PageBuilder
 
 import scala.collection.mutable.ListBuffer
 
-trait PdfDecoratorControllerFactory extends LegacyI18nSupport {
-  def createPdfDecoratorControllerForScheme(scheme: String, ersSummary: ErsSummary, filesUploaded: Option[ListBuffer[String]]): DecoratorController
+trait PdfDecoratorControllerFactory  {
+  def createPdfDecoratorControllerForScheme(scheme: String, ersSummary: ErsSummary, filesUploaded: Option[ListBuffer[String]])(implicit messages: Messages): DecoratorController
 }
 
 object PdfDecoratorControllerFactory extends PdfDecoratorControllerFactory {
 
-  def createPdfDecoratorControllerForScheme(scheme: String, ersSummary: ErsSummary, filesUploaded: Option[ListBuffer[String]]): DecoratorController = {
+  def createPdfDecoratorControllerForScheme(scheme: String, ersSummary: ErsSummary, filesUploaded: Option[ListBuffer[String]])(implicit messages: Messages): DecoratorController = {
 
     class DecoratorControllerImpl(val decorators: Array[Decorator]) extends DecoratorController {
 
@@ -95,7 +92,7 @@ object PdfDecoratorControllerFactory extends PdfDecoratorControllerFactory {
     }
   }
 
-  def createAltAmendOptionsFor(ersSummary: ErsSummary, variant: String): Map[String, String] = {
+  def createAltAmendOptionsFor(ersSummary: ErsSummary, variant: String)(implicit messages: Messages): Map[String, String] = {
 
     val map = scala.collection.mutable.HashMap.empty[String, String]
 

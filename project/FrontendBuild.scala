@@ -32,6 +32,7 @@ private object AppDependencies {
     "uk.gov.hmrc" %% "frontend-bootstrap" % frontendBootstrapVersion,
     "uk.gov.hmrc" %% "domain" % domainVersion,
     "uk.gov.hmrc" %% "http-caching-client" % httpCachingVersion,
+    "uk.gov.hmrc" %% "play-language" % "3.4.0",
     "org.scala-lang.modules" %% "scala-parser-combinators" % scalaParserCombinatorsVersion,
     "org.apache.pdfbox" % "pdfbox" % pdfboxVersion,
     "org.apache.pdfbox" % "xmpbox" % xmpboxVersion
