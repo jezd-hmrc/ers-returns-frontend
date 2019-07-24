@@ -563,9 +563,10 @@ ers_trustee_summary.name = Enw
 ers_trustee_summary.address = Cyfeiriad
 ers_trustee_summary.action = Camau i’w cymryd
 ers_trustee_summary.altamends.section =Addasiadau a wnaed i’r cynllun hwn
-ers.global_errors.message = Mae’n flin gennym, mae anhawster technegol ac ni allwch ddefnyddio’r gwasanaeth ar hyn o bryd. Rhowch gynnig arall arni yn nes ymlaen.
-ers.global_errors.heading = Nid yw’r gwasanaeth ar gael
-ers.global_errors.title = Nid yw’r gwasanaeth ar gael
+ers.global_errors.message = Mae’n ddrwg gennym, mae problem gyda’r gwasanaeth
+ers.global_errors.heading = Cyflwyno eich Datganiad Blynyddol ar gyfer ERS
+ers.global_errors.title = Mae’n ddrwg gennym, mae problem gyda’r gwasanaeth - Cyflwyno eich Datganiad Blynyddol ar gyfer ERS – GOV.UK
+ers.global.errors.try.later = Rhowch gynnig arall arni yn nes ymlaen.
 urbanner.message.text =Helpwch i wella gwasanaethau digidol drwy ymuno â phanel defnyddwyr CThEM (yn agor ffenestr newydd)
 urbanner.message.reject = Dim diolch
 

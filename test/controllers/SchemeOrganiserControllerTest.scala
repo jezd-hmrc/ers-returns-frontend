@@ -105,7 +105,7 @@ class SchemeOrganiserControllerTest extends UnitSpec with OneAppPerSuite with ER
     "direct to ers errors page if fetching reportableEvents throws exception" in {
       val controllerUnderTest = buildFakeSchemeOrganiserController(reportableEventsRes = false)
       val result = await(controllerUnderTest.showSchemeOrganiserPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
-      contentAsString(result) should include("Service unavailable")
+      contentAsString(result) should include(messages("ers.global_errors.message"))
       contentAsString(result) shouldBe contentAsString(buildFakeSchemeOrganiserController().getGlobalErrorPage)
     }
 
@@ -227,7 +227,7 @@ class SchemeOrganiserControllerTest extends UnitSpec with OneAppPerSuite with ER
       val form = _root_.models.RsFormMappings.schemeOrganiserForm.bind(schemeOrganiserData)
       val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
       val result = controllerUnderTest.showSchemeOrganiserSubmit()(Fixtures.buildFakeUser, request, hc)
-      contentAsString(result) should include("Service unavailable")
+      contentAsString(result) should include(messages("ers.global_errors.message"))
       contentAsString(result) shouldBe contentAsString(buildFakeSchemeOrganiserController().getGlobalErrorPage)
     }
 

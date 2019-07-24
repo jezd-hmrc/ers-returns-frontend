@@ -91,7 +91,7 @@ class AltAmendsControllerTest extends UnitSpec with ERSFakeApplicationConfig wit
     "direct to ers errors page if fetching groupSchemeActivity throws exception" in {
       val controllerUnderTest = buildFakeAltAmendsPageController(groupSchemeActivityRes = false)
       val result = await(controllerUnderTest.showAltActivityPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
-      contentAsString(result) should include("Service unavailable")
+      contentAsString(result) should include(messages("ers.global_errors.message"))
       contentAsString(result) shouldBe contentAsString(buildFakeAltAmendsPageController().getGlobalErrorPage)
     }
 
@@ -162,7 +162,7 @@ class AltAmendsControllerTest extends UnitSpec with ERSFakeApplicationConfig wit
       val result = controllerUnderTest.showAltActivitySelected()(Fixtures.buildFakeUser, request, hc)
       status(result) shouldBe Status.OK
       contentAsString(result) shouldBe contentAsString(buildFakeAltAmendsPageController().getGlobalErrorPage)
-      contentAsString(result) should include("Service unavailable")
+      contentAsString(result) should include(messages("ers.global_errors.message"))
     }
 
     "direct to ers errors page if no form errors and no sessionId" in {
@@ -172,7 +172,7 @@ class AltAmendsControllerTest extends UnitSpec with ERSFakeApplicationConfig wit
       val request = Fixtures.buildFakeRequest("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
       val result = await(controllerUnderTest.showAltActivitySelected()(Fixtures.buildFakeUser, request, hc))
       contentAsString(result) shouldBe contentAsString(buildFakeAltAmendsPageController().getGlobalErrorPage)
-      contentAsString(result) should include("Service unavailable")
+      contentAsString(result) should include(messages("ers.global_errors.message"))
     }
   }
 
@@ -286,7 +286,7 @@ class AltAmendsControllerTest extends UnitSpec with ERSFakeApplicationConfig wit
       val result = controllerUnderTest.showAltAmendsSelected()(Fixtures.buildFakeUser, request, hc)
       status(result) shouldBe Status.OK
       contentAsString(result) shouldBe contentAsString(buildFakeAltAmendsPageController().getGlobalErrorPage)
-      contentAsString(result) should include("Service unavailable")
+      contentAsString(result) should include(messages("ers.global_errors.message"))
     }
 
     "give a redirect to summary declaration page if no form errors and selection applied" in {

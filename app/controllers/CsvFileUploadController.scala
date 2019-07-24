@@ -232,7 +232,7 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
   def getGlobalErrorPage(implicit messages: Messages) = Ok(views.html.global_error(
     messages("ers.global_errors.title"),
     messages("ers.global_errors.heading"),
-    messages("ers.global_errors.message")))
+    messages("ers.global_errors.message"))(messages))
 
 }
 
