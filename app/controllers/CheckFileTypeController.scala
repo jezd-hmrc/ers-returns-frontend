@@ -86,6 +86,9 @@ trait CheckFileTypeController extends ERSReturnBaseController with Authenticator
     )
   }
 
-  def getGlobalErrorPage = Ok(views.html.global_error(Messages("ers.global_errors.title"), Messages("ers.global_errors.heading"), Messages("ers.global_errors.message")))
+  def getGlobalErrorPage(implicit messages: Messages) = Ok(views.html.global_error(
+    messages("ers.global_errors.title"),
+    messages("ers.global_errors.heading"),
+    messages("ers.global_errors.message"))(messages))
 
 }

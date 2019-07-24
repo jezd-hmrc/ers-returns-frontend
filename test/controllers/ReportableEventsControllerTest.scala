@@ -256,7 +256,7 @@ class ReportableEventsControllerTest extends UnitSpec with ERSFakeApplicationCon
       val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form)
       val result = controllerUnderTest.showReportableEventsSelected()(Fixtures.buildFakeUser, request)
       status(result) shouldBe Status.OK
-      contentAsString(result) should include("Service unavailable")
+      contentAsString(result) should include(messages("ers.global_errors.message"))
       contentAsString(result) shouldBe contentAsString(buildFakeReportableEventsController().getGlobalErrorPage)
     }
 

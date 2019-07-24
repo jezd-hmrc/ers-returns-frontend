@@ -26,9 +26,8 @@ import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
 import play.api.Application
-import play.api.Play.current
-import play.api.i18n.Messages
-import play.api.i18n.Messages.Implicits._
+import play.api.i18n.{Lang, Messages, MessagesApi}
+import play.api.inject.Injector
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{AnyContentAsEmpty, LegacyI18nSupport, Request, Result}
@@ -42,7 +41,7 @@ import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import uk.gov.hmrc.http.{ HeaderCarrier, HttpResponse }
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 
 class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
   with MockitoSugar with ERSUsers with ErsConstants with LegacyI18nSupport
@@ -50,6 +49,9 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
 
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val materializer: Materializer = app.materializer
+  def injector: Injector = app.injector
+  def messagesApi: MessagesApi = injector.instanceOf[MessagesApi]
+  implicit val messages: Messages = messagesApi.preferred(Seq(Lang.get("en").get))
 
   "FileUploadController" must {
 
@@ -187,7 +189,7 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
         withAuthorisedUser { user =>
           failure(user) { result =>
             status(result) must equal(OK)
-            contentAsString(result) must include("Service unavailable")
+            contentAsString(result) must include(messages("ers.global_errors.message"))
           }
         }
       }
@@ -242,7 +244,7 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
         .thenReturn(Future.successful(mock[CacheMap]))
 
       val result = fileUploadController.showSuccess()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
-      contentAsString(result).contains(Messages("ers.bulk.success.csop.info", "this file")) must be(true)
+      contentAsString(result).contains(messages("ers.bulk.success.csop.info", "this file")) must be(true)
     }
 
     "direct to ers errors page if fetching fileName fails" in {
@@ -281,7 +283,7 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
         withAuthorisedUser { user =>
           validationFailure(user) { result =>
             status(result) must be(OK)
-            contentAsString(result) must include(Messages("file_upload_errors.title"))
+            contentAsString(result) must include(messages("file_upload_errors.title"))
           }
         }
       }

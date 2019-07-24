@@ -69,14 +69,14 @@ class GeneratePdfControllerSpec extends UnitSpec with ERSFakeApplicationConfig w
     "direct to errors page if fetch all res pdf throws exception" in {
       val controller = createController(fetchAllRes = false)
       val result = await(controller.generatePdf("", "")(buildFakeUser, buildFakeRequestWithSessionIdCSOP("GET"), hc))
-      contentAsString(result) should include("Service unavailable")
+      contentAsString(result) should include(messages("ers.global_errors.message"))
       contentAsString(result) shouldBe contentAsString(createController().getGlobalErrorPage)
     }
 
     "direct to errors page if get all data res pdf throws exception" in {
       val controller = createController(getAllDataRes = false)
       val result = await(controller.generatePdf("", "")(buildFakeUser, buildFakeRequestWithSessionIdCSOP("GET"), hc))
-      contentAsString(result) should include("Service unavailable")
+      contentAsString(result) should include(messages("ers.global_errors.message"))
       contentAsString(result) shouldBe contentAsString(createController().getGlobalErrorPage)
     }
 

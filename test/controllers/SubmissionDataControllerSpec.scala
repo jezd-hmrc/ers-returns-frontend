@@ -23,6 +23,7 @@ import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
+import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.Request
@@ -38,6 +39,7 @@ class SubmissionDataControllerSpec extends UnitSpec with ERSFakeApplicationConfi
 
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val mat: Materializer = app.materializer
+  implicit lazy val messages: Messages = Messages(Lang("en"), app.injector.instanceOf[MessagesApi])
 
   "calling createSchemeInfoFromURL" should {
 
@@ -125,7 +127,7 @@ class SubmissionDataControllerSpec extends UnitSpec with ERSFakeApplicationConfi
       )
       val result = submissionDataController.getRetrieveSubmissionData()(Fixtures.buildFakeUser, FakeRequest(), hc)
       status(result) shouldBe OK
-      bodyOf(result).contains("Service unavailable") shouldBe true
+      bodyOf(result).contains(messages("ers.global_errors.message")) shouldBe true
     }
 
     "shows error page if all parameters are given but retrieveSubmissionData throws exception" in {
@@ -142,7 +144,7 @@ class SubmissionDataControllerSpec extends UnitSpec with ERSFakeApplicationConfi
       )
       val result = submissionDataController.getRetrieveSubmissionData()(Fixtures.buildFakeUser, FakeRequest(), hc)
       status(result) shouldBe OK
-      bodyOf(result).contains("Service unavailable") shouldBe true
+      bodyOf(result).contains(messages("ers.global_errors.message")) shouldBe true
     }
 
   }
