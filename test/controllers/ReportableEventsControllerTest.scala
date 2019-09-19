@@ -32,6 +32,7 @@ import play.api.http.Status
 import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.inject.Injector
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.mvc.Request
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.play.test.UnitSpec
@@ -44,6 +45,7 @@ class ReportableEventsControllerTest extends UnitSpec with ERSFakeApplicationCon
   def injector: Injector = app.injector
   def messagesApi: MessagesApi = injector.instanceOf[MessagesApi]
   implicit val messages: Messages = messagesApi.preferred(Seq(Lang.get("en").get))
+  implicit val requests: Request[_] = FakeRequest()
 
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val mat: Materializer = app.materializer

@@ -49,6 +49,7 @@ class SummaryDeclarationControllerTest extends UnitSpec with ERSFakeApplicationC
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val mat: Materializer = app.materializer
   implicit lazy val messages: Messages = Messages(Lang("en"), app.injector.instanceOf[MessagesApi])
+  implicit val request: Request[_] = FakeRequest()
 
   lazy val mockHttp = mock[HttpPost]
   lazy val mockHttpGet = mock[HttpGet]

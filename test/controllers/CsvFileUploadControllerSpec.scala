@@ -48,6 +48,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val mat: Materializer = app.materializer
   implicit lazy val messages: Messages = Messages(Lang("en"), app.injector.instanceOf[MessagesApi])
+  implicit val requests: Request[_] = FakeRequest()
 
   val mockAuthConnector = mock[AuthConnector]
 

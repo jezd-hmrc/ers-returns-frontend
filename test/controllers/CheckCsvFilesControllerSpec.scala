@@ -41,6 +41,7 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val materializer: Materializer = app.materializer
   implicit lazy val messages: Messages = Messages(Lang("en"), app.injector.instanceOf[MessagesApi])
+  implicit val request: Request[_] = FakeRequest()
 
   "calling checkCsvFilesPage" should {
 

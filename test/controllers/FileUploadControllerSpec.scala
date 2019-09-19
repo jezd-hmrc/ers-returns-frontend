@@ -52,6 +52,7 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
   def injector: Injector = app.injector
   def messagesApi: MessagesApi = injector.instanceOf[MessagesApi]
   implicit val messages: Messages = messagesApi.preferred(Seq(Lang.get("en").get))
+  implicit val request: Request[_] = FakeRequest()
 
   "FileUploadController" must {
 
