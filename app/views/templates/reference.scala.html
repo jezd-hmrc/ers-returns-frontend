@@ -21,9 +21,9 @@
     <p class="font-xsmall">
         <span class="visuallyhidden">@Html(Messages("ers.reference.info"))</span>
         @if(screenSchemeInfo.isDefined) {
-            @Html(ErsMetaDataHelper.rewriteSchemeInfo(screenSchemeInfo.get).drop(3).take(100))
+            @screenSchemeInfo.getOrElse(None))
         } else {
-            @Html(ErsMetaDataHelper.rewriteSchemeInfo(request.session.get("screenSchemeInfo").get).drop(3).take(100))
+            Blah
         }
     </p>
 </div>

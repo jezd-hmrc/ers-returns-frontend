@@ -16,6 +16,8 @@
 
 package utils
 
+import models.{ErsMetaData, SchemeInfo}
+import org.joda.time.DateTime
 import org.scalatest.Matchers
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -30,34 +32,55 @@ class ErsMetaDataHelperSpec extends UnitSpec with MockitoSugar with Matchers wit
   override def fakeApplication() = new GuiceApplicationBuilder().configure(Map("play.i18n.langs"->List("en-GB","en","cy-GB", "cy"))).build()
 
   "ErsMetaDataHelper" should {
-    "rewrite a schmemeInfo String from english to welsh" in {
-      implicit val messages: Messages = messagesApi.preferred(Seq(Lang.get("cy").get))
 
-      val schemeInfo = "CSOP - CSOP - XA1100000000000 - 2015 to 2016"
-      ErsMetaDataHelper.rewriteSchemeInfo(schemeInfo) should be ("CSOP - CSOP - XA1100000000000 - 2015 i 2016")
+    implicit val messages: Messages = messagesApi.preferred(Seq(Lang.get("en").get))
+
+    def metaData(schemeName: String, schemeType: String) = ErsMetaData(
+      SchemeInfo("XA1100000000000", DateTime.now, "001", "2015/16", schemeName, schemeType),
+      "ipRef",
+      Some("aoRef"),
+      "empRef",
+      Some("agentRef"),
+      Some("sapNumber")
+    )
+
+    "produce the correct schemeInfo String for caching" in {
+
+      ErsMetaDataHelper.getScreenSchemeInfo(metaData("CSOP 2015/16", "CSOP")) shouldBe
+        "001 - CSOP - CSOP 2015/16 - XA1100000000000 - 2015 to 2016"
     }
 
-    "rewrite a schmemeInfo String from english to english" in {
-      implicit val messages: Messages = messagesApi.preferred(Seq(Lang.get("en").get))
+    "produce the correct schemeInfo String for views" when {
 
-      val schemeInfo = "CSOP - CSOP - XA1100000000000 - 2015 to 2016"
-      ErsMetaDataHelper.rewriteSchemeInfo(schemeInfo) should be ("CSOP - CSOP - XA1100000000000 - 2015 to 2016")
-    }
+      "scheme is CSOP" in {
 
-    "rewrite a schemeInfo string from welsh to english" in {
-      implicit val messages: Messages = messagesApi.preferred(Seq(Lang.get("en").get))
+        ErsMetaDataHelper.getSchemeInfoForView(metaData("CSOP 2015/16", "CSOP")) shouldBe
+        s"${messages(s"ers.scheme.CSOP")} - ${messages(s"ers.scheme.CSOP.title")} - XA1100000000000 - 2015 ${messages("ers.taxYear.text")} 2016"
+      }
 
-      val schemeInfo = "CSOP - CSOP - XA1100000000000 - 2015 i 2016"
+      "scheme is EMI" in {
 
-      ErsMetaDataHelper.rewriteSchemeInfo(schemeInfo) should be ("CSOP - CSOP - XA1100000000000 - 2015 to 2016")
+        ErsMetaDataHelper.getSchemeInfoForView(metaData("EMI", "EMI")) shouldBe
+        s"${messages(s"ers.scheme.EMI")} - ${messages(s"ers.scheme.EMI.title")} - XA1100000000000 - 2015 ${messages("ers.taxYear.text")} 2016"
+      }
 
-    }
+      "scheme is SIP" in {
 
-    "return the same string if no match " in {
-      implicit val messages: Messages = messagesApi.preferred(Seq(Lang.get("en").get))
-      val schemeInfo = "CSOP - CSOP - XA1100000000000 - 2015 by 2016"
+        ErsMetaDataHelper.getSchemeInfoForView(metaData("SIP", "SIP")) shouldBe
+        s"${messages(s"ers.scheme.SIP")} - ${messages(s"ers.scheme.SIP.title")} - XA1100000000000 - 2015 ${messages("ers.taxYear.text")} 2016"
+      }
 
-      ErsMetaDataHelper.rewriteSchemeInfo(schemeInfo) should be (schemeInfo)
+      "scheme is SAYE" in {
+
+        ErsMetaDataHelper.getSchemeInfoForView(metaData("SAYE", "SAYE")) shouldBe
+        s"${messages(s"ers.scheme.SAYE")} - ${messages(s"ers.scheme.SAYE.title")} - XA1100000000000 - 2015 ${messages("ers.taxYear.text")} 2016"
+      }
+
+      "scheme is OTHER" in {
+
+        ErsMetaDataHelper.getSchemeInfoForView(metaData("OTHER", "OTHER")) shouldBe
+        s"${messages(s"ers.scheme.OTHER")} - ${messages(s"ers.scheme.OTHER.title")} - XA1100000000000 - 2015 ${messages("ers.taxYear.text")} 2016"
+      }
     }
   }
 }
