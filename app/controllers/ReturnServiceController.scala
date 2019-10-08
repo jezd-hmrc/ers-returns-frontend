@@ -58,28 +58,14 @@ trait ReturnServiceController extends ERSReturnBaseController with Authenticator
   val accessThreshold: Int
   val metrics: Metrics
 
-  def getSchemeId(schemeType: String): String = {
-    schemeType.toUpperCase match {
-      case PageBuilder.CSOP => PageBuilder.SCHEME_CSOP
-      case PageBuilder.EMI => PageBuilder.SCHEME_EMI
-      case PageBuilder.SAYE => PageBuilder.SCHEME_SAYE
-      case PageBuilder.SIP => PageBuilder.SCHEME_SIP
-      case PageBuilder.OTHER => PageBuilder.SCHEME_OTHER
-      case _ => PageBuilder.DEFAULT
-    }
-  }
-
   def cacheParams(ersRequestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
     implicit val formatRSParams = Json.format[ErsMetaData]
-    val sr = ersRequestObject.getSchemeReference()
-    val schemeInfo = SchemeInfo(ersRequestObject.ersSchemeRef.get, DateTime.now, getSchemeId(ersRequestObject.getSchemeType()), ersRequestObject.taxYear.get, ersRequestObject.schemeName.get, ersRequestObject.schemeType.get)
 
-    val metaData: ErsMetaData = ErsMetaData(schemeInfo, request.remoteAddress, ersRequestObject.aoRef, ersRequestObject.getEmpRef, ersRequestObject.agentRef, None)
-    Logger.debug("metaData created --> " + metaData)
-    cacheUtil.cache(CacheUtil.ersMetaData, metaData, sr).map {
+    Logger.debug("Request Object created --> " + ersRequestObject)
+    cacheUtil.cache(CacheUtil.ersRequestObject, ersRequestObject).map {
       cacheResult => {
-        Logger.debug("metaData after cache --> " + metaData); showInitialStartPage(metaData)(authContext, request, hc)
+        Logger.debug("Request Object Cached --> " + ersRequestObject); showInitialStartPage(ersRequestObject)(authContext, request, hc)
       }
     } recover { case e: Exception =>
       Logger.warn(s"Caught exception ${e.getMessage}", e)
@@ -110,29 +96,35 @@ trait ReturnServiceController extends ERSReturnBaseController with Authenticator
           Logger.warn("Missing SchemeRef in URL")
           Future(getGlobalErrorPage)
         } else {
-          HMACUtil.isHmacAndTimestampValid(getRequestParameters(request)) match {
-            case true => Logger.warn("HMAC Check Valid")
-              try {
-                cacheParams(getRequestParameters(request))
-              } catch {
-                case e: Throwable => Logger.warn(s"Caught exception ${e.getMessage}", e)
-                  Future(getGlobalErrorPage)
-              }
-            case _ => Logger.warn("HMAC Check Invalid")
-              showUnauthorisedPage(request)
+          if (HMACUtil.isHmacAndTimestampValid(getRequestParameters(request))) {
+            Logger.warn("HMAC Check Valid")
+            try {
+              cacheParams(getRequestParameters(request))
+            } catch {
+              case e: Throwable => Logger.warn(s"Caught exception ${e.getMessage}", e)
+                Future(getGlobalErrorPage)
+            }
+          } else {
+            Logger.warn("HMAC Check Invalid")
+            showUnauthorisedPage(request)
           }
         }
   }
 
-  def showInitialStartPage(metaData: ErsMetaData)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Result = {
-    Ok(views.html.start(ErsMetaDataHelper.getScreenSchemeInfo(metaData))).
-      withSession(request.session + (screenSchemeInfo -> ErsMetaDataHelper.getScreenSchemeInfo(metaData)) - "bundelRef" - "dateTimeSubmitted")
+  def showInitialStartPage(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Result = {
+
+    val sessionData = s"${requestObject.getSchemeId} - ${requestObject.getPageTitle}"
+    Ok(views.html.start(requestObject)).
+      withSession(request.session + (screenSchemeInfo -> sessionData) - "bundelRef" - "dateTimeSubmitted")
   }
 
   def startPage(): Action[AnyContent] = AuthenticatedBy(ERSGovernmentGateway, pageVisibility = AllowAll).async {
     implicit user =>
       implicit request =>
-        Future(Ok(views.html.start(request.session.get(screenSchemeInfo).get)).withSession(request.session - "bundelRef" - "dateTimeSubmitted"))
+        cacheUtil.fetch[RequestObject](CacheUtil.ersRequestObject).map{
+          result =>
+            Ok(views.html.start(result)).withSession(request.session - "bundelRef" - "dateTimeSubmitted")
+        }
   }
 
   def showUnauthorisedPage(request: Request[AnyRef]): Future[Result] = {

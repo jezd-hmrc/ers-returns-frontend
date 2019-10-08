@@ -29,11 +29,7 @@ ers.scheme.EMI = EMI
 ers.scheme.SIP = SIP
 ers.scheme.SAYE = SAYE
 ers.scheme.OTHER = OTHER
-ers.scheme.CSOP.title = CSOP scheme
-ers.scheme.EMI.title = EMI scheme
-ers.scheme.SIP.title = SIP scheme
-ers.scheme.SAYE.title = SAYE scheme
-ers.scheme.OTHER.title = OTHER scheme
+ers.scheme.title = {0} scheme
 
 #********************************************************************
 # File upload messages

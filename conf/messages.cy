@@ -25,11 +25,7 @@ ers.scheme.EMI = Cymhellion Rheoli Mentrau (EMI)
 ers.scheme.SIP = Cynllun Cymell Cyfranddaliadau (SIP)
 ers.scheme.SAYE = Cynilo Wrth Ennill (SAYE)
 ers.scheme.OTHER = ARALL
-ers.scheme.CSOP.title = Cynllun CSOP
-ers.scheme.EMI.title = Cynllun EMI
-ers.scheme.SIP.title = Cynllun SIP
-ers.scheme.SAYE.title = Cynllun SAYE
-ers.scheme.OTHER.title = Cynllun ARALL
+ers.scheme.title = Cynllun {0}
 
 ers.start.page_title = Cyflwyno eich Datganiad Blynyddol – Gwarantau ar Sail Cyflogaeth – GOV.UK
 ers.reportable_events.page_title = Digwyddiadau i’w nodi – Gwarantau ar Sail Cyflogaeth – GOV.UK

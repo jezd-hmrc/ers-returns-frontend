@@ -43,6 +43,7 @@ trait CacheUtil {
   val largeFileStatus = "largefiles"
   val savedStatus = "saved"
   val ersMetaData: String = "ErsMetaData"
+  val ersRequestObject: String = "ErsMetaData"
   val reportableEvents = "ReportableEvents"
   val GROUP_SCHEME_CACHE_CONTROLLER: String = "group-scheme-controller"
   val ALT_AMENDS_CACHE_CONTROLLER: String = "alt-amends-cache-controller"

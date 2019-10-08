@@ -48,6 +48,10 @@ class ReportableEventsControllerTest extends UnitSpec with ERSFakeApplicationCon
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val mat: Materializer = app.materializer
 
+  val testString = Some("test")
+
+  val testRequestObject = RequestObject(testString, testString, testString, testString, testString, testString, testString, testString, testString)
+
   "calling Reportable Events Page" should {
 
     def buildFakeReportableEventsController(ersMetaDataRes: Boolean = true, ersMetaDataCachedOk: Boolean = true, sapRequestRes: Boolean = true, schemeOrganiserDetailsRes: Boolean = true, schemeOrganiserDataCached: Boolean = false, reportableEventsRes: Boolean = true, fileTypeRes: Boolean = true, altAmendsActivityRes: Boolean = true, cacheRes: Boolean = true) = new ReportableEventsController {
@@ -132,7 +136,7 @@ class ReportableEventsControllerTest extends UnitSpec with ERSFakeApplicationCon
 
     "show blank reportable events page if fetching reportableEvents throws exception" in {
       val controllerUnderTest = buildFakeReportableEventsController(reportableEventsRes = false)
-      val result = await(controllerUnderTest.showReportableEventsPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+      val result = await(controllerUnderTest.showReportableEventsPage(testRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       status(result) shouldBe Status.OK
       val document = Jsoup.parse(contentAsString(result))
       document.select("input[id=upload-spreadsheet-radio-button]").hasAttr("checked") shouldEqual false
@@ -141,7 +145,7 @@ class ReportableEventsControllerTest extends UnitSpec with ERSFakeApplicationCon
 
     "show reportable events page with NO selected" in {
       val controllerUnderTest = buildFakeReportableEventsController()
-      val result = await(controllerUnderTest.showReportableEventsPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+      val result = await(controllerUnderTest.showReportableEventsPage(testRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       status(result) shouldBe Status.OK
       val document = Jsoup.parse(contentAsString(result))
       document.select("input[id=upload-spreadsheet-radio-button]").hasAttr("checked") shouldEqual false
@@ -228,7 +232,7 @@ class ReportableEventsControllerTest extends UnitSpec with ERSFakeApplicationCon
       val reportableEventsData = Map("" -> "")
       val form = _root_.models.RsFormMappings.chooseForm.bind(reportableEventsData)
       val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
-      val result = controllerUnderTest.showReportableEventsSelected()(Fixtures.buildFakeUser, request)
+      val result = controllerUnderTest.showReportableEventsSelected(testRequestObject)(Fixtures.buildFakeUser, request)
       status(result) shouldBe Status.OK
     }
 
@@ -236,7 +240,7 @@ class ReportableEventsControllerTest extends UnitSpec with ERSFakeApplicationCon
       val controllerUnderTest = buildFakeReportableEventsController()
       val form = "isNilReturn" -> PageBuilder.OPTION_UPLOAD_SPREEDSHEET
       val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form)
-      val result = controllerUnderTest.showReportableEventsSelected()(Fixtures.buildFakeUser, request)
+      val result = controllerUnderTest.showReportableEventsSelected(testRequestObject)(Fixtures.buildFakeUser, request)
       status(result) shouldBe Status.SEE_OTHER
       result.header.headers.get("Location").get shouldBe routes.CheckFileTypeController.checkFileTypePage().toString()
     }
@@ -245,7 +249,7 @@ class ReportableEventsControllerTest extends UnitSpec with ERSFakeApplicationCon
       val controllerUnderTest = buildFakeReportableEventsController()
       val form = "isNilReturn" -> PageBuilder.OPTION_NIL_RETURN
       val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form)
-      val result = controllerUnderTest.showReportableEventsSelected()(Fixtures.buildFakeUser, request)
+      val result = controllerUnderTest.showReportableEventsSelected(testRequestObject)(Fixtures.buildFakeUser, request)
       status(result) shouldBe Status.SEE_OTHER
       result.header.headers.get("Location").get shouldBe routes.SchemeOrganiserController.schemeOrganiserPage().toString()
     }
@@ -254,7 +258,7 @@ class ReportableEventsControllerTest extends UnitSpec with ERSFakeApplicationCon
       val controllerUnderTest = buildFakeReportableEventsController(ersMetaDataCachedOk = false)
       val form = "isNilReturn" -> PageBuilder.OPTION_NIL_RETURN
       val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form)
-      val result = controllerUnderTest.showReportableEventsSelected()(Fixtures.buildFakeUser, request)
+      val result = controllerUnderTest.showReportableEventsSelected(testRequestObject)(Fixtures.buildFakeUser, request)
       status(result) shouldBe Status.OK
       contentAsString(result) should include(messages("ers.global_errors.message"))
       contentAsString(result) shouldBe contentAsString(buildFakeReportableEventsController().getGlobalErrorPage)

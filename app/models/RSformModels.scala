@@ -16,7 +16,9 @@
 
 package models
 
+import play.api.i18n.Messages
 import play.api.libs.json.Json
+import utils.{DateUtils, PageBuilder}
 
 case class RS_scheme(scheme: String)
 
@@ -111,6 +113,9 @@ case class RequestObject(
                           hmac: Option[String]
                           ) {
 
+  def getPageTitle()(implicit messages: Messages) =
+    s"${messages(s"ers.scheme.$getSchemeType")} - ${messages(s"ers.scheme.title", getSchemeName)} - $getSchemeReference - ${DateUtils.getFullTaxYear(getTaxYear)}"
+
   def getAORef() = aoRef.get
 
   def getTaxYear() = taxYear.get
@@ -140,6 +145,17 @@ case class RequestObject(
       getNVPair("ts", ts)
   }
 
+  def getSchemeId: String = {
+    getSchemeType.toUpperCase match {
+      case PageBuilder.CSOP => PageBuilder.SCHEME_CSOP
+      case PageBuilder.EMI => PageBuilder.SCHEME_EMI
+      case PageBuilder.SAYE => PageBuilder.SCHEME_SAYE
+      case PageBuilder.SIP => PageBuilder.SCHEME_SIP
+      case PageBuilder.OTHER => PageBuilder.SCHEME_OTHER
+      case _ => PageBuilder.DEFAULT
+    }
+  }
+
   private def getNVPair(paramName: String, value: Option[String]): String = {
 
     try {
@@ -151,4 +167,8 @@ case class RequestObject(
       }
     }
   }
+}
+
+object RequestObject {
+  implicit val format = Json.format[RequestObject]
 }

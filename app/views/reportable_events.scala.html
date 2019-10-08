@@ -14,9 +14,9 @@
  * limitations under the License.
  *@
 
-@(activity: Option[String], reportableEvents: Form[models.ReportableEvents])(implicit request: Request[AnyRef], flash: Flash, context: config.ErsContext, messages: Messages)
+@(requestObject: RequestObject, activity: Option[String], reportableEvents: Form[models.ReportableEvents])(implicit request: Request[AnyRef], flash: Flash, context: config.ErsContext, messages: Messages)
 @* type of activity template *@
-@schemeId = @{request.session.get("screenSchemeInfo").get.split(" - ").head}
+@schemeId = @{requestObject.getSchemeId}
 @import uk.gov.hmrc.play.views.html.helpers
 @import utils.PageBuilder._
 @import views.html.helpers.error_overview
@@ -26,7 +26,7 @@
 
 @ers_main(title = Messages("ers.reportable_events.page_title"), scripts) {
 
-	@reference()
+	@reference(requestObject.getPageTitle)
 	<p class="font-xsmall"><a href="@routes.ReturnServiceController.startPage" class="link-back">@Html(Messages("ers.back"))</a></p>
 	@header(getPageElement(schemeId, PAGE_CHOOSE, "question"))
 	@helpers.form(action = routes.ReportableEventsController.reportableEventsSelected) {

@@ -16,14 +16,10 @@
 
 @import utils.ErsMetaDataHelper
 
-@(screenSchemeInfo: Option[String] = None)(implicit request: Request[AnyRef], messages: Messages)
+@(screenSchemeInfo: String = "")(implicit request: Request[AnyRef], messages: Messages)
 <div class="reference">
     <p class="font-xsmall">
         <span class="visuallyhidden">@Html(Messages("ers.reference.info"))</span>
-        @if(screenSchemeInfo.isDefined) {
-            @screenSchemeInfo.getOrElse(None))
-        } else {
-            Blah
-        }
+            @screenSchemeInfo
     </p>
 </div>

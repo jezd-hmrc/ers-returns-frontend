@@ -14,8 +14,8 @@
  * limitations under the License.
  *@
 
-@(screenSchemeInfo:String)(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
-@schemeId = @{screenSchemeInfo.split(" - ").head}
+@(requestObject: RequestObject)(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
+@schemeId = @{requestObject.getSchemeId}
 @import views.html.templates._
 @import utils.PageBuilder._
 @import utils.ContentUtil._
@@ -23,7 +23,7 @@
 
 @ers_main(title = Messages("ers.start.page_title")) {
 
-	@reference(Some(screenSchemeInfo))
+	@reference(requestObject.getPageTitle)
 
 	@header(Messages("ers_start.page_title", getSchemeName(schemeId)))
 

@@ -41,8 +41,11 @@ trait ReportableEventsController extends ERSReturnBaseController with Authentica
   def reportableEventsPage(): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        updateErsMetaData()(user, request, hc)
-        showReportableEventsPage()(user, request, hc)
+        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObj =>
+
+          updateErsMetaData()(user, request, hc)
+          showReportableEventsPage(requestObj)(user, request, hc)
+        }
   }
 
   def updateErsMetaData()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Object] = {
@@ -66,31 +69,33 @@ trait ReportableEventsController extends ERSReturnBaseController with Authentica
     }
   }
 
-  def showReportableEventsPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showReportableEventsPage(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
     cacheUtil.fetch[ReportableEvents](CacheUtil.reportableEvents, schemeRef).map { activity =>
-      Ok(views.html.reportable_events(activity.isNilReturn, RsFormMappings.chooseForm.fill(activity)))
+      Ok(views.html.reportable_events(requestObject, activity.isNilReturn, RsFormMappings.chooseForm.fill(activity)))
     } recover {
       case e: NoSuchElementException =>
         val form = ReportableEvents(Some(""))
-        Ok(views.html.reportable_events(Some(""), RsFormMappings.chooseForm.fill(form)))
+        Ok(views.html.reportable_events(requestObject, Some(""), RsFormMappings.chooseForm.fill(form)))
     }
   }
 
   def reportableEventsSelected(): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        showReportableEventsSelected()(user, request) recover {
-          case e: Exception =>
-            Logger.error(s"reportableEventsSelected failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
-            getGlobalErrorPage
+        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObj =>
+          showReportableEventsSelected(requestObj)(user, request) recover {
+            case e: Exception =>
+              Logger.error(s"reportableEventsSelected failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
+              getGlobalErrorPage
+          }
         }
   }
 
-  def showReportableEventsSelected()(implicit authContext: AuthContext, request: Request[AnyRef]): Future[Result] = {
+  def showReportableEventsSelected(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef]): Future[Result] = {
     RsFormMappings.chooseForm.bindFromRequest.fold(
       errors => {
-        Future.successful(Ok(views.html.reportable_events(Some(""), errors)))
+        Future.successful(Ok(views.html.reportable_events(requestObject, Some(""), errors)))
       },
       formData => {
         val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))

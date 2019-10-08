@@ -16,23 +16,7 @@
 
 package utils
 
-import models.ErsMetaData
-import play.api.i18n.Messages
 
 object ErsMetaDataHelper {
 
-  def getScreenSchemeInfo(metaData: ErsMetaData)(implicit messages: Messages) = {
-    val taxYear = getFullTaxYear(metaData.schemeInfo.taxYear)
-    metaData.schemeInfo.schemeId + " - " +metaData.schemeInfo.schemeType + " - " + metaData.schemeInfo.schemeName + " - " + metaData.schemeInfo.schemeRef + " - " + taxYear
-  }
-
-  def getSchemeInfoForView(metaData: ErsMetaData)(implicit messages: Messages): String = {
-    val taxYear = getFullTaxYear(metaData.schemeInfo.taxYear)
-
-    s"${messages(s"ers.scheme.${metaData.schemeInfo.schemeType}")} - ${messages(s"ers.scheme.${metaData.schemeInfo.schemeType}.title")} - ${metaData.schemeInfo.schemeRef} - $taxYear"
-  }
-
-  def getFullTaxYear(taxYear : String)(implicit messages: Messages) : String = {
-    s"${taxYear.take(4)} ${messages("ers.taxYear.text")} ${taxYear.take(2)}${taxYear.takeRight(2)}"
-  }
 }

@@ -30,7 +30,7 @@ import org.apache.xmpbox.XMPMetadata
 import org.apache.xmpbox.xml.{XmpSerializationException, XmpSerializer}
 import play.api.Logger
 import play.api.i18n.Messages
-import utils.ErsMetaDataHelper
+import utils.DateUtils
 
 trait ErsContentsStreamer {
   def saveErsSummary() : ByteArrayOutputStream
@@ -225,7 +225,7 @@ class ApachePdfContentsStreamer(ersSummary : ErsSummary) extends ErsContentsStre
     drawText(Messages("ers.pdf.header"), pos._1, pos._2, 16)
 
     pos = cursorPositioner.getIndentedHeaderPos()
-    drawText(s"${ersSummary.metaData.schemeInfo.schemeType} - ${ersSummary.metaData.schemeInfo.schemeRef} - ${ErsMetaDataHelper.getFullTaxYear(ersSummary.metaData.schemeInfo.taxYear)}", pos._1, pos._2, 12)
+    drawText(s"${ersSummary.metaData.schemeInfo.schemeType} - ${ersSummary.metaData.schemeInfo.schemeRef} - ${DateUtils.getFullTaxYear(ersSummary.metaData.schemeInfo.taxYear)}", pos._1, pos._2, 12)
 
     drawText("", 20)
 
