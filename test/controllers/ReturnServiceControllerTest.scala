@@ -35,17 +35,18 @@ import play.api.i18n.Messages
 import play.api.i18n.Messages.Implicits._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json
+import play.api.libs.json.Json
 import play.api.mvc.Request
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers}
 import services.SessionService
-import uk.gov.hmrc.http.cache.client.ShortLivedCache
+import uk.gov.hmrc.http.cache.client.{CacheMap, ShortLivedCache}
 import uk.gov.hmrc.play.test.UnitSpec
 import utils.ContentUtil._
 import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures}
 
 import scala.concurrent.Future
-import uk.gov.hmrc.http.{ HeaderCarrier, HttpGet, HttpPost, HttpResponse }
+import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpPost, HttpResponse}
 
 
 class ReturnServiceControllerTest extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with OneAppPerSuite {
@@ -59,6 +60,17 @@ class ReturnServiceControllerTest extends UnitSpec with ERSFakeApplicationConfig
   lazy val ExpectedRedirectionUrlIfNotSignedIn = "/gg/sign-in?continue=/submit-your-ers-return"
   lazy val schemeInfo = SchemeInfo("XA1100000000000", DateTime.now, "1", "2016", "EMI", "EMI")
   lazy val rsc: ErsMetaData = new ErsMetaData(schemeInfo, "ipRef", Some("aoRef"), "empRef", Some("agentRef"), Some("sapNumber"))
+
+  val aoRef: Option[String] = Option("123AA12345678")
+  val taxYear: Option[String] = Option("2014/15")
+  val ersSchemeRef: Option[String] = Option("AA0000000000000")
+  val schemeType: Option[String] = Option("CSOP")
+  val schemeName: Option[String] = Option("MyScheme")
+  val agentRef: Option[String] = None
+  val empRef: Option[String] = Option("empRef")
+  val ts: Option[String] = None
+  val hmac: Option[String] = Option("hmac")
+  val ersRequestObject = new RequestObject(aoRef, taxYear, ersSchemeRef, schemeName, schemeType, agentRef, empRef, ts, hmac)
 
   def buildFakeReturnServiceController(accessThresholdValue: Int = 100) = new ReturnServiceController {
 
@@ -76,38 +88,36 @@ class ReturnServiceControllerTest extends UnitSpec with ERSFakeApplicationConfig
       override val sessionService: SessionService = mockSessionCache
 
       override def cache[T](key: String, body: T, cacheId: String)(implicit hc: HeaderCarrier, formats: json.Format[T], request: Request[AnyRef]) = {
-        Future.successful(null)
+        Future.successful()
       }
 
       @throws(classOf[NoSuchElementException])
       override def fetch[T](key: String, cacheId: String)(implicit hc: HeaderCarrier, formats: json.Format[T], request: Request[AnyRef]): Future[T] = {
 
         fetchMapVal match {
-          case "e" => {
+          case "e" =>
             Future(throw new NoSuchElementException)
-          }
-          case "withSchemeType" => {
+
+          case "withSchemeType" =>
             Future.successful(rsc.asInstanceOf[T])
-          }
-          case "withZeroErrorCount" => {
+
+          case "withZeroErrorCount" =>
             Future.successful(rsc.asInstanceOf[T])
-          }
-          case "withErrorCountSchemeTypeFileNameFileType" => {
+          case "withErrorCountSchemeTypeFileNameFileType" =>
             Future.successful(rsc.asInstanceOf[T])
-          }
-          case "withSchemeAndFileType" => {
+
+          case "withSchemeAndFileType" =>
             Future.successful(rsc.asInstanceOf[T])
-          }
-          case "withMatchingSchemeRef" => {
+
+          case "withMatchingSchemeRef" =>
             Future.successful(rsc.asInstanceOf[T])
-          }
-          case "withNonMatchingSchemeRef" => {
+
+          case "withNonMatchingSchemeRef" =>
             Future.successful(rsc.asInstanceOf[T])
-          }
         }
       }
 
-      override def shortLivedCache: ShortLivedCache = ???
+      override def shortLivedCache: ShortLivedCache = mock[ShortLivedCache]
     }
     override val accessThreshold: Int = accessThresholdValue
     override val metrics: Metrics = mock[Metrics]

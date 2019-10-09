@@ -17,7 +17,7 @@
 package controllers
 
 import akka.stream.Materializer
-import models.{CheckFileType, RsFormMappings}
+import models.{CheckFileType, RequestObject, RsFormMappings}
 import org.jsoup.Jsoup
 import org.mockito.Matchers._
 import org.mockito.Mockito._
@@ -44,6 +44,18 @@ class CheckFileTypeControllerTest extends UnitSpec with OneAppPerSuite with ERSF
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val mat: Materializer = app.materializer
 
+  val aoRef: Option[String] = Option("123AA12345678")
+  val taxYear: Option[String] = Option("2014/15")
+  val ersSchemeRef: Option[String] = Option("AA0000000000000")
+  val schemeType: Option[String] = Option("CSOP")
+  val schemeName: Option[String] = Option("MyScheme")
+  val agentRef: Option[String] = None
+  val empRef: Option[String] = Option("empRef")
+  val ts: Option[String] = None
+  val hmac: Option[String] = Option("hmac")
+
+  val requestObject = RequestObject(aoRef, taxYear, ersSchemeRef, schemeName, schemeType, agentRef, empRef, ts, hmac)
+
   "Check File Type Page GET" should {
 
     def buildFakeCheckingServiceController(fileTypeRes: Boolean = true) = new CheckFileTypeController {
@@ -52,9 +64,10 @@ class CheckFileTypeControllerTest extends UnitSpec with OneAppPerSuite with ERSF
       when(
         mockCacheUtil.fetch[CheckFileType](refEq(CacheUtil.FILE_TYPE_CACHE), any())(any(), any(), any())
       ).thenReturn(
-        fileTypeRes match {
-          case true => Future.successful(CheckFileType(Some(PageBuilder.OPTION_CSV)))
-          case _ => Future.failed(new NoSuchElementException)
+        if (fileTypeRes) {
+          Future.successful(CheckFileType(Some(PageBuilder.OPTION_CSV)))
+        } else {
+          Future.failed(new NoSuchElementException)
         }
       )
     }
@@ -73,7 +86,7 @@ class CheckFileTypeControllerTest extends UnitSpec with OneAppPerSuite with ERSF
 
     "give a status OK if fetch successful and shows check file type page with file type selected" in {
       val controllerUnderTest = buildFakeCheckingServiceController()
-      val result = controllerUnderTest.showCheckFileTypePage(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc)
+      val result = controllerUnderTest.showCheckFileTypePage(requestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc)
       status(result) shouldBe Status.OK
       val document = Jsoup.parse(contentAsString(result))
       document.select("input[id=csv]").hasAttr("checked") shouldEqual true
@@ -82,7 +95,7 @@ class CheckFileTypeControllerTest extends UnitSpec with OneAppPerSuite with ERSF
 
     "give a status OK if fetch fails then show check file type page with nothing selected" in {
       val controllerUnderTest = buildFakeCheckingServiceController(fileTypeRes = false)
-      val result = controllerUnderTest.showCheckFileTypePage(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc)
+      val result = controllerUnderTest.showCheckFileTypePage(requestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc)
       status(result) shouldBe Status.OK
       val document = Jsoup.parse(contentAsString(result))
       document.select("input[id=csv]").hasAttr("checked") shouldEqual false
@@ -99,9 +112,10 @@ class CheckFileTypeControllerTest extends UnitSpec with OneAppPerSuite with ERSF
       when(
         mockCacheUtil.cache(refEq(CacheUtil.FILE_TYPE_CACHE), anyString(), any())(any(), any(), any())
       ).thenReturn(
-        fileTypeRes match {
-          case true => Future.successful(null)
-          case _ => Future.failed(new Exception)
+        if (fileTypeRes) {
+          Future.successful(null)
+        } else {
+          Future.failed(new Exception)
         }
       )
     }
@@ -123,7 +137,7 @@ class CheckFileTypeControllerTest extends UnitSpec with OneAppPerSuite with ERSF
       val fileTypeData = Map("" -> "")
       val form = RsFormMappings.checkFileTypeForm.bind(fileTypeData)
       val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
-      val result = controllerUnderTest.showCheckFileTypeSelected(Fixtures.buildFakeUser, request, hc)
+      val result = controllerUnderTest.showCheckFileTypeSelected(requestObject)(Fixtures.buildFakeUser, request, hc)
       status(result) shouldBe Status.OK
     }
 
@@ -132,9 +146,9 @@ class CheckFileTypeControllerTest extends UnitSpec with OneAppPerSuite with ERSF
       val checkFileTypeData = Map("checkFileType" -> "csv")
       val form = RsFormMappings.schemeTypeForm.bind(checkFileTypeData)
       val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
-      val result = controllerUnderTest.showCheckFileTypeSelected(Fixtures.buildFakeUser, request, hc)
+      val result = controllerUnderTest.showCheckFileTypeSelected(requestObject)(Fixtures.buildFakeUser, request, hc)
       status(result) shouldBe Status.SEE_OTHER
-      result.header.headers.get("Location").get shouldBe routes.CheckCsvFilesController.checkCsvFilesPage().toString()
+      result.header.headers("Location") shouldBe routes.CheckCsvFilesController.checkCsvFilesPage().toString
     }
 
     "if no form errors with file type = ods and save success" in {
@@ -142,9 +156,9 @@ class CheckFileTypeControllerTest extends UnitSpec with OneAppPerSuite with ERSF
       val checkFileTypeData = Map("checkFileType" -> "ods")
       val form = RsFormMappings.schemeTypeForm.bind(checkFileTypeData)
       val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
-      val result = controllerUnderTest.showCheckFileTypeSelected(Fixtures.buildFakeUser, request, hc)
+      val result = controllerUnderTest.showCheckFileTypeSelected(requestObject)(Fixtures.buildFakeUser, request, hc)
       status(result) shouldBe Status.SEE_OTHER
-      result.header.headers.get("Location").get shouldBe routes.FileUploadController.uploadFilePage.toString()
+      result.header.headers("Location") shouldBe routes.FileUploadController.uploadFilePage.toString
     }
 
     "if no form errors with scheme type and save fails" in {
@@ -152,7 +166,7 @@ class CheckFileTypeControllerTest extends UnitSpec with OneAppPerSuite with ERSF
       val schemeTypeData = Map("checkFileType" -> "csv")
       val form = RsFormMappings.schemeTypeForm.bind(schemeTypeData)
       val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
-      val result = await(controllerUnderTest.showCheckFileTypeSelected(Fixtures.buildFakeUser, request, hc))
+      val result = await(controllerUnderTest.showCheckFileTypeSelected(requestObject)(Fixtures.buildFakeUser, request, hc))
       contentAsString(result) shouldBe contentAsString(controllerUnderTest.getGlobalErrorPage)
       contentAsString(result) should include(messages("ers.global_errors.message"))
     }

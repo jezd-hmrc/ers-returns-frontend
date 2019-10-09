@@ -23,11 +23,12 @@ import org.joda.time.DateTime
 import play.Logger
 import play.api.Play
 import play.api.i18n.Messages
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OFormat}
 import play.api.mvc._
 import uk.gov.hmrc.play.frontend.auth.{AllowAll, AuthContext}
 import utils._
 import config._
+
 import scala.concurrent.Future
 import play.api.Play.current
 import play.api.i18n.Messages
@@ -60,11 +61,11 @@ trait ReturnServiceController extends ERSReturnBaseController with Authenticator
 
   def cacheParams(ersRequestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
-    implicit val formatRSParams = Json.format[ErsMetaData]
+    implicit val formatRSParams: OFormat[RequestObject] = Json.format[RequestObject]
 
     Logger.debug("Request Object created --> " + ersRequestObject)
     cacheUtil.cache(CacheUtil.ersRequestObject, ersRequestObject).map {
-      cacheResult => {
+      _ => {
         Logger.debug("Request Object Cached --> " + ersRequestObject); showInitialStartPage(ersRequestObject)(authContext, request, hc)
       }
     } recover { case e: Exception =>
@@ -88,7 +89,7 @@ trait ReturnServiceController extends ERSReturnBaseController with Authenticator
     reqObj
   }
 
-  def hmacCheck() = AuthenticatedBy(ERSGovernmentGateway, pageVisibility = AllowAll).async {
+  def hmacCheck(): Action[AnyContent] = AuthenticatedBy(ERSGovernmentGateway, pageVisibility = AllowAll).async {
     implicit user =>
       implicit request =>
         Logger.warn("HMAC Check Authenticated")
@@ -131,7 +132,7 @@ trait ReturnServiceController extends ERSReturnBaseController with Authenticator
     Future.successful(Ok(views.html.unauthorised()(request, context)))
   }
 
-  def getGlobalErrorPage(implicit messages: Messages) = Ok(views.html.global_error(
+  def getGlobalErrorPage(implicit messages: Messages): Result = Ok(views.html.global_error(
     messages("ers.global_errors.title"),
     messages("ers.global_errors.heading"),
     messages("ers.global_errors.message"))(messages))
