@@ -16,14 +16,14 @@
 
 package controllers
 
-import models.{RsFormMappings, _}
+import models._
 import play.api.Logger
 import play.api.Play.current
 import play.api.i18n.Messages
 import play.api.i18n.Messages.Implicits._
-import play.api.mvc.{LegacyI18nSupport, _}
+import play.api.mvc._
 import uk.gov.hmrc.play.frontend.auth.AuthContext
-import utils.{PageBuilder, _}
+import utils._
 
 import scala.concurrent.Future
 import uk.gov.hmrc.http.HeaderCarrier
@@ -39,38 +39,37 @@ trait CheckFileTypeController extends ERSReturnBaseController with Authenticator
   val contentUtil = ContentUtil
   val cacheUtil: CacheUtil
 
-  def checkFileTypePage() = AuthenticatedBy(ERSGovernmentGateway, pageVisibilityPredicate).async {
+ // val whatItUsedToBe: AuthenticatedBy = AuthenticatedBy(ERSGovernmentGateway, pageVisibilityPredicate)
+
+  def checkFileTypePage() = SchemeRef2 {
     implicit authContext =>
       implicit request =>
         showCheckFileTypePage(authContext, request, hc)
   }
 
-  def showCheckFileTypePage(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    cacheUtil.fetch[CheckFileType](CacheUtil.FILE_TYPE_CACHE, schemeRef).map { fileType =>
+  def showCheckFileTypePage(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyContent], hc: HeaderCarrier): Future[Result] =  {
+    cacheUtil.fetch[CheckFileType](CacheUtil.FILE_TYPE_CACHE, request.schemeRef).map{ fileType =>
       Ok(views.html.check_file_type(fileType.checkFileType, RsFormMappings.checkFileTypeForm.fill(fileType)))
     } recover {
-      case e: NoSuchElementException => {
-        val form = CheckFileType(Some(""))
+      case _: NoSuchElementException =>
+        val form = CheckFileType(Some("")) //TODO THIS SHOULD BE NONE ??? // ALL THE OPTIONS IN THIS VIEW A FUNKED - FIX
         Ok(views.html.check_file_type(Some(""), RsFormMappings.checkFileTypeForm.fill(form)))
-      }
     }
   }
 
-  def checkFileTypeSelected() = AuthenticatedBy(ERSGovernmentGateway, pageVisibilityPredicate).async {
+  def checkFileTypeSelected() = SchemeRef2 {
     implicit authContext =>
       implicit request =>
         showCheckFileTypeSelected(authContext, request, hc)
   }
 
-  def showCheckFileTypeSelected(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showCheckFileTypeSelected(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyContent], hc: HeaderCarrier): Future[Result] = {
     RsFormMappings.checkFileTypeForm.bindFromRequest.fold(
       errors => {
         Future.successful(Ok(views.html.check_file_type(Some(""), errors)))
       },
       formData => {
-        val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-        cacheUtil.cache(CacheUtil.FILE_TYPE_CACHE, formData, schemeRef).map { res =>
+        cacheUtil.cache(CacheUtil.FILE_TYPE_CACHE, formData, request.schemeRef).map { res =>
           if (formData.checkFileType.get == PageBuilder.OPTION_ODS) {
             Redirect(routes.FileUploadController.uploadFilePage())
           } else {

@@ -21,59 +21,89 @@ import play.api.libs.json.Json
 import play.api.mvc._
 import uk.gov.hmrc.domain.EmpRef
 import uk.gov.hmrc.play.frontend.auth._
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, EpayeAccount}
+import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, ConfidenceLevel, EpayeAccount}
 import utils.CacheUtil
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
+import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 
+case class RequestWithSchemeRef[+A](request: Request[A], schemeRef: String) extends WrappedRequest(request)
 
 trait Authenticator extends Actions with ErsConstants {
   private val cacheUtil: CacheUtil = CacheUtil
-  private type AsyncUserRequest = AuthContext => Request[AnyContent] => Future[Result]
-  private type UserRequest = AuthContext => Request[AnyContent] => Result
+  private type AsyncUserRequest = AuthContext => RequestWithSchemeRef[AnyContent] => Future[Result]
+  private type UserRequest = AuthContext => Request[AnyContent] => Future[Result]
 
-  def AuthorisedForAsync()(body: AsyncUserRequest): Action[AnyContent] = {
+
+  def AuthorisedForAsync()(body: UserRequest): Action[AnyContent] = {
     AuthorisedFor(ERSRegime, pageVisibility = GGConfidence).async {
       implicit user =>
         implicit request => {
           implicit val hc = HeaderCarrierConverter.fromHeadersAndSession(request.headers, Some(request.session))
-          FilterAgentsWrapperAsync(user, body)
+          cacheUtil.getSchemeRefFromScreenSchemeInfo2(request.session.get(screenSchemeInfo))
+            .fold{
+              Future.successful(Redirect("go get a new session")) //TODO NEEDS REDIRCT TO GET SESSION sign in
+            }{ schemeRef =>
+              FilterAgentsWrapperAsync(user, body)(hc, RequestWithSchemeRef(request, schemeRef))
+            }
         }
     }
   }
 
-  def AuthorisedFor(body: UserRequest): Action[AnyContent] = {
+  def AuthorisedForAsync3()(body: AsyncUserRequest): Action[AnyContent] = {
     AuthorisedFor(ERSRegime, pageVisibility = GGConfidence).async {
       implicit user =>
         implicit request =>
           implicit val hc = HeaderCarrierConverter.fromHeadersAndSession(request.headers, Some(request.session))
-          FilterAgentsWrapper(user, body)
+          FilterForSchemeRef2(body, request, user)
+            .fold(redirect => redirect, requestWithSchemeRef => FilterAgentsWrapperAsync2(user, body)(hc, requestWithSchemeRef))
     }
   }
 
-  def FilterAgentsWrapper(authContext: AuthContext, body: UserRequest)(implicit hc: HeaderCarrier, request: Request[AnyContent]): Future[Result] = {
+  def SchemeRef2(body:AsyncUserRequest): Action[AnyContent] = {
+    AuthorisedFor(ERSRegime, new NonNegotiableIdentityConfidencePredicate(ConfidenceLevel.L50)).async {
+      implicit user =>
+        implicit request =>
+        FilterForSchemeRef2(body, request, user)
+          .fold(redirect => redirect, requestWithSchemeRef => body(user)(requestWithSchemeRef))
+    }
+  }
+
+
+  def FilterForSchemeRef2(body: AsyncUserRequest, request: Request[AnyContent], user: AuthContext)
+  : Either[Future[Result], RequestWithSchemeRef[AnyContent]] = {
+    implicit val hc = HeaderCarrierConverter.fromHeadersAndSession(request.headers, Some(request.session))
+    cacheUtil.getSchemeRefFromScreenSchemeInfo2(request.session.get(screenSchemeInfo))
+      .fold[Either[Future[Result], RequestWithSchemeRef[AnyContent]]]{
+        Left(Future.successful(Redirect("pan is the best"))) //TODO NEEDS REDIRCT TO GET SESSION sign in
+      }{ schemeRef =>
+        Right(RequestWithSchemeRef(request, schemeRef))
+      }
+  }
+
+  //TODO USE catch util getInfo2
+  def FilterAgentsWrapperAsync(authContext: AuthContext, body: UserRequest)
+                              (implicit hc: HeaderCarrier, request: RequestWithSchemeRef[AnyContent]): Future[Result] = {
     implicit val formatRSParams = Json.format[ErsMetaData]
     val defined = authContext.principal.accounts.agent.isDefined
     if (defined) {
-      val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-      cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, schemeRef).map { all =>
+      cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, request.schemeRef).flatMap { all =>
         body(delegationModelUser(all, authContext: AuthContext))(request)
       }
     } else {
-      Future {body(authContext)(request)}
+      body(authContext)(request)
     }
   }
 
-  def FilterAgentsWrapperAsync(authContext: AuthContext, body: AsyncUserRequest)
-                              (implicit hc: HeaderCarrier, request: Request[AnyContent]): Future[Result] = {
+  def FilterAgentsWrapperAsync2(authContext: AuthContext, body: AsyncUserRequest)
+                              (implicit hc: HeaderCarrier, request: RequestWithSchemeRef[AnyContent]): Future[Result] = {
     implicit val formatRSParams = Json.format[ErsMetaData]
     val defined = authContext.principal.accounts.agent.isDefined
     if (defined) {
-      val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-      cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, schemeRef).flatMap { all =>
+      cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, request.schemeRef).flatMap { all =>
         body(delegationModelUser(all, authContext: AuthContext))(request)
       }
     } else {

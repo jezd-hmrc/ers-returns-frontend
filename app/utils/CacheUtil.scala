@@ -34,7 +34,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 object CacheUtil extends CacheUtil {
   def shortLivedCache = config.ShortLivedCache
-  private def getCacheId (implicit hc: HeaderCarrier): String = ""
+  //private def getCacheId (implicit hc: HeaderCarrier): String = ""
   val sessionService = SessionService
 }
 
@@ -230,15 +230,18 @@ trait CacheUtil {
   }
 
   def getStatus(tRows:Option[Int]): Some[String] = {
-    (tRows.isDefined && (tRows.get > ApplicationConfig.sentViaSchedulerNoOfRowsLimit)) match {
-    case true => Some(largeFileStatus)
-    case _ => Some(savedStatus)
-  }}
+    if (tRows.isDefined && (tRows.get > ApplicationConfig.sentViaSchedulerNoOfRowsLimit)) {
+      Some(largeFileStatus)
+    } else {
+        Some(savedStatus)
+    }
+  }
 
   def getNoOfRows(nilReturn:String)(implicit hc: HeaderCarrier, ec: ExecutionContext, request: Request[AnyRef]): Future[Option[Int]] = {
-    isNilReturn(nilReturn:String) match {
-      case true => Future(None)
-      case _ => sessionService.retrieveCallbackData().map(res=> res.get.noOfRows)
+    if (isNilReturn(nilReturn:String)) {
+      Future.successful(None)
+    } else {
+      sessionService.retrieveCallbackData().map(res=> res.get.noOfRows)
     }
   }
 
@@ -246,14 +249,25 @@ trait CacheUtil {
     hc.sessionId.getOrElse(throw new RuntimeException("")).value
   }
 
-  def getSchemeRefFromScreenSchemeInfo(screenSchemeInfo:Option[String]):String = {
+  def getSchemeRefFromScreenSchemeInfo(screenSchemeInfo:Option[String]): String = {
     Logger.warn(s"CacheUtil: form getSchemeRefFromScreenSchemeInfo : ${screenSchemeInfo}.")
     val schemeInfo = screenSchemeInfo.getOrElse("").split(" - ").init
-    if (schemeInfo.length == 0)
-      Logger.error(s"CacheUtil: screenSchemeInfo not in valid format : ${screenSchemeInfo}.")
-    schemeInfo.last
+    if (schemeInfo.length == 0) {
+      Logger.error(s"CacheUtil: screenSchemeInfo not in valid format : ${screenSchemeInfo}.")}
+      schemeInfo.last
   }
 
-  def isNilReturn(nilReturn:String) :Boolean = (nilReturn == PageBuilder.OPTION_NIL_RETURN)
+  def getSchemeRefFromScreenSchemeInfo2(screenSchemeInfo:Option[String]): Option[String] = {
+    Logger.warn(s"CacheUtil: form getSchemeRefFromScreenSchemeInfo : ${screenSchemeInfo}.")
+    val schemeInfo = screenSchemeInfo.getOrElse("").split(" - ").init
+    if (schemeInfo.length == 0) {
+      Logger.error(s"CacheUtil: screenSchemeInfo not in valid format : ${screenSchemeInfo}.")
+      None
+    } else {
+      Some(schemeInfo.last)
+    }
+  }
+
+  def isNilReturn(nilReturn:String) :Boolean = nilReturn == PageBuilder.OPTION_NIL_RETURN
 
 }

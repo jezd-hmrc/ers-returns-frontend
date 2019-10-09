@@ -43,12 +43,30 @@ object Fixtures {
   val loggedInuser = LoggedInUser("userId", Some(DateTime.now), Some(DateTime.now), Some("governmentGatewayToken"), CredentialStrength.Strong, ConfidenceLevel.L500,"")
   def buildFakeUser = AuthContext(loggedInuser,Principal(Some("name"), accounts),Some(Attorney("name", Link("url", "text"))), None, None, None)
 
-  def buildFakeRequestWithSessionId(method: String) = FakeRequest().withSession(("sessionId" -> "FAKE_SESSION_ID"),("screenSchemeInfo" -> "2 - EMI - MYScheme - XX12345678 - 2016"))
-  def buildFakeRequestWithSessionIdCSOP(method: String) = FakeRequest().withSession(("sessionId" -> "FAKE_SESSION_ID"),("screenSchemeInfo" -> "1 - CSOP - MYScheme - XX12345678 - 2016"))
-  def buildFakeRequestWithSessionIdSAYE(method: String) = FakeRequest().withSession(("sessionId" -> "FAKE_SESSION_ID"),("screenSchemeInfo" -> "4 - SAYE - MYScheme - XX12345678 - 2016"))
-  def buildFakeRequestWithSessionIdSIP(method: String) = FakeRequest().withSession(("sessionId" -> "FAKE_SESSION_ID"),("screenSchemeInfo" -> "5 - SIP - MYScheme - XX12345678 - 2016"))
-  def buildFakeRequestWithSessionIdEMI(method: String) = FakeRequest().withSession(("sessionId" -> "FAKE_SESSION_ID"),("screenSchemeInfo" -> "2 - EMI - MYScheme - XX12345678 - 2016"))
-  def buildFakeRequestWithSessionIdOTHER(method: String) = FakeRequest().withSession(("sessionId" -> "FAKE_SESSION_ID"),("screenSchemeInfo" -> "3 - OTHER - MYScheme - XX12345678 - 2016"))
+  def buildFakeRequestWithSessionId(method: String = "pointless") = FakeRequest()
+    .withSession("sessionId" -> "FAKE_SESSION_ID","screenSchemeInfo" -> "2 - EMI - MYScheme - XX12345678 - 2016")
+
+  def buildFakeRequestWithNoScreenScheemeInfo(method: String) = FakeRequest()
+    .withSession("sessionId" -> "FAKE_SESSION_ID")
+
+  def buildFakeRequestWithBrokenScreenScheemeInfo(method: String) = FakeRequest()
+    .withSession("sessionId" -> "FAKE_SESSION_ID", "screenSchemeInfo" -> "-")
+
+  def buildFakeRequestWithSessionIdCSOP(method: String) = FakeRequest()
+    .withSession("sessionId" -> "FAKE_SESSION_ID", "screenSchemeInfo" -> "1 - CSOP - MYScheme - XX12345678 - 2016")
+
+  def buildFakeRequestWithSessionIdSAYE(method: String) = FakeRequest()
+    .withSession("sessionId" -> "FAKE_SESSION_ID", "screenSchemeInfo" -> "4 - SAYE - MYScheme - XX12345678 - 2016")
+
+  def buildFakeRequestWithSessionIdSIP(method: String) = FakeRequest()
+    .withSession("sessionId" -> "FAKE_SESSION_ID", "screenSchemeInfo" -> "5 - SIP - MYScheme - XX12345678 - 2016")
+
+  def buildFakeRequestWithSessionIdEMI(method: String) = FakeRequest()
+    .withSession("sessionId" -> "FAKE_SESSION_ID", "screenSchemeInfo" -> "2 - EMI - MYScheme - XX12345678 - 2016")
+
+  def buildFakeRequestWithSessionIdOTHER(method: String) = FakeRequest()
+    .withSession("sessionId" -> "FAKE_SESSION_ID", "screenSchemeInfo" -> "3 - OTHER - MYScheme - XX12345678 - 2016")
+
   def buildFakeRequest(method: String) = FakeRequest()
 
   def fetchAndGetMockScheme(): Future[Option[String]] = {
