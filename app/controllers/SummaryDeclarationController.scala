@@ -45,10 +45,12 @@ trait SummaryDeclarationController extends ERSReturnBaseController with Authenti
   def summaryDeclarationPage(): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        showSummaryDeclarationPage()(user, request, hc)
+        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
+          showSummaryDeclarationPage(requestObject)(user, request, hc)
+        }
   }
 
-  def showSummaryDeclarationPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showSummaryDeclarationPage(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
     cacheUtil.fetchAll(schemeRef).flatMap { all =>
       val schemeOrganiser: SchemeOrganiserDetails = all.getEntry[SchemeOrganiserDetails](CacheUtil.SCHEME_ORGANISER_CACHE).get
@@ -79,7 +81,7 @@ trait SummaryDeclarationController extends ERSReturnBaseController with Authenti
         case PageBuilder.SCHEME_CSOP | PageBuilder.SCHEME_SIP | PageBuilder.SCHEME_SAYE => altAmendsActivity.altActivity
         case _ => ""
       }
-      Future(Ok(views.html.summary(reportableEvents, fileType, fileNames, fileCount, groupScheme, schemeOrganiser,
+      Future(Ok(views.html.summary(requestObject, reportableEvents, fileType, fileNames, fileCount, groupScheme, schemeOrganiser,
         getCompDetails(all), altActivity, getAltAmends(all), getTrustees(all))))
     } recover {
       case e: Throwable => Logger.error(s"showSummaryDeclarationPage failed to fetch data with exception ${e.getMessage}.", e)
