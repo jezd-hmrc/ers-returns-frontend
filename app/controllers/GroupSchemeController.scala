@@ -45,19 +45,23 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
   }
 
   def showManualCompanyDetailsPage(index: Int)(implicit authContext: AuthContext, request: Request[AnyContent]): Future[Result] = {
-    Future(Ok(views.html.manual_company_details(index, RsFormMappings.companyDetailsForm)))
+    cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).map { requestObject =>
+      Ok(views.html.manual_company_details(requestObject, index, RsFormMappings.companyDetailsForm))
+    }
   }
 
   def manualCompanyDetailsSubmit(index: Int) = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        showManualCompanyDetailsSubmit(index)(user, request)
+        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
+          showManualCompanyDetailsSubmit(requestObject, index)(user, request)
+        }
   }
 
-  def showManualCompanyDetailsSubmit(index: Int)(implicit authContext: AuthContext, request: Request[AnyRef]): Future[Result] = {
+  def showManualCompanyDetailsSubmit(requestObject: RequestObject, index: Int)(implicit authContext: AuthContext, request: Request[AnyRef]): Future[Result] = {
     RsFormMappings.companyDetailsForm.bindFromRequest.fold(
       errors => {
-        Future(Ok(views.html.manual_company_details(index, errors)))
+        Future(Ok(views.html.manual_company_details(requestObject, index, errors)))
       },
       successful => {
         val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
@@ -155,10 +159,12 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
   def editCompany(id: Int) = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        showEditCompany(id)(user, request, hc)
+        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
+          showEditCompany(requestObject, id)(user, request, hc)
+        }
   }
 
-  def showEditCompany(id: Int)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showEditCompany(requestObject: RequestObject, id: Int)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
     cacheUtil.fetch[CompanyDetailsList](CacheUtil.GROUP_SCHEME_COMPANIES, schemeRef).map { companies =>
       var companyDetails: CompanyDetails = CompanyDetails(PageBuilder.DEFAULT, PageBuilder.DEFAULT, Some(PageBuilder.DEFAULT), Some(PageBuilder.DEFAULT), Some(PageBuilder.DEFAULT), Some(PageBuilder.DEFAULT), Some(PageBuilder.DEFAULT), Some(PageBuilder.DEFAULT), Some(PageBuilder.DEFAULT))
@@ -177,7 +183,7 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
           )
         }
       }
-      Ok(views.html.manual_company_details(id, RsFormMappings.companyDetailsForm.fill(companyDetails)))
+      Ok(views.html.manual_company_details(requestObject, id, RsFormMappings.companyDetailsForm.fill(companyDetails)))
     } recover {
       case e: NoSuchElementException => {
         Logger.error(s"Fetch group scheme companies for edit failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
@@ -272,13 +278,15 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
   def groupPlanSummaryPage() = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        showGroupPlanSummaryPage()(user, request, hc)
+        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
+          showGroupPlanSummaryPage(requestObject)(user, request, hc)
+        }
   }
 
-  def showGroupPlanSummaryPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showGroupPlanSummaryPage(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
     cacheUtil.fetch[CompanyDetailsList](CacheUtil.GROUP_SCHEME_COMPANIES, schemeRef).map { compDetails =>
-      Ok(views.html.group_plan_summary(OPTION_MANUAL, compDetails))
+      Ok(views.html.group_plan_summary(requestObject, OPTION_MANUAL, compDetails))
     } recover {
       case e: NoSuchElementException => {
         Logger.error(s"Fetch group scheme companies before call to group plan summary page failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")

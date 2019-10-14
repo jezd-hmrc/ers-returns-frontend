@@ -82,6 +82,8 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
 
   "showManualCompanyDetailsPage" should {
     "display company details page for correct scheme" in {
+      when(mockCacheUtil.fetch[RequestObject](refEq(mockCacheUtil.ersRequestObject))(any(), any(), any(), any())).thenReturn(Future.successful(ersRequestObject))
+
       val result = await(testGroupSchemeController.showManualCompanyDetailsPage(1)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET")))
       status(result) shouldBe OK
       bodyOf(result).contains(Messages("ers_manual_company_details.csop.title"))
@@ -115,7 +117,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
     }
 
     "display error if showManualCompanyDetailsSubmit is called with authentication and form errors" in {
-      val result = testGroupSchemeController.showManualCompanyDetailsSubmit(1000)(Fixtures.buildFakeUser, buildCompanyDetailsRequest(isValid = false))
+      val result = testGroupSchemeController.showManualCompanyDetailsSubmit(ersRequestObject, 1000)(Fixtures.buildFakeUser, buildCompanyDetailsRequest(isValid = false))
       status(result) shouldBe OK
       bodyOf(result).contains(Messages("validation.summary.heading")) shouldBe true
     }
@@ -131,7 +133,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
       ).thenReturn(
         mock[CacheMap]
       )
-      val result = testGroupSchemeController.showManualCompanyDetailsSubmit(10000)(Fixtures.buildFakeUser, buildCompanyDetailsRequest(isValid = true))
+      val result = testGroupSchemeController.showManualCompanyDetailsSubmit(ersRequestObject, 10000)(Fixtures.buildFakeUser, buildCompanyDetailsRequest(isValid = true))
       status(result) shouldBe SEE_OTHER
       headers(result).get("Location").get.contains("/group-summary")
     }
@@ -148,7 +150,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
       ).thenReturn(
         mock[CacheMap]
       )
-      val result = testGroupSchemeController.showManualCompanyDetailsSubmit(1)(Fixtures.buildFakeUser, buildCompanyDetailsRequest(isValid = true))
+      val result = testGroupSchemeController.showManualCompanyDetailsSubmit(ersRequestObject, 1)(Fixtures.buildFakeUser, buildCompanyDetailsRequest(isValid = true))
       status(result) shouldBe SEE_OTHER
       headers(result).get("Location").get.contains("/group-summary")
     }
@@ -164,7 +166,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
       ).thenReturn(
         mock[CacheMap]
       )
-      val result = testGroupSchemeController.showManualCompanyDetailsSubmit(0)(Fixtures.buildFakeUser, buildCompanyDetailsRequest(isValid = true))
+      val result = testGroupSchemeController.showManualCompanyDetailsSubmit(ersRequestObject, 0)(Fixtures.buildFakeUser, buildCompanyDetailsRequest(isValid = true))
       status(result) shouldBe SEE_OTHER
       headers(result).get("Location").get.contains("/group-summary")
     }
@@ -181,7 +183,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
       ).thenReturn(
         mock[CacheMap]
       )
-      val result = testGroupSchemeController.showManualCompanyDetailsSubmit(1000)(Fixtures.buildFakeUser, buildCompanyDetailsRequest(isValid = true))
+      val result = testGroupSchemeController.showManualCompanyDetailsSubmit(ersRequestObject, 1000)(Fixtures.buildFakeUser, buildCompanyDetailsRequest(isValid = true))
       status(result) shouldBe SEE_OTHER
       headers(result).get("Location").get.contains("/group-summary")
     }
@@ -257,7 +259,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
       ).thenReturn(
         Future.failed(new NoSuchElementException("Nothing in cache"))
       )
-      val result = await(testGroupSchemeController.showEditCompany(0)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
+      val result = await(testGroupSchemeController.showEditCompany(ersRequestObject, 0)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
       status(result) shouldBe OK
       bodyOf(result).contains(Messages("ers.global_errors.title")) shouldBe true
     }
@@ -268,7 +270,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
       ).thenReturn(
         Future.successful(companyDetailsList)
       )
-      val result = await(testGroupSchemeController.showEditCompany(0)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+      val result = await(testGroupSchemeController.showEditCompany(ersRequestObject, 0)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       status(result) shouldBe OK
       bodyOf(result).contains(Messages("ers_manual_company_details.csop.title"))
     }
@@ -497,7 +499,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
       ).thenReturn(
         Future.failed(new NoSuchElementException("Nothing in cache"))
       )
-      val result = await(testGroupSchemeController.showGroupPlanSummaryPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
+      val result = await(testGroupSchemeController.showGroupPlanSummaryPage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
       status(result) shouldBe OK
       bodyOf(result).contains(Messages("ers.global_errors.title")) shouldBe true
     }
@@ -508,7 +510,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
       ).thenReturn(
         Future.successful(companyDetailsList)
       )
-      val result = await(testGroupSchemeController.showGroupPlanSummaryPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+      val result = await(testGroupSchemeController.showGroupPlanSummaryPage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       status(result) shouldBe OK
       bodyOf(result).contains(Messages("ers_group_summary.csop.title"))
     }
