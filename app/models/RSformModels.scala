@@ -116,17 +116,17 @@ case class RequestObject(
   def getPageTitle()(implicit messages: Messages) =
     s"${messages(s"ers.scheme.$getSchemeType")} - ${messages(s"ers.scheme.title", getSchemeName)} - $getSchemeReference - ${DateUtils.getFullTaxYear(getTaxYear)}"
 
-  def getAORef() = aoRef.get
+  def getAORef() = aoRef.getOrElse("")
 
-  def getTaxYear() = taxYear.get
+  def getTaxYear() = taxYear.getOrElse("")
 
-  def getSchemeReference() = ersSchemeRef.get
+  def getSchemeReference() = ersSchemeRef.getOrElse("")
 
-  def getSchemeName() = schemeName.get
+  def getSchemeName() = schemeName.getOrElse("")
 
-  def getSchemeType() = schemeType.get
+  def getSchemeType() = schemeType.getOrElse("")
 
-  def getAgentRef() = agentRef.get
+  def getAgentRef() = agentRef.getOrElse("")
 
   def getEmpRef() = empRef.getOrElse("")
 

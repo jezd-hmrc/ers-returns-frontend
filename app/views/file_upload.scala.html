@@ -14,7 +14,7 @@
  * limitations under the License.
  *@
 
-@(uploadForm: Html)(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
+@(requestObject: RequestObject, uploadForm: Html)(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
 
 @import views.html.templates._
 
@@ -24,7 +24,7 @@
 
 @ers_main(title = Messages("ers.upload_ods_file.page_title"), scripts) {
 
-	@reference()
+	@reference(requestObject.getPageTitle)
 	<p class="font-xsmall"><a href="@routes.CheckFileTypeController.checkFileTypePage" class="link-back">@Html(Messages("ers.back"))</a></p>
 	@header(Messages("file_upload.title"))
 

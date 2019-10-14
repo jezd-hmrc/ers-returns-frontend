@@ -44,25 +44,30 @@ trait FileUploadController extends FrontendController with Authenticator with Le
   def uploadFilePage(): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        attachmentsConnector.getFileUploadPartial().map {
-          Logger.info(s"uploadFilePage: Response recieved from Attachments for partial, timestamp: ${System.currentTimeMillis()}.")
-          partial => Ok(file_upload(Html(partial.body)))
+      cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap{ responseObject =>
+    attachmentsConnector.getFileUploadPartial().map {
+          Logger.info(s"uploadFilePage: Response received from Attachments for partial, timestamp: ${System.currentTimeMillis()}.")
+          partial =>
+              Ok(file_upload(responseObject, Html(partial.body)))
+            }
         }
   }
 
   def success(): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        showSuccess()
+        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { responseObject =>
+          showSuccess(responseObject)
+        }
   }
 
 
-  def showSuccess()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
+  def showSuccess(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+    val scRef = requestObject.getSchemeReference
     Logger.info("success: Attachments Success: " + (System.currentTimeMillis() / 1000))
     sessionService.retrieveCallbackData().flatMap { callbackData =>
       cacheUtil.cache[String](CacheUtil.FILE_NAME_CACHE, callbackData.get.name.get, scRef).map { cached =>
-        Ok(views.html.success(None, Some(callbackData.get.name.get)))
+        Ok(views.html.success(requestObject, None, Some(callbackData.get.name.get)))
       } recover {
         case e: Exception => {
           Logger.error(s"success: failed to save ods filename with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
@@ -117,10 +122,12 @@ trait FileUploadController extends FrontendController with Authenticator with Le
         Logger.info("validationFailure: Validation Failure: " + (System.currentTimeMillis() / 1000))
         val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
         cacheUtil.fetch[CheckFileType](CacheUtil.FILE_TYPE_CACHE, scRef).flatMap { fileType =>
-          cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, scRef).map { all =>
-            val scheme: String = all.schemeInfo.schemeId
-            val schemeName: String = all.schemeInfo.schemeName
-            Ok(views.html.file_upload_errors(scheme, schemeName, scRef, fileType.checkFileType.get))
+          cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, scRef).flatMap { all =>
+            cacheUtil.fetch[RequestObject](CacheUtil.ersRequestObject).map { requestObject =>
+              val scheme: String = all.schemeInfo.schemeId
+              val schemeName: String = all.schemeInfo.schemeName
+              Ok(views.html.file_upload_errors(requestObject, scheme, schemeName, scRef, fileType.checkFileType.get))
+            }
           }
         }
   }

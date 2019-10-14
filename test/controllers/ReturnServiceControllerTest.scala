@@ -35,7 +35,7 @@ import play.api.i18n.Messages
 import play.api.i18n.Messages.Implicits._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json
-import play.api.libs.json.Json
+import play.api.libs.json.{JsString, Json}
 import play.api.mvc.Request
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers}
@@ -45,7 +45,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 import utils.ContentUtil._
 import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpPost, HttpResponse}
 
 
@@ -87,8 +87,8 @@ class ReturnServiceControllerTest extends UnitSpec with ERSFakeApplicationConfig
     override val cacheUtil: CacheUtil = new CacheUtil {
       override val sessionService: SessionService = mockSessionCache
 
-      override def cache[T](key: String, body: T, cacheId: String)(implicit hc: HeaderCarrier, formats: json.Format[T], request: Request[AnyRef]) = {
-        Future.successful()
+      override def cache[T](key: String, body: T)(implicit hc:HeaderCarrier, ec:ExecutionContext, formats: json.Format[T], request: Request[AnyRef]) = {
+        Future.successful(CacheMap("1", Map(key -> JsString("result"))))
       }
 
       @throws(classOf[NoSuchElementException])
@@ -139,8 +139,9 @@ class ReturnServiceControllerTest extends UnitSpec with ERSFakeApplicationConfig
       val empRef: Option[String] = Option("empRef")
       val ts: Option[String] = None
       val hmac: Option[String] = Option("hmac")
-      val ersRequestObject = new RequestObject(aoRef, taxYear, ersSchemeRef, schemeName, schemeType, agentRef, empRef, ts, hmac)
-      val result = controllerUnderTest.cacheParams(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc)
+      val ersRequestObject = RequestObject(aoRef, taxYear, ersSchemeRef, schemeName, schemeType, agentRef, empRef, ts, hmac)
+
+      val result = controllerUnderTest.cacheParams(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
       status(result) shouldBe Status.OK
       val document = Jsoup.parse(contentAsString(result))
       val scheme = "1"
@@ -162,7 +163,7 @@ class ReturnServiceControllerTest extends UnitSpec with ERSFakeApplicationConfig
       val ts: Option[String] = None
       val hmac: Option[String] = Option("hmac")
       val ersRequestObject = new RequestObject(aoRef, taxYear, ersSchemeRef, schemeName, schemeType, agentRef, empRef, ts, hmac)
-      val result = controllerUnderTest.cacheParams(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc)
+      val result = controllerUnderTest.cacheParams(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
       status(result) shouldBe Status.OK
     }
   }

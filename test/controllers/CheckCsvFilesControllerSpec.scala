@@ -42,13 +42,17 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
   implicit lazy val materializer: Materializer = app.materializer
   implicit lazy val messages: Messages = Messages(Lang("en"), app.injector.instanceOf[MessagesApi])
 
+  val testString = Some("test")
+
+  val testRequestObject: RequestObject = RequestObject(testString, testString, testString, testString, testString, testString, testString, testString, testString)
+
   "calling checkCsvFilesPage" should {
 
     val checkCsvFilesController: CheckCsvFilesController = new CheckCsvFilesController {
       override val cacheUtil: CacheUtil = mock[CacheUtil]
       override val pageBuilder: PageBuilder = mock[PageBuilder]
 
-      override def showCheckCsvFilesPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future.successful(Ok)
+      override def showCheckCsvFilesPage(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future.successful(Ok)
     }
 
     "redirect to company authentication frontend if user is not authenticated" in {
@@ -76,7 +80,7 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
       ).thenReturn(
         Future.successful(mock[CsvFilesCallbackList])
       )
-      val result = await(checkCsvFilesController.showCheckCsvFilesPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+      val result = await(checkCsvFilesController.showCheckCsvFilesPage(testRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       status(result) shouldBe OK
     }
 
@@ -87,7 +91,7 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
       ).thenReturn(
         Future.failed(new NoSuchElementException)
       )
-      val result = await(checkCsvFilesController.showCheckCsvFilesPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+      val result = await(checkCsvFilesController.showCheckCsvFilesPage(testRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       status(result) shouldBe OK
     }
 
@@ -98,7 +102,7 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
       ).thenReturn(
         Future.failed(new Exception)
       )
-      val result = await(checkCsvFilesController.showCheckCsvFilesPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+      val result = await(checkCsvFilesController.showCheckCsvFilesPage(testRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       contentAsString(result) shouldBe contentAsString(checkCsvFilesController.getGlobalErrorPage)
       contentAsString(result) should include(messages("ers.global_errors.message"))
     }
@@ -164,6 +168,7 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
       override val pageBuilder: PageBuilder = mock[PageBuilder]
 
       override def performCsvFilesPageSelected(formData: CsvFilesList)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future.successful(Ok)
+
     }
 
     "return the result of performCsvFilesPageSelected if data is valid" in {

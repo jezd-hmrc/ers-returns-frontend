@@ -49,6 +49,10 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
   implicit lazy val mat: Materializer = app.materializer
   implicit lazy val messages: Messages = Messages(Lang("en"), app.injector.instanceOf[MessagesApi])
 
+  val testString = Some("test")
+
+  val testRequestObject: RequestObject = RequestObject(testString, testString, testString, testString, testString, testString, testString, testString, testString)
+
   val mockAuthConnector = mock[AuthConnector]
 
   "calling uploadFilePage" should {
@@ -61,7 +65,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
       override val ersConnector: ErsConnector = mock[ErsConnector]
       override val cacheUtil: CacheUtil = mock[CacheUtil]
 
-      override def showUploadFilePage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Ok
+      override def showUploadFilePage(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Ok
     }
 
     "redirect for unauthorised users to login page" in {
@@ -92,7 +96,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
       override val ersConnector: ErsConnector = mock[ErsConnector]
       override val cacheUtil: CacheUtil = mockCacheUtil
 
-      override def showAttachmentsPartial(csvFilesList: List[CsvFilesCallback])(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future.successful(Ok)
+      override def showAttachmentsPartial(requestObject: RequestObject, csvFilesList: List[CsvFilesCallback])(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future.successful(Ok)
     }
 
     "direct to ers errors page if fetching from cache fails" in {
@@ -103,7 +107,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
         Future.failed(new RuntimeException)
       )
 
-      contentAsString(await(csvFileUploadController.showUploadFilePage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))) shouldBe contentAsString(csvFileUploadController.getGlobalErrorPage)
+      contentAsString(await(csvFileUploadController.showUploadFilePage(testRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))) shouldBe contentAsString(csvFileUploadController.getGlobalErrorPage)
     }
 
     "return the result of showAttachmentsPartial if fetching from cache is successful" in {
@@ -114,7 +118,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
         Future.successful(CsvFilesCallbackList(List()))
       )
 
-      val result = await(csvFileUploadController.showUploadFilePage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+      val result = await(csvFileUploadController.showUploadFilePage(testRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       status(result) shouldBe OK
     }
 
@@ -141,7 +145,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
         Future.failed(new RuntimeException)
       )
 
-      contentAsString(await(csvFileUploadController.showAttachmentsPartial(List())(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))) shouldBe contentAsString(csvFileUploadController.getGlobalErrorPage)
+      contentAsString(await(csvFileUploadController.showAttachmentsPartial(testRequestObject, List())(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))) shouldBe contentAsString(csvFileUploadController.getGlobalErrorPage)
     }
 
     "returns OK if getting partial from attachments is successful" in {
@@ -152,7 +156,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
         Future.successful(HttpResponse(OK, Some(Json.obj())))
       )
 
-      val result = await(csvFileUploadController.showAttachmentsPartial(List())(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+      val result = await(csvFileUploadController.showAttachmentsPartial(testRequestObject, List())(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       status(result) shouldBe OK
     }
 
@@ -380,7 +384,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
       override val ersConnector: ErsConnector = mock[ErsConnector]
       override val cacheUtil: CacheUtil = mock[CacheUtil]
 
-      override def processValidationFailure()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Ok)
+      override def processValidationFailure(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Ok)
     }
 
     "redirect for unauthorised users to login page" in {
@@ -425,7 +429,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
         Future.successful(CheckFileType(Some("csv")))
       )
 
-      val result = await(csvFileUploadController.processValidationFailure()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+      val result = await(csvFileUploadController.processValidationFailure(testRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       status(result) shouldBe OK
 
     }
@@ -439,7 +443,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
       )
 
       intercept[Exception] {
-        await(csvFileUploadController.processValidationFailure()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+        await(csvFileUploadController.processValidationFailure(testRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       }
 
     }

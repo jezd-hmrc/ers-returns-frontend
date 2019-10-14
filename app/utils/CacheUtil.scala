@@ -90,8 +90,6 @@ trait CacheUtil {
 
   val VALIDATED_SHEEETS: String = "validated-sheets"
 
-  private val sourceId: String = "ers-eoy"
-
   def shortLivedCache: ShortLivedCache
 
   def cache[T](key:String, body:T)(implicit hc:HeaderCarrier, ec:ExecutionContext, formats: json.Format[T], request: Request[AnyRef]) = {

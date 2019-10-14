@@ -14,13 +14,13 @@
  * limitations under the License.
  *@
 
-@(csvFilesList: CsvFilesList)(implicit request: Request[AnyRef], flash: Flash, context: config.ErsContext, messages: Messages)
+@(requestObject: RequestObject, csvFilesList: CsvFilesList)(implicit request: Request[AnyRef], flash: Flash, context: config.ErsContext, messages: Messages)
 @import views.html.templates._
 @import utils.PageBuilder._
-@schemeId = @{request.session.get("screenSchemeInfo").get.split(" - ").head}
+@schemeId = @{requestObject.getSchemeId}
 
 @ers_main(title = Messages("ers.choose_csv_files.page_title")) {
-    @reference()
+    @reference(requestObject.getPageTitle)
     <p class="font-xsmall"><a href="@routes.CheckFileTypeController.checkFileTypePage" class="link-back">@Html(Messages("ers.back"))</a></p>
     @header(Messages("ers_check_csv_file.title"))
 

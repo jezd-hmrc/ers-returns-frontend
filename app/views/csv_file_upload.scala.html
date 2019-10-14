@@ -14,8 +14,8 @@
  * limitations under the License.
  *@
 
-@(uploadForm: Html, csvFilesCallback: List[CsvFilesCallback])(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
-@schemeId = @{request.session.get("screenSchemeInfo").get.split(" - ").head}
+@(requestObject: RequestObject, uploadForm: Html, csvFilesCallback: List[CsvFilesCallback])(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
+@schemeId = @{requestObject.getSchemeId}
 @import utils.PageBuilder._
 @import views.html.templates._
 
@@ -37,7 +37,7 @@
 
 @ers_main(title = pageTitle.toString, scripts) {
 
-    @reference()
+    @reference(requestObject.getPageTitle)
     <p class="font-xsmall"><a href="@routes.CheckCsvFilesController.checkCsvFilesPage" class="link-back">@Html(Messages("ers.back"))</a></p>
     @if(csvFilesCallback.count(_.callbackData.isDefined) == 0) {
         @if(csvFilesCallback.map(_.fileId).size == 1) {
