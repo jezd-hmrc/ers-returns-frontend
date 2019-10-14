@@ -35,16 +35,13 @@ import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures, PageBuilder}
 
 import scala.concurrent.Future
 import uk.gov.hmrc.http.HeaderCarrier
+import utils.Fixtures.ersRequestObject
 
 class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with OneAppPerSuite {
 
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val materializer: Materializer = app.materializer
   implicit lazy val messages: Messages = Messages(Lang("en"), app.injector.instanceOf[MessagesApi])
-
-  val testString = Some("test")
-
-  val testRequestObject: RequestObject = RequestObject(testString, testString, testString, testString, testString, testString, testString, testString, testString)
 
   "calling checkCsvFilesPage" should {
 
@@ -80,7 +77,7 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
       ).thenReturn(
         Future.successful(mock[CsvFilesCallbackList])
       )
-      val result = await(checkCsvFilesController.showCheckCsvFilesPage(testRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+      val result = await(checkCsvFilesController.showCheckCsvFilesPage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       status(result) shouldBe OK
     }
 
@@ -91,7 +88,7 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
       ).thenReturn(
         Future.failed(new NoSuchElementException)
       )
-      val result = await(checkCsvFilesController.showCheckCsvFilesPage(testRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+      val result = await(checkCsvFilesController.showCheckCsvFilesPage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       status(result) shouldBe OK
     }
 
@@ -102,7 +99,7 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
       ).thenReturn(
         Future.failed(new Exception)
       )
-      val result = await(checkCsvFilesController.showCheckCsvFilesPage(testRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+      val result = await(checkCsvFilesController.showCheckCsvFilesPage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       contentAsString(result) shouldBe contentAsString(checkCsvFilesController.getGlobalErrorPage)
       contentAsString(result) should include(messages("ers.global_errors.message"))
     }

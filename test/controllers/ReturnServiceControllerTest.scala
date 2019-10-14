@@ -47,6 +47,7 @@ import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures}
 
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpPost, HttpResponse}
+import utils.Fixtures.ersRequestObject
 
 
 class ReturnServiceControllerTest extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with OneAppPerSuite {
@@ -60,17 +61,6 @@ class ReturnServiceControllerTest extends UnitSpec with ERSFakeApplicationConfig
   lazy val ExpectedRedirectionUrlIfNotSignedIn = "/gg/sign-in?continue=/submit-your-ers-return"
   lazy val schemeInfo = SchemeInfo("XA1100000000000", DateTime.now, "1", "2016", "EMI", "EMI")
   lazy val rsc: ErsMetaData = new ErsMetaData(schemeInfo, "ipRef", Some("aoRef"), "empRef", Some("agentRef"), Some("sapNumber"))
-
-  val aoRef: Option[String] = Option("123AA12345678")
-  val taxYear: Option[String] = Option("2014/15")
-  val ersSchemeRef: Option[String] = Option("AA0000000000000")
-  val schemeType: Option[String] = Option("CSOP")
-  val schemeName: Option[String] = Option("MyScheme")
-  val agentRef: Option[String] = None
-  val empRef: Option[String] = Option("empRef")
-  val ts: Option[String] = None
-  val hmac: Option[String] = Option("hmac")
-  val ersRequestObject = new RequestObject(aoRef, taxYear, ersSchemeRef, schemeName, schemeType, agentRef, empRef, ts, hmac)
 
   def buildFakeReturnServiceController(accessThresholdValue: Int = 100) = new ReturnServiceController {
 
@@ -130,22 +120,11 @@ class ReturnServiceControllerTest extends UnitSpec with ERSFakeApplicationConfig
     "retrieve the stored cache and redirect to the initial start page" in {
       val controllerUnderTest = buildFakeReturnServiceController()
       controllerUnderTest.fetchMapVal = "withMatchingSchemeRef"
-      val aoRef: Option[String] = Option("123AA12345678")
-      val taxYear: Option[String] = Option("2014/15")
-      val ersSchemeRef: Option[String] = Option("AA0000000000000")
-      val schemeType: Option[String] = Option("CSOP")
-      val schemeName: Option[String] = Option("MyScheme")
-      val agentRef: Option[String] = None
-      val empRef: Option[String] = Option("empRef")
-      val ts: Option[String] = None
-      val hmac: Option[String] = Option("hmac")
-      val ersRequestObject = RequestObject(aoRef, taxYear, ersSchemeRef, schemeName, schemeType, agentRef, empRef, ts, hmac)
 
       val result = controllerUnderTest.cacheParams(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
       status(result) shouldBe Status.OK
       val document = Jsoup.parse(contentAsString(result))
-      val scheme = "1"
-      document.getElementsByTag("h1").text() should include(Messages("ers_start.page_title", getSchemeName(scheme)))
+      document.getElementsByTag("h1").text() should include(Messages("ers_start.page_title", ersRequestObject.getSchemeName))
     }
   }
 
@@ -153,16 +132,7 @@ class ReturnServiceControllerTest extends UnitSpec with ERSFakeApplicationConfig
     "create a new cache object and redirect to the initial start page" in {
       val controllerUnderTest = buildFakeReturnServiceController()
       controllerUnderTest.fetchMapVal = "withNonMatchingSchemeRef"
-      val aoRef: Option[String] = Option("123AA12345678")
-      val taxYear: Option[String] = Option("2014/15")
-      val ersSchemeRef: Option[String] = Option("AA0000000000000")
-      val schemeType: Option[String] = Option("CSOP")
-      val schemeName: Option[String] = Option("MyScheme")
-      val agentRef: Option[String] = None
-      val empRef: Option[String] = Option("empRef")
-      val ts: Option[String] = None
-      val hmac: Option[String] = Option("hmac")
-      val ersRequestObject = new RequestObject(aoRef, taxYear, ersSchemeRef, schemeName, schemeType, agentRef, empRef, ts, hmac)
+
       val result = controllerUnderTest.cacheParams(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
       status(result) shouldBe Status.OK
     }

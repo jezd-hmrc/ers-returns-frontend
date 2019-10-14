@@ -36,6 +36,7 @@ import play.api.test.Helpers._
 import uk.gov.hmrc.http.cache.client.CacheMap
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.test.UnitSpec
+import utils.Fixtures.ersRequestObject
 import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures, PageBuilder}
 
 import scala.concurrent.Future
@@ -294,7 +295,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
       ).thenReturn(
         Future.failed(new NoSuchElementException("Nothing in cache"))
       )
-      val result = await(testGroupSchemeController.showGroupSchemePage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
+      val result = await(testGroupSchemeController.showGroupSchemePage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
       status(result) shouldBe OK
       val document = Jsoup.parse(contentAsString(result))
       document.select("input[id=yes]").hasAttr("checked") shouldEqual false
@@ -308,7 +309,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
           GroupSchemeInfo(Option(PageBuilder.OPTION_YES), None)
         )
       )
-      val result = await(testGroupSchemeController.showGroupSchemePage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
+      val result = await(testGroupSchemeController.showGroupSchemePage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
       status(result) shouldBe OK
       val document = Jsoup.parse(contentAsString(result))
       document.select("input[id=yes]").hasAttr("checked") shouldEqual true
@@ -349,7 +350,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
 
     "display errors if invalid data is sent" in {
       val request = buildGroupSchemeSelectedRequest(None, "CSOP")
-      val result = testGroupSchemeController.showGroupSchemeSelected(PageBuilder.SCHEME_CSOP)(Fixtures.buildFakeUser, request)
+      val result = testGroupSchemeController.showGroupSchemeSelected(ersRequestObject, PageBuilder.SCHEME_CSOP)(Fixtures.buildFakeUser, request)
       status(result) shouldBe OK
       bodyOf(result).contains(Messages("validation.summary.heading")) shouldBe true
     }
@@ -361,7 +362,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
         mock[CacheMap]
       )
       val request = buildGroupSchemeSelectedRequest(Some(true), "CSOP")
-      val result = testGroupSchemeController.showGroupSchemeSelected(PageBuilder.SCHEME_CSOP)(Fixtures.buildFakeUser, request)
+      val result = testGroupSchemeController.showGroupSchemeSelected(ersRequestObject, PageBuilder.SCHEME_CSOP)(Fixtures.buildFakeUser, request)
       status(result) shouldBe SEE_OTHER
       headers(result).get("Location").get.contains("/add-company-details-manually")
     }
@@ -373,7 +374,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
         mock[CacheMap]
       )
       val request = buildGroupSchemeSelectedRequest(Some(false), "CSOP")
-      val result = testGroupSchemeController.showGroupSchemeSelected(PageBuilder.SCHEME_CSOP)(Fixtures.buildFakeUser, request)
+      val result = testGroupSchemeController.showGroupSchemeSelected(ersRequestObject, PageBuilder.SCHEME_CSOP)(Fixtures.buildFakeUser, request)
       status(result) shouldBe SEE_OTHER
       headers(result).get("Location").get.contains("/alterations")
     }
@@ -385,7 +386,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
         mock[CacheMap]
       )
       val request = buildGroupSchemeSelectedRequest(Some(true), "SAYE")
-      val result = testGroupSchemeController.showGroupSchemeSelected(PageBuilder.SCHEME_SAYE)(Fixtures.buildFakeUser, request)
+      val result = testGroupSchemeController.showGroupSchemeSelected(ersRequestObject, PageBuilder.SCHEME_SAYE)(Fixtures.buildFakeUser, request)
       status(result) shouldBe SEE_OTHER
       headers(result).get("Location").get.contains("/add-company-details-manually")
     }
@@ -397,7 +398,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
         mock[CacheMap]
       )
       val request = buildGroupSchemeSelectedRequest(Some(false), "SAYE")
-      val result = testGroupSchemeController.showGroupSchemeSelected(PageBuilder.SCHEME_SAYE)(Fixtures.buildFakeUser, request)
+      val result = testGroupSchemeController.showGroupSchemeSelected(ersRequestObject, PageBuilder.SCHEME_SAYE)(Fixtures.buildFakeUser, request)
       status(result) shouldBe SEE_OTHER
       headers(result).get("Location").get.contains("/alterations")
     }
@@ -409,7 +410,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
         mock[CacheMap]
       )
       val request = buildGroupSchemeSelectedRequest(Some(true), "EMI")
-      val result = testGroupSchemeController.showGroupSchemeSelected(PageBuilder.SCHEME_EMI)(Fixtures.buildFakeUser, request)
+      val result = testGroupSchemeController.showGroupSchemeSelected(ersRequestObject, PageBuilder.SCHEME_EMI)(Fixtures.buildFakeUser, request)
       status(result) shouldBe SEE_OTHER
       headers(result).get("Location").get.contains("/add-company-details-manually")
     }
@@ -421,7 +422,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
         mock[CacheMap]
       )
       val request = buildGroupSchemeSelectedRequest(Some(false), "EMI")
-      val result = testGroupSchemeController.showGroupSchemeSelected(PageBuilder.SCHEME_EMI)(Fixtures.buildFakeUser, request)
+      val result = testGroupSchemeController.showGroupSchemeSelected(ersRequestObject, PageBuilder.SCHEME_EMI)(Fixtures.buildFakeUser, request)
       status(result) shouldBe SEE_OTHER
       headers(result).get("Location").get.contains("/summary")
     }
@@ -433,7 +434,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
         mock[CacheMap]
       )
       val request = buildGroupSchemeSelectedRequest(Some(true), "SIP")
-      val result = testGroupSchemeController.showGroupSchemeSelected(PageBuilder.SCHEME_SIP)(Fixtures.buildFakeUser, request)
+      val result = testGroupSchemeController.showGroupSchemeSelected(ersRequestObject, PageBuilder.SCHEME_SIP)(Fixtures.buildFakeUser, request)
       status(result) shouldBe SEE_OTHER
       headers(result).get("Location").get.contains("/add-company-details-manually")
     }
@@ -445,7 +446,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
         mock[CacheMap]
       )
       val request = buildGroupSchemeSelectedRequest(Some(false), "SIP")
-      val result = testGroupSchemeController.showGroupSchemeSelected(PageBuilder.SCHEME_SIP)(Fixtures.buildFakeUser, request)
+      val result = testGroupSchemeController.showGroupSchemeSelected(ersRequestObject, PageBuilder.SCHEME_SIP)(Fixtures.buildFakeUser, request)
       status(result) shouldBe SEE_OTHER
       headers(result).get("Location").get.contains("/trustee-details")
     }
@@ -457,7 +458,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
         mock[CacheMap]
       )
       val request = buildGroupSchemeSelectedRequest(Some(true), "OTHER")
-      val result = testGroupSchemeController.showGroupSchemeSelected(PageBuilder.SCHEME_OTHER)(Fixtures.buildFakeUser, request)
+      val result = testGroupSchemeController.showGroupSchemeSelected(ersRequestObject, PageBuilder.SCHEME_OTHER)(Fixtures.buildFakeUser, request)
       status(result) shouldBe SEE_OTHER
       headers(result).get("Location").get.contains("/add-company-details-manually")
     }
@@ -469,7 +470,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
         mock[CacheMap]
       )
       val request = buildGroupSchemeSelectedRequest(Some(false), "OTHER")
-      val result = testGroupSchemeController.showGroupSchemeSelected(PageBuilder.SCHEME_OTHER)(Fixtures.buildFakeUser, request)
+      val result = testGroupSchemeController.showGroupSchemeSelected(ersRequestObject, PageBuilder.SCHEME_OTHER)(Fixtures.buildFakeUser, request)
       status(result) shouldBe SEE_OTHER
       headers(result).get("Location").get.contains("/summary")
     }

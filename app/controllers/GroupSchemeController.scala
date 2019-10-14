@@ -189,17 +189,19 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
   def groupSchemePage() = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        showGroupSchemePage()(user, request, hc)
+        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
+          showGroupSchemePage(requestObject)(user, request, hc)
+        }
   }
 
-  def showGroupSchemePage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showGroupSchemePage(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
     cacheUtil.fetch[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, schemeRef).map { groupSchemeInfo =>
-      Ok(views.html.group(groupSchemeInfo.groupScheme, RsFormMappings.groupForm.fill(RS_groupScheme(groupSchemeInfo.groupScheme))))
+      Ok(views.html.group(requestObject, groupSchemeInfo.groupScheme, RsFormMappings.groupForm.fill(RS_groupScheme(groupSchemeInfo.groupScheme))))
     } recover {
       case e: NoSuchElementException => {
         val form = RS_groupScheme(Some(""))
-        Ok(views.html.group(Some(PageBuilder.DEFAULT), RsFormMappings.groupForm.fill(form)))
+        Ok(views.html.group(requestObject, Some(PageBuilder.DEFAULT), RsFormMappings.groupForm.fill(form)))
       }
     }
   }
@@ -207,10 +209,12 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
   def groupSchemeSelected(scheme: String) = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        showGroupSchemeSelected(scheme)(user, request)
+        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
+          showGroupSchemeSelected(requestObject, scheme)(user, request)
+        }
   }
 
-  def showGroupSchemeSelected(scheme: String)(implicit authContext: AuthContext, request: Request[AnyRef]): Future[Result] = {
+  def showGroupSchemeSelected(requestObject: RequestObject, scheme: String)(implicit authContext: AuthContext, request: Request[AnyRef]): Future[Result] = {
     Logger.info(request.session.get(screenSchemeInfo).get.split(" - ").head)
     RsFormMappings.groupForm.bindFromRequest.fold(
       errors => {
@@ -218,7 +222,7 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
         val incorrectOrderGrouped = errors.errors.groupBy(_.key).map(_._2.head).toSeq
         val correctOrderGrouped = correctOrder.flatMap(x => incorrectOrderGrouped.find(_.key == x))
         val firstErrors: Form[models.RS_groupScheme] = new Form[RS_groupScheme](errors.mapping, errors.data, correctOrderGrouped, errors.value)
-        Future.successful(Ok(views.html.group(Some(""), firstErrors)))
+        Future.successful(Ok(views.html.group(requestObject, Some(""), firstErrors)))
       },
       formData => {
         val gsc: GroupSchemeInfo = GroupSchemeInfo(Some(formData.groupScheme.get),

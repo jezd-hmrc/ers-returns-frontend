@@ -35,6 +35,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.play.test.UnitSpec
+import utils.Fixtures.ersRequestObject
 import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures, PageBuilder}
 
 import scala.concurrent.Future
@@ -47,18 +48,6 @@ class SchemeOrganiserControllerTest extends UnitSpec with OneAppPerSuite with ER
 
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit val mat: Materializer = app.materializer
-
-  val aoRef: Option[String] = Option("123AA12345678")
-  val taxYear: Option[String] = Option("2014/15")
-  val ersSchemeRef: Option[String] = Option("AA0000000000000")
-  val schemeType: Option[String] = Option("CSOP")
-  val schemeName: Option[String] = Option("MyScheme")
-  val agentRef: Option[String] = None
-  val empRef: Option[String] = Option("empRef")
-  val ts: Option[String] = None
-  val hmac: Option[String] = Option("hmac")
-
-  val requestObject = RequestObject(aoRef, taxYear, ersSchemeRef, schemeName, schemeType, agentRef, empRef, ts, hmac)
 
   "calling Scheme Organiser Page" should {
 
@@ -115,14 +104,14 @@ class SchemeOrganiserControllerTest extends UnitSpec with OneAppPerSuite with ER
 
     "direct to ers errors page if fetching reportableEvents throws exception" in {
       val controllerUnderTest = buildFakeSchemeOrganiserController(reportableEventsRes = false)
-      val result = await(controllerUnderTest.showSchemeOrganiserPage(requestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+      val result = await(controllerUnderTest.showSchemeOrganiserPage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       contentAsString(result) should include(messages("ers.global_errors.message"))
       contentAsString(result) shouldBe contentAsString(buildFakeSchemeOrganiserController().getGlobalErrorPage)
     }
 
     "show blank scheme organiser page if fetching file type from cache fails" in {
       val controllerUnderTest = buildFakeSchemeOrganiserController(fileTypeRes = false)
-      val result = controllerUnderTest.showSchemeOrganiserPage(requestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
+      val result = controllerUnderTest.showSchemeOrganiserPage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
       status(result) shouldBe Status.OK
       val document = Jsoup.parse(contentAsString(result))
       document.select("input[id=company-name]").hasText shouldEqual false
@@ -131,7 +120,7 @@ class SchemeOrganiserControllerTest extends UnitSpec with OneAppPerSuite with ER
 
     "show blank scheme organiser page if fetching scheme organiser details from cache fails" in {
       val controllerUnderTest = buildFakeSchemeOrganiserController(schemeOrganiserDetailsRes = false)
-      val result = controllerUnderTest.showSchemeOrganiserPage(requestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
+      val result = controllerUnderTest.showSchemeOrganiserPage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
       status(result) shouldBe Status.OK
       val document = Jsoup.parse(contentAsString(result))
       document.select("input[id=company-name]").hasText shouldEqual false
@@ -140,7 +129,7 @@ class SchemeOrganiserControllerTest extends UnitSpec with OneAppPerSuite with ER
 
     "show filled out scheme organiser page if fetching scheme organiser details from cache is successful" in {
       val controllerUnderTest = buildFakeSchemeOrganiserController(schemeOrganiserDataCached = true)
-      val result = controllerUnderTest.showSchemeOrganiserPage(requestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
+      val result = controllerUnderTest.showSchemeOrganiserPage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
       status(result) shouldBe Status.OK
       val document = Jsoup.parse(contentAsString(result))
       document.select("input[id=companyName]").`val`() shouldEqual "Name"
@@ -221,7 +210,7 @@ class SchemeOrganiserControllerTest extends UnitSpec with OneAppPerSuite with ER
       val schemeOrganiserData = Map("" -> "")
       val form = RsFormMappings.schemeOrganiserForm.bind(schemeOrganiserData)
       val request = Fixtures.buildFakeRequestWithSessionIdCSOP("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
-      val result = controllerUnderTest.showSchemeOrganiserSubmit(requestObject)(Fixtures.buildFakeUser, request, hc)
+      val result = controllerUnderTest.showSchemeOrganiserSubmit(ersRequestObject)(Fixtures.buildFakeUser, request, hc)
       status(result) shouldBe Status.OK
     }
 
@@ -230,7 +219,7 @@ class SchemeOrganiserControllerTest extends UnitSpec with OneAppPerSuite with ER
       val schemeOrganiserData = Map("companyName" -> Fixtures.companyName, "addressLine1" -> "Add1", "addressLine" -> "Add2", "addressLine3" -> "Add3", "addressLine1" -> "Add4", "postcode" -> "AA11 1AA", "country" -> "United Kingdom", "companyReg" -> "AB123456", "corporationRef" -> "1234567890")
       val form = _root_.models.RsFormMappings.schemeOrganiserForm.bind(schemeOrganiserData)
       val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
-      val result = controllerUnderTest.showSchemeOrganiserSubmit(requestObject)(Fixtures.buildFakeUser, request, hc)
+      val result = controllerUnderTest.showSchemeOrganiserSubmit(ersRequestObject)(Fixtures.buildFakeUser, request, hc)
       status(result) shouldBe Status.SEE_OTHER
       result.header.headers.get("Location").get shouldBe routes.GroupSchemeController.groupSchemePage().toString()
     }
@@ -240,7 +229,7 @@ class SchemeOrganiserControllerTest extends UnitSpec with OneAppPerSuite with ER
       val schemeOrganiserData = Map("companyName" -> Fixtures.companyName, "addressLine1" -> "Add1", "addressLine" -> "Add2", "addressLine3" -> "Add3", "addressLine1" -> "Add4", "postcode" -> "AA11 1AA", "country" -> "United Kingdom", "companyReg" -> "AB123456", "corporationRef" -> "1234567890")
       val form = _root_.models.RsFormMappings.schemeOrganiserForm.bind(schemeOrganiserData)
       val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
-      val result = controllerUnderTest.showSchemeOrganiserSubmit(requestObject)(Fixtures.buildFakeUser, request, hc)
+      val result = controllerUnderTest.showSchemeOrganiserSubmit(ersRequestObject)(Fixtures.buildFakeUser, request, hc)
       contentAsString(result) should include(messages("ers.global_errors.message"))
       contentAsString(result) shouldBe contentAsString(buildFakeSchemeOrganiserController().getGlobalErrorPage)
     }
