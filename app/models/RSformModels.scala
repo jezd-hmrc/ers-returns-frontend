@@ -113,7 +113,7 @@ case class RequestObject(
                           hmac: Option[String]
                           ) {
 
-  def getPageTitle()(implicit messages: Messages) =
+  def getPageTitle(implicit messages: Messages) =
     s"${messages(s"ers.scheme.$getSchemeType")} - ${messages(s"ers.scheme.title", getSchemeName)} - $getSchemeReference - ${DateUtils.getFullTaxYear(getTaxYear)}"
 
   def getAORef() = aoRef.getOrElse("")

@@ -31,6 +31,7 @@ import play.api.mvc.LegacyI18nSupport
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.play.test.UnitSpec
+import utils.Fixtures.ersRequestObject
 import utils._
 
 import scala.concurrent.Future
@@ -90,14 +91,14 @@ class AltAmendsControllerTest extends UnitSpec with ERSFakeApplicationConfig wit
 
     "direct to ers errors page if fetching groupSchemeActivity throws exception" in {
       val controllerUnderTest = buildFakeAltAmendsPageController(groupSchemeActivityRes = false)
-      val result = await(controllerUnderTest.showAltActivityPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+      val result = await(controllerUnderTest.showAltActivityPage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       contentAsString(result) should include(messages("ers.global_errors.message"))
       contentAsString(result) shouldBe contentAsString(buildFakeAltAmendsPageController().getGlobalErrorPage)
     }
 
     "show alterations activity page with selection if fetching altAmendsActivity successful" in {
       val controllerUnderTest = buildFakeAltAmendsPageController(altAmendsActivityRes = true)
-      val result = controllerUnderTest.showAltActivityPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
+      val result = controllerUnderTest.showAltActivityPage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
       status(result) shouldBe Status.OK
       val document = Jsoup.parse(contentAsString(result))
       document.select("input[id=no]").hasAttr("checked") shouldEqual true
@@ -106,7 +107,7 @@ class AltAmendsControllerTest extends UnitSpec with ERSFakeApplicationConfig wit
 
     "show alterations activity page with nothing selected if fetching altAmendsActivity fails" in {
       val controllerUnderTest = buildFakeAltAmendsPageController(altAmendsActivityRes = false)
-      val result = controllerUnderTest.showAltActivityPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
+      val result = controllerUnderTest.showAltActivityPage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
       status(result) shouldBe Status.OK
       val document = Jsoup.parse(contentAsString(result))
       document.select("input[id=no]").hasAttr("checked") shouldEqual false
@@ -130,7 +131,7 @@ class AltAmendsControllerTest extends UnitSpec with ERSFakeApplicationConfig wit
       val altActivityData = Map("" -> "")
       val form = RsFormMappings.altActivityForm.bind(altActivityData)
       val request = Fixtures.buildFakeRequestWithSessionIdCSOP("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
-      val result = controllerUnderTest.showAltActivitySelected()(Fixtures.buildFakeUser, request, hc)
+      val result = controllerUnderTest.showAltActivitySelected(ersRequestObject)(Fixtures.buildFakeUser, request, hc)
       status(result) shouldBe Status.OK
     }
 
@@ -139,7 +140,7 @@ class AltAmendsControllerTest extends UnitSpec with ERSFakeApplicationConfig wit
       val altActivityData = Map("altActivity" -> PageBuilder.OPTION_NO)
       val form = RsFormMappings.altActivityForm.bind(altActivityData)
       val request = Fixtures.buildFakeRequestWithSessionIdCSOP("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
-      val result = controllerUnderTest.showAltActivitySelected()(Fixtures.buildFakeUser, request, hc)
+      val result = controllerUnderTest.showAltActivitySelected(ersRequestObject)(Fixtures.buildFakeUser, request, hc)
       status(result) shouldBe Status.SEE_OTHER
       result.header.headers.get("Location").get shouldBe routes.SummaryDeclarationController.summaryDeclarationPage().toString
     }
@@ -149,7 +150,7 @@ class AltAmendsControllerTest extends UnitSpec with ERSFakeApplicationConfig wit
       val altActivityData = Map("altActivity" -> PageBuilder.OPTION_YES)
       val form = RsFormMappings.altActivityForm.bind(altActivityData)
       val request = Fixtures.buildFakeRequestWithSessionIdCSOP("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
-      val result = controllerUnderTest.showAltActivitySelected()(Fixtures.buildFakeUser, request, hc)
+      val result = controllerUnderTest.showAltActivitySelected(ersRequestObject)(Fixtures.buildFakeUser, request, hc)
       status(result) shouldBe Status.SEE_OTHER
       result.header.headers.get("Location").get shouldBe routes.AltAmendsController.altAmendsPage().toString
     }
@@ -159,7 +160,7 @@ class AltAmendsControllerTest extends UnitSpec with ERSFakeApplicationConfig wit
       val altActivityData = Map("altActivity" -> PageBuilder.OPTION_YES)
       val form = RsFormMappings.altActivityForm.bind(altActivityData)
       val request = Fixtures.buildFakeRequestWithSessionIdCSOP("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
-      val result = controllerUnderTest.showAltActivitySelected()(Fixtures.buildFakeUser, request, hc)
+      val result = controllerUnderTest.showAltActivitySelected(ersRequestObject)(Fixtures.buildFakeUser, request, hc)
       status(result) shouldBe Status.OK
       contentAsString(result) shouldBe contentAsString(buildFakeAltAmendsPageController().getGlobalErrorPage)
       contentAsString(result) should include(messages("ers.global_errors.message"))
@@ -170,7 +171,7 @@ class AltAmendsControllerTest extends UnitSpec with ERSFakeApplicationConfig wit
       val altActivityData = Map("altActivity" -> PageBuilder.OPTION_YES)
       val form = RsFormMappings.altActivityForm.bind(altActivityData)
       val request = Fixtures.buildFakeRequest("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
-      val result = await(controllerUnderTest.showAltActivitySelected()(Fixtures.buildFakeUser, request, hc))
+      val result = await(controllerUnderTest.showAltActivitySelected(ersRequestObject)(Fixtures.buildFakeUser, request, hc))
       contentAsString(result) shouldBe contentAsString(buildFakeAltAmendsPageController().getGlobalErrorPage)
       contentAsString(result) should include(messages("ers.global_errors.message"))
     }
@@ -223,7 +224,7 @@ class AltAmendsControllerTest extends UnitSpec with ERSFakeApplicationConfig wit
 
     "shows alterations amends page with no selection if fetching altAmends fails" in {
       val controllerUnderTest = buildFakeAltAmendsPageController(altAmendsRes = false)
-      val result = controllerUnderTest.showAltAmendsPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
+      val result = controllerUnderTest.showAltAmendsPage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
       status(result) shouldBe Status.OK
       val document = Jsoup.parse(contentAsString(result))
       document.select("input[id=alt-terms-check-box]").hasAttr("checked") shouldEqual false
@@ -235,7 +236,7 @@ class AltAmendsControllerTest extends UnitSpec with ERSFakeApplicationConfig wit
 
     "show alterations amends page with selection if fetching altAmends successful" in {
       val controllerUnderTest = buildFakeAltAmendsPageController(altAmendsRes = true)
-      val result = controllerUnderTest.showAltAmendsPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
+      val result = controllerUnderTest.showAltAmendsPage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
       status(result) shouldBe Status.OK
       val document = Jsoup.parse(contentAsString(result))
       document.select("input[id=alt-terms-check-box]").hasAttr("checked") shouldEqual false
