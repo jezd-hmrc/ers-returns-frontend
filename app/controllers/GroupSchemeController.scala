@@ -60,7 +60,7 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
         Future(Ok(views.html.manual_company_details(index, errors)))
       },
       successful => {
-        val scRef = request.schemeRef
+        val scRef = request.schemeInfo.schemeRef
         cacheUtil.fetch[CompanyDetailsList](CacheUtil.GROUP_SCHEME_COMPANIES, scRef).flatMap { cachedCompaniesList =>
 
           var cachedCompaniesListPlusNewCompany = CompanyDetailsList(List[CompanyDetails]())
@@ -121,7 +121,7 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
   }
 
   def showDeleteCompany(id: Int)(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val scRef = request.schemeRef
+    val scRef = request.schemeInfo.schemeRef
     cacheUtil.fetchAll(scRef).flatMap { all =>
       val companies: CompanyDetailsList = (all.getEntry[CompanyDetailsList](CacheUtil.GROUP_SCHEME_COMPANIES).get)
       var companyDetailsList = List[CompanyDetails]()
@@ -159,7 +159,7 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
   }
 
   def showEditCompany(id: Int)(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    cacheUtil.fetch[CompanyDetailsList](CacheUtil.GROUP_SCHEME_COMPANIES, request.schemeRef).map { companies =>
+    cacheUtil.fetch[CompanyDetailsList](CacheUtil.GROUP_SCHEME_COMPANIES, request.schemeInfo.schemeRef).map { companies =>
       var companyDetails: CompanyDetails = CompanyDetails(PageBuilder.DEFAULT, PageBuilder.DEFAULT, Some(PageBuilder.DEFAULT), Some(PageBuilder.DEFAULT), Some(PageBuilder.DEFAULT), Some(PageBuilder.DEFAULT), Some(PageBuilder.DEFAULT), Some(PageBuilder.DEFAULT), Some(PageBuilder.DEFAULT))
       for ((company, index) <- companies.companies.zipWithIndex) {
         if (index == id) {
@@ -192,7 +192,7 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
   }
 
   def showGroupSchemePage()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    cacheUtil.fetch[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, request.schemeRef).map { groupSchemeInfo =>
+    cacheUtil.fetch[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, request.schemeInfo.schemeRef).map { groupSchemeInfo =>
       Ok(views.html.group(groupSchemeInfo.groupScheme, RsFormMappings.groupForm.fill(RS_groupScheme(groupSchemeInfo.groupScheme))))
     } recover {
       case e: NoSuchElementException => {
@@ -222,7 +222,7 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
         val gsc: GroupSchemeInfo = GroupSchemeInfo(Some(formData.groupScheme.get),
           if (formData.groupScheme.get == PageBuilder.OPTION_YES) Some(PageBuilder.OPTION_MANUAL)
           else None)
-        cacheUtil.cache(CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, gsc, request.schemeRef).map { all =>
+        cacheUtil.cache(CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, gsc, request.schemeInfo.schemeRef).map { all =>
           request.session.get(screenSchemeInfo).get.split(" - ").head match {
             case PageBuilder.SCHEME_CSOP => {
               formData.groupScheme.get match {
@@ -269,7 +269,7 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
   }
 
   def showGroupPlanSummaryPage()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    cacheUtil.fetch[CompanyDetailsList](CacheUtil.GROUP_SCHEME_COMPANIES, request.schemeRef).map { compDetails =>
+    cacheUtil.fetch[CompanyDetailsList](CacheUtil.GROUP_SCHEME_COMPANIES, request.schemeInfo.schemeRef).map { compDetails =>
       Ok(views.html.group_plan_summary(OPTION_MANUAL, compDetails))
     } recover {
       case e: NoSuchElementException => {

@@ -60,7 +60,7 @@ trait FileUploadController extends FrontendController with Authenticator with Le
   def showSuccess()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
     Logger.info("success: Attachments Success: " + (System.currentTimeMillis() / 1000))
     sessionService.retrieveCallbackData().flatMap { callbackData =>
-      cacheUtil.cache[String](CacheUtil.FILE_NAME_CACHE, callbackData.get.name.get, request.schemeRef).map { cached =>
+      cacheUtil.cache[String](CacheUtil.FILE_NAME_CACHE, callbackData.get.name.get, request.schemeInfo.schemeRef).map { cached =>
         Ok(views.html.success(None, Some(callbackData.get.name.get)))
       } recover {
         case e: Exception => {
@@ -75,7 +75,7 @@ trait FileUploadController extends FrontendController with Authenticator with Le
   def validationResults() = AuthorisedForAsync() {
     implicit user =>
       implicit request => {
-        val scRef = request.schemeRef
+        val scRef = request.schemeInfo.schemeRef
         cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, scRef).flatMap { all =>
           sessionService.retrieveCallbackData().flatMap { callbackData =>
             ersConnector.removePresubmissionData(all.schemeInfo).flatMap(result =>
@@ -114,7 +114,7 @@ trait FileUploadController extends FrontendController with Authenticator with Le
     implicit user =>
       implicit request =>
         Logger.info("validationFailure: Validation Failure: " + (System.currentTimeMillis() / 1000))
-        val scRef = request.schemeRef
+        val scRef = request.schemeInfo.schemeRef
         cacheUtil.fetch[CheckFileType](CacheUtil.FILE_TYPE_CACHE, scRef).flatMap { fileType =>
           cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, scRef).map { all =>
             val scheme: String = all.schemeInfo.schemeId

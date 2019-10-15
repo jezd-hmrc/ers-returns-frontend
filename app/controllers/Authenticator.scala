@@ -16,7 +16,7 @@
 
 package controllers
 
-import models.ErsMetaData
+import models.{ErsMetaData, SchemeInfo}
 import play.api.libs.json.Json
 import play.api.mvc._
 import uk.gov.hmrc.domain.EmpRef
@@ -30,13 +30,11 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 
-case class RequestWithSchemeRef[+A](request: Request[A], schemeRef: String) extends WrappedRequest(request)
+case class RequestWithSchemeRef[+A](request: Request[A], schemeInfo: SchemeInfo) extends WrappedRequest(request)
 
 trait Authenticator extends Actions with ErsConstants {
   private val cacheUtil: CacheUtil = CacheUtil
   private type AsyncUserRequest = AuthContext => RequestWithSchemeRef[AnyContent] => Future[Result]
-  private type UserRequest = AuthContext => Request[AnyContent] => Future[Result]
-
 
   def AuthorisedForAsync()(body: AsyncUserRequest): Action[AnyContent] = {
     AuthorisedFor(ERSRegime, pageVisibility = GGConfidence).async {
@@ -49,7 +47,7 @@ trait Authenticator extends Actions with ErsConstants {
   }
 
   //TODO CAN WE USE AuthorisedForAsync() INSTEAD
-  def SchemeRef2(body:AsyncUserRequest): Action[AnyContent] = {
+  def SchemeRef2(body: AsyncUserRequest): Action[AnyContent] = {
     AuthorisedFor(ERSRegime, new NonNegotiableIdentityConfidencePredicate(ConfidenceLevel.L50)).async {
       implicit user =>
         implicit request =>
@@ -58,15 +56,14 @@ trait Authenticator extends Actions with ErsConstants {
     }
   }
 
-
   def FilterForSchemeRef(body: AsyncUserRequest, request: Request[AnyContent], user: AuthContext)
   : Either[Future[Result], RequestWithSchemeRef[AnyContent]] = {
     implicit val hc = HeaderCarrierConverter.fromHeadersAndSession(request.headers, Some(request.session))
     cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
       .fold[Either[Future[Result], RequestWithSchemeRef[AnyContent]]]{
-        Left(Future.successful(Redirect("pan is the best"))) //TODO NEEDS REDIRCT TO GET SESSION sign in
-      }{ schemeRef =>
-        Right(RequestWithSchemeRef(request, schemeRef))
+        Left(Future.successful(Redirect(routes.AuthorizationController.timedOut().url)))
+      }{ schemeInfo =>
+        Right(RequestWithSchemeRef(request, schemeInfo))
       }
   }
 
@@ -75,7 +72,7 @@ trait Authenticator extends Actions with ErsConstants {
     implicit val formatRSParams = Json.format[ErsMetaData]
     val defined = authContext.principal.accounts.agent.isDefined
     if (defined) {
-      cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, request.schemeRef).flatMap { all =>
+      cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, request.schemeInfo.schemeRef).flatMap { all =>
         body(delegationModelUser(all, authContext: AuthContext))(request)
       }
     } else {

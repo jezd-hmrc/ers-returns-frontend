@@ -249,15 +249,24 @@ trait CacheUtil {
     hc.sessionId.getOrElse(throw new RuntimeException("")).value
   }
 
-  //TODO refactor - could use regex, could also extract more then just the ref?
-  def getSchemeRefFromScreenSchemeInfo(screenSchemeInfo:Option[String]): Option[String] = {
-    Logger.warn(s"CacheUtil: form getSchemeRefFromScreenSchemeInfo : ${screenSchemeInfo}.")
-    val schemeInfo = screenSchemeInfo.getOrElse("").split(" - ").init
-    if (schemeInfo.length == 0) {
-      Logger.error(s"CacheUtil: screenSchemeInfo not in valid format : ${screenSchemeInfo}.")
-      None
-    } else {
-      Some(schemeInfo.last)
+
+  def getSchemeRefFromScreenSchemeInfo(screenSchemeInfo:Option[String]): Option[SchemeInfo] = {
+    val screenSchemeRegex = """(\d)\ -\ ([A-Z]+)\ -\ (\w+)\ -\ (\w+)\ -\ (\d{4})"""
+      .r("schemeId", "schemeType", "schemeName", "schemeRef", "taxYear")
+
+    Logger.warn(s"CacheUtil: form getSchemeRefFromScreenSchemeInfo : $screenSchemeInfo.")
+    screenSchemeInfo.flatMap{
+      screenSchemeRegex.findFirstMatchIn(_).fold[Option[SchemeInfo]]{
+        Logger.error(s"CacheUtil: screenSchemeInfo not in valid format : $screenSchemeInfo.")
+        None
+      }{matched =>
+        Some(SchemeInfo(
+          schemeRef = matched.group("schemeRef"),
+          schemeId = matched.group("schemeId"),
+          taxYear = matched.group("taxYear"),
+          schemeName = matched.group("schemeName"),
+          schemeType = matched.group("schemeType")))
+      }
     }
   }
 

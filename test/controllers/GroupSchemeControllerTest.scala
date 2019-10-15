@@ -111,7 +111,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
         Map("" -> "")
       }
       val form = _root_.models.RsFormMappings.companyDetailsForm.bind(data)
-      RequestWithSchemeRef(Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*), "XX12345678")
+      Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
     }
 
     "display error if showManualCompanyDetailsSubmit is called with authentication and form errors" in {
@@ -268,7 +268,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
       ).thenReturn(
         Future.successful(companyDetailsList)
       )
-      val request = RequestWithSchemeRef(Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), "XX12345678")
+      val request = Fixtures.buildFakeRequestWithSessionIdCSOP("GET")
       val result = await(testGroupSchemeController.showEditCompany(0)(Fixtures.buildFakeAuthContext, request, hc))
       status(result) shouldBe OK
       bodyOf(result).contains(Messages("ers_manual_company_details.csop.title"))
@@ -296,7 +296,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
       ).thenReturn(
         Future.failed(new NoSuchElementException("Nothing in cache"))
       )
-      val request = RequestWithSchemeRef(Fixtures.buildFakeRequestWithSessionId("GET"), "XX12345678")
+      val request = Fixtures.buildFakeRequestWithSessionId("GET")
       val result = await(testGroupSchemeController.showGroupSchemePage()(Fixtures.buildFakeAuthContext,request , hc))
       status(result) shouldBe OK
       val document = Jsoup.parse(contentAsString(result))
@@ -556,7 +556,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
     }
 
     "redirect to summary page for OTHER" in {
-      val request = RequestWithSchemeRef(Fixtures.buildFakeRequestWithSessionId("GET"), "XX12345678")
+      val request = Fixtures.buildFakeRequestWithSessionId("GET")
       val result = testGroupSchemeController.continueFromGroupPlanSummaryPage(PageBuilder.SCHEME_OTHER)(Fixtures.buildFakeAuthContext,request , hc)
       status(result) shouldBe SEE_OTHER
       headers(result).get("Location").get.contains("/summary")

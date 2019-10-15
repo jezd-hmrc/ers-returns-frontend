@@ -45,7 +45,7 @@ trait AltAmendsController extends ERSReturnBaseController with Authenticator wit
   }
 
   def showAltActivityPage()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val schemeRef: String = request.schemeRef
+    val schemeRef: String = request.schemeInfo.schemeRef
     cacheUtil.fetch[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, schemeRef).flatMap { groupSchemeActivity =>
       cacheUtil.fetch[AltAmendsActivity](CacheUtil.altAmendsActivity, schemeRef).map { altAmendsActivity =>
         Ok(views.html.alterations_activity(altAmendsActivity.altActivity,
@@ -77,7 +77,7 @@ trait AltAmendsController extends ERSReturnBaseController with Authenticator wit
         Future.successful(Ok(views.html.alterations_activity("", "", errors)))
       },
       formData => {
-        cacheUtil.cache(CacheUtil.altAmendsActivity, formData, request.schemeRef).map { _ =>
+        cacheUtil.cache(CacheUtil.altAmendsActivity, formData, request.schemeInfo.schemeRef).map { _ =>
           formData.altActivity match {
             case PageBuilder.OPTION_NO => Redirect(routes.SummaryDeclarationController.summaryDeclarationPage())
             case PageBuilder.OPTION_YES => Redirect(routes.AltAmendsController.altAmendsPage())
@@ -98,7 +98,7 @@ trait AltAmendsController extends ERSReturnBaseController with Authenticator wit
   }
 
   def showAltAmendsPage()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    cacheUtil.fetch[AltAmends](CacheUtil.ALT_AMENDS_CACHE_CONTROLLER, request.schemeRef).map { altAmends =>
+    cacheUtil.fetch[AltAmends](CacheUtil.ALT_AMENDS_CACHE_CONTROLLER, request.schemeInfo.schemeRef).map { altAmends =>
       Ok(views.html.alterations_amends(altAmends))
     } recover {
       case e: NoSuchElementException => Ok(views.html.alterations_amends(AltAmends(None, None, None, None, None)))
@@ -114,7 +114,7 @@ trait AltAmendsController extends ERSReturnBaseController with Authenticator wit
   def showAltAmendsSelected()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
     RsFormMappings.altAmendsForm.bindFromRequest.fold(
       formWithErrors => {
-        Future.successful(Redirect(routes.AltAmendsController.altAmendsPage()).flashing("alt-amends-not-selected-error" -> PageBuilder.getPageElement(request.schemeRef, PageBuilder.PAGE_ALT_AMENDS, "err.message")))
+        Future.successful(Redirect(routes.AltAmendsController.altAmendsPage()).flashing("alt-amends-not-selected-error" -> PageBuilder.getPageElement(request.schemeInfo.schemeRef, PageBuilder.PAGE_ALT_AMENDS, "err.message")))
       },
       formData => {
         val altAmends = AltAmends(

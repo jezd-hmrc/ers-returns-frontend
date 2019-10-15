@@ -55,7 +55,7 @@ trait ConfirmationPageController extends ERSReturnBaseController with Authentica
   }
 
   def showConfirmationPage()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val schemeRef: String = request.schemeRef
+    val schemeRef: String = request.schemeInfo.schemeRef
     val sessionBundelRef: String = request.session.get("bundelRef").getOrElse("")
     val sessionDateTimeSubmitted: String = request.session.get("dateTimeSubmitted").getOrElse("")
     if (sessionBundelRef == "") {

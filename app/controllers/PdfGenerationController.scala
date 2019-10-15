@@ -46,13 +46,13 @@ trait PdfGenerationController extends ERSReturnBaseController with Authenticator
   def generatePdf(bundle: String, dateSubmitted: String)(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
     Logger.debug("ers returns frontend getting into the controller to generate the pdf")
-    val cache: Future[ErsMetaData] = cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, request.schemeRef)
+    val cache: Future[ErsMetaData] = cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, request.schemeInfo.schemeRef)
     cache.flatMap { all =>
       Logger.debug("ers returns frontend pdf generation: got the metadata")
       cacheUtil.getAllData(bundle, all).flatMap { alldata =>
         Logger.debug("ers returns frontend generation: got the cache map")
 
-        cacheUtil.fetchAll(request.schemeRef).map { all =>
+        cacheUtil.fetchAll(request.schemeInfo.schemeRef).map { all =>
           val filesUploaded: ListBuffer[String] = ListBuffer()
           val schemeId = request.session.get("screenSchemeInfo").get.split(" - ").head
           if (all.getEntry[ReportableEvents](CacheUtil.reportableEvents).get.isNilReturn.get == PageBuilder.OPTION_UPLOAD_SPREEDSHEET) {

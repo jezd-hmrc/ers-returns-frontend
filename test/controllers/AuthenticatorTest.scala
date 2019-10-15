@@ -51,7 +51,7 @@ class AuthenticatorTest extends UnitSpec with OneAppPerSuite with ERSFakeApplica
           val result: Future[Result] = eitherResult.left.value
 
           status(result) shouldBe 303
-          redirectLocation(result) shouldBe Some("pan is the best")
+          redirectLocation(result) shouldBe Some(routes.AuthorizationController.timedOut().url)
         }
       }
 
@@ -61,7 +61,7 @@ class AuthenticatorTest extends UnitSpec with OneAppPerSuite with ERSFakeApplica
           val eitherResult: Either[Future[Result], RequestWithSchemeRef[AnyContent]] = FilterForSchemeRef(body, request, authContext)
           val result: RequestWithSchemeRef[AnyContent] = eitherResult.right.value
 
-          result.schemeRef shouldBe "XX12345678"
+          result.schemeInfo.schemeRef shouldBe "XX12345678"
         }
       }
     }

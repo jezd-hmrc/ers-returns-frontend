@@ -493,19 +493,35 @@ class CacheUtilSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach w
     }
 
     "return schemeRef from given string" in {
-      val screenSchemeInfo = "metaData.schemeInfo.schemeId - metaData.schemeInfo.schemeType - metaData.schemeInfo.schemeName - metaData.schemeInfo.schemeRef - taxYear"
-      cacheUtil.getSchemeRefFromScreenSchemeInfo(Some(screenSchemeInfo)) shouldBe Some("metaData.schemeInfo.schemeRef")
+      val screenSchemeInfo = "2 - EMI - MYScheme - XX12345678 - 2016"
+
+      val result: SchemeInfo = cacheUtil.getSchemeRefFromScreenSchemeInfo(Some(screenSchemeInfo)).get
+
+      result.schemeRef shouldBe "XX12345678"
+      result.taxYear shouldBe "2016"
+      result.schemeId shouldBe "2"
+      result.schemeType shouldBe "EMI"
+      result.schemeName shouldBe "MYScheme"
     }
 
-    "return None if hyphens are replaced" in {
-      val screenSchemeInfo = "metaData.schemeInfo.schemeId | metaData.schemeInfo.schemeType | metaData.schemeInfo.schemeName | metaData.schemeInfo.schemeRef | taxYear"
+    "return None" when {
 
-      cacheUtil.getSchemeRefFromScreenSchemeInfo(Some(screenSchemeInfo)) shouldBe None
-    }
+      "hyphens are replaced" in {
+        val screenSchemeInfo = "2 | EMI | MYScheme | XX12345678 | 2016"
 
-    "return None no scheme ref is present" in {
+        cacheUtil.getSchemeRefFromScreenSchemeInfo(Some(screenSchemeInfo)) shouldBe None
+      }
 
-      cacheUtil.getSchemeRefFromScreenSchemeInfo(None) shouldBe None
+      "fails regex match" in {
+        val screenSchemeInfo = "fail - fail - fail - fail - fail"
+
+        cacheUtil.getSchemeRefFromScreenSchemeInfo(Some(screenSchemeInfo)) shouldBe None
+      }
+
+      "no scheme ref is present" in {
+
+        cacheUtil.getSchemeRefFromScreenSchemeInfo(None) shouldBe None
+      }
     }
   }
 

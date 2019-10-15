@@ -46,7 +46,7 @@ trait ReportableEventsController extends ERSReturnBaseController with Authentica
   }
 
   def updateErsMetaData()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Object] = {
-    val schemeRef = request.schemeRef
+    val schemeRef = request.schemeInfo.schemeRef
     ersConnector.connectToEtmpSapRequest(schemeRef).flatMap { sapNumber =>
       cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, schemeRef).map { metaData =>
         val ersMetaData = ErsMetaData(
@@ -67,7 +67,7 @@ trait ReportableEventsController extends ERSReturnBaseController with Authentica
   }
 
   def showReportableEventsPage()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    cacheUtil.fetch[ReportableEvents](CacheUtil.reportableEvents, request.schemeRef).map { activity =>
+    cacheUtil.fetch[ReportableEvents](CacheUtil.reportableEvents, request.schemeInfo.schemeRef).map { activity =>
       Ok(views.html.reportable_events(activity.isNilReturn, RsFormMappings.chooseForm.fill(activity)))
     } recover {
       case e: NoSuchElementException =>
@@ -92,7 +92,7 @@ trait ReportableEventsController extends ERSReturnBaseController with Authentica
         Future.successful(Ok(views.html.reportable_events(Some(""), errors)))
       },
       formData => {
-        cacheUtil.cache(CacheUtil.reportableEvents, formData, request.schemeRef).map { _ =>
+        cacheUtil.cache(CacheUtil.reportableEvents, formData, request.schemeInfo.schemeRef).map { _ =>
           if (formData.isNilReturn.get == PageBuilder.OPTION_NIL_RETURN) {
             Redirect(routes.SchemeOrganiserController.schemeOrganiserPage())
           } else {

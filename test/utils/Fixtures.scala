@@ -49,16 +49,15 @@ object Fixtures {
 
   //TODO REFACTOR
 
-  val schemeRefID = "XX12345678"
-
   def fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
-    .withSession("sessionId" -> "FAKE_SESSION_ID","screenSchemeInfo" -> s"2 - EMI - MYScheme - $schemeRefID - 2016")
+    .withSession("sessionId" -> "FAKE_SESSION_ID","screenSchemeInfo" -> "2 - EMI - MYScheme - XX12345678 - 2016")
 
   def fakeRequestWithFormData(formData: Seq[(String, String)]) =
     fakeRequest.withFormUrlEncodedBody(formData: _*)
 
   implicit def fakeRequestToRequestWithSchemeRef[A](request: FakeRequest[A]): RequestWithSchemeRef[A] =
-    RequestWithSchemeRef(request, schemeRefID)
+    RequestWithSchemeRef(request, SchemeInfo(schemeRef = "XX12345678", schemeId = "2", schemeName = "MYScheme", schemeType = "EMI", taxYear = "2016"))
+
 
   def buildFakeRequestWithSessionId(method: String = "pointless") = FakeRequest()
     .withSession("sessionId" -> "FAKE_SESSION_ID","screenSchemeInfo" -> "2 - EMI - MYScheme - XX12345678 - 2016")
