@@ -39,7 +39,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures, PageBuilder}
 
 import scala.concurrent.Future
-import utils.Fixtures.fakeRequestToRequestWithSchemeRef
+import utils.Fixtures.fakeRequestToRequestWithSchemeInfo
 
 class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers with ERSFakeApplicationConfig with BeforeAndAfterEach with OneAppPerSuite {
 

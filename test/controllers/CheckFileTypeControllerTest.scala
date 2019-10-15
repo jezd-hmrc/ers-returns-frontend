@@ -32,7 +32,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.play.test.UnitSpec
 import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures, PageBuilder}
-import utils.Fixtures.fakeRequestToRequestWithSchemeRef
+import utils.Fixtures.fakeRequestToRequestWithSchemeInfo
 
 import scala.concurrent.Future
 
@@ -72,7 +72,7 @@ class CheckFileTypeControllerTest extends UnitSpec with OneAppPerSuite with ERSF
       status(result) shouldBe Status.SEE_OTHER
     }
 
-    "PA gives a call to showCheckFileTypePage if user is authenticated" in {
+    "gives a call to login if user is authenticated but screenSchemeInfo not correct" in {
       val controllerUnderTest = buildFakeCheckingServiceController()
       val result = controllerUnderTest.checkFileTypePage().apply(Fixtures.buildFakeRequestWithNoScreenScheemeInfo("GET"))
       status(result) shouldBe Status.SEE_OTHER

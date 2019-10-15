@@ -57,7 +57,7 @@ trait FileUploadController extends FrontendController with Authenticator with Le
   }
 
 
-  def showSuccess()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showSuccess()(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyRef], hc: HeaderCarrier): Future[Result] = {
     Logger.info("success: Attachments Success: " + (System.currentTimeMillis() / 1000))
     sessionService.retrieveCallbackData().flatMap { callbackData =>
       cacheUtil.cache[String](CacheUtil.FILE_NAME_CACHE, callbackData.get.name.get, request.schemeInfo.schemeRef).map { cached =>

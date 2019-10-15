@@ -51,7 +51,7 @@ import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures, PageBuilder}
 
 import scala.concurrent.Future
 import uk.gov.hmrc.http.HeaderCarrier
-import utils.Fixtures.fakeRequestToRequestWithSchemeRef
+import utils.Fixtures.fakeRequestToRequestWithSchemeInfo
 
 class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with OneAppPerSuite {
 
@@ -65,7 +65,7 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
       override val cacheUtil: CacheUtil = mock[CacheUtil]
       override val pageBuilder: PageBuilder = mock[PageBuilder]
 
-      override def showCheckCsvFilesPage()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = Future.successful(Ok)
+      override def showCheckCsvFilesPage()(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyRef], hc: HeaderCarrier): Future[Result] = Future.successful(Ok)
     }
 
     "redirect to company authentication frontend if user is not authenticated" in {
@@ -164,7 +164,7 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
       override val cacheUtil: CacheUtil = mock[CacheUtil]
       override val pageBuilder: PageBuilder = mock[PageBuilder]
 
-      override def validateCsvFilesPageSelected()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = Future.successful(Ok)
+      override def validateCsvFilesPageSelected()(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyRef], hc: HeaderCarrier): Future[Result] = Future.successful(Ok)
     }
 
     "redirect to company authentication frontend if user is not authenticated to access checkCsvFilesPage" in {
@@ -180,7 +180,7 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
       override val cacheUtil: CacheUtil = mock[CacheUtil]
       override val pageBuilder: PageBuilder = mock[PageBuilder]
 
-      override def performCsvFilesPageSelected(formData: CsvFilesList)(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = Future.successful(Ok)
+      override def performCsvFilesPageSelected(formData: CsvFilesList)(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyRef], hc: HeaderCarrier): Future[Result] = Future.successful(Ok)
     }
 
     "return the result of performCsvFilesPageSelected if data is valid" in {

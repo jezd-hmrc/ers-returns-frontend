@@ -34,7 +34,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 import utils._
 
 import scala.concurrent.Future
-import utils.Fixtures.fakeRequestToRequestWithSchemeRef
+import utils.Fixtures.fakeRequestToRequestWithSchemeInfo
 
 class AltAmendsControllerTest extends UnitSpec with ERSFakeApplicationConfig with OneAppPerSuite with MockitoSugar {
 

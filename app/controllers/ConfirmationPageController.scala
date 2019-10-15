@@ -54,7 +54,7 @@ trait ConfirmationPageController extends ERSReturnBaseController with Authentica
         showConfirmationPage()(user, request, hc)
   }
 
-  def showConfirmationPage()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showConfirmationPage()(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyRef], hc: HeaderCarrier): Future[Result] = {
     val schemeRef: String = request.schemeInfo.schemeRef
     val sessionBundelRef: String = request.session.get("bundelRef").getOrElse("")
     val sessionDateTimeSubmitted: String = request.session.get("dateTimeSubmitted").getOrElse("")
@@ -118,7 +118,7 @@ trait ConfirmationPageController extends ERSReturnBaseController with Authentica
     }
   }
 
-  def saveAndSubmit(alldata: ErsSummary, all: ErsMetaData, bundle: String)(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def saveAndSubmit(alldata: ErsSummary, all: ErsMetaData, bundle: String)(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
     val jsonDateTimeFormat = new SimpleDateFormat("d MMMM yyyy, h:mma")
     val dateTimeSubmitted = jsonDateTimeFormat.format(alldata.confirmationDateTime.toDate()).replace("AM", "am").replace("PM", "pm")

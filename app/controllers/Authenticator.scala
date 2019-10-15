@@ -30,11 +30,11 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 
-case class RequestWithSchemeRef[+A](request: Request[A], schemeInfo: SchemeInfo) extends WrappedRequest(request)
+case class RequestWithSchemeInfo[+A](request: Request[A], schemeInfo: SchemeInfo) extends WrappedRequest(request)
 
 trait Authenticator extends Actions with ErsConstants {
   private val cacheUtil: CacheUtil = CacheUtil
-  private type AsyncUserRequest = AuthContext => RequestWithSchemeRef[AnyContent] => Future[Result]
+  private type AsyncUserRequest = AuthContext => RequestWithSchemeInfo[AnyContent] => Future[Result]
 
   def AuthorisedForAsync()(body: AsyncUserRequest): Action[AnyContent] = {
     AuthorisedFor(ERSRegime, pageVisibility = GGConfidence).async {
@@ -42,7 +42,7 @@ trait Authenticator extends Actions with ErsConstants {
         implicit request =>
           implicit val hc = HeaderCarrierConverter.fromHeadersAndSession(request.headers, Some(request.session))
           FilterForSchemeRef(body, request, user)
-            .fold(redirect => redirect, requestWithSchemeRef => FilterAgentsWrapperAsync(user, body)(hc, requestWithSchemeRef))
+            .fold(redirect => redirect, requestWithSchemeInfo => FilterAgentsWrapperAsync(user, body)(hc, requestWithSchemeInfo))
     }
   }
 
@@ -52,23 +52,23 @@ trait Authenticator extends Actions with ErsConstants {
       implicit user =>
         implicit request =>
         FilterForSchemeRef(body, request, user)
-          .fold(redirect => redirect, requestWithSchemeRef => body(user)(requestWithSchemeRef))
+          .fold(redirect => redirect, requestWithSchemeInfo => body(user)(requestWithSchemeInfo))
     }
   }
 
   def FilterForSchemeRef(body: AsyncUserRequest, request: Request[AnyContent], user: AuthContext)
-  : Either[Future[Result], RequestWithSchemeRef[AnyContent]] = {
+  : Either[Future[Result], RequestWithSchemeInfo[AnyContent]] = {
     implicit val hc = HeaderCarrierConverter.fromHeadersAndSession(request.headers, Some(request.session))
     cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-      .fold[Either[Future[Result], RequestWithSchemeRef[AnyContent]]]{
+      .fold[Either[Future[Result], RequestWithSchemeInfo[AnyContent]]]{
         Left(Future.successful(Redirect(routes.AuthorizationController.timedOut().url)))
       }{ schemeInfo =>
-        Right(RequestWithSchemeRef(request, schemeInfo))
+        Right(RequestWithSchemeInfo(request, schemeInfo))
       }
   }
 
   def FilterAgentsWrapperAsync(authContext: AuthContext, body: AsyncUserRequest)
-                              (implicit hc: HeaderCarrier, request: RequestWithSchemeRef[AnyContent]): Future[Result] = {
+                              (implicit hc: HeaderCarrier, request: RequestWithSchemeInfo[AnyContent]): Future[Result] = {
     implicit val formatRSParams = Json.format[ErsMetaData]
     val defined = authContext.principal.accounts.agent.isDefined
     if (defined) {

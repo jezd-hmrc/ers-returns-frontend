@@ -43,7 +43,7 @@ trait CheckCsvFilesController extends ERSReturnBaseController with Authenticator
         showCheckCsvFilesPage()(user, request, hc)
   }
 
-  def showCheckCsvFilesPage()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showCheckCsvFilesPage()(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyRef], hc: HeaderCarrier): Future[Result] = {
     val csvFilesList: List[CsvFiles] = PageBuilder.getCsvFilesList(request.schemeInfo.schemeType)
     cacheUtil.fetch[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, request.schemeInfo.schemeRef).map { cacheData =>
       val mergeWithSelected: List[CsvFiles] = mergeCsvFilesListWithCsvFilesCallback(csvFilesList, cacheData)
@@ -71,7 +71,7 @@ trait CheckCsvFilesController extends ERSReturnBaseController with Authenticator
         validateCsvFilesPageSelected()
   }
 
-  def validateCsvFilesPageSelected()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def validateCsvFilesPageSelected()(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyRef], hc: HeaderCarrier): Future[Result] = {
     RsFormMappings.csvFileCheckForm.bindFromRequest.fold(
       formWithErrors => {
         reloadWithError()
@@ -82,7 +82,7 @@ trait CheckCsvFilesController extends ERSReturnBaseController with Authenticator
     )
   }
 
-  def performCsvFilesPageSelected(formData: CsvFilesList)(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def performCsvFilesPageSelected(formData: CsvFilesList)(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
     val csvFilesCallbackList: List[CsvFilesCallback] = createCacheData(formData.files)
     if (csvFilesCallbackList.isEmpty) {

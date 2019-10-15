@@ -48,13 +48,13 @@ trait SummaryDeclarationController extends ERSReturnBaseController with Authenti
         showSummaryDeclarationPage()(user, request, hc)
   }
 
-  def showSummaryDeclarationPage()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showSummaryDeclarationPage()(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyRef], hc: HeaderCarrier): Future[Result] = {
     cacheUtil.fetchAll(request.schemeInfo.schemeRef).flatMap { all =>
       val schemeOrganiser: SchemeOrganiserDetails = all.getEntry[SchemeOrganiserDetails](CacheUtil.SCHEME_ORGANISER_CACHE).get
       val groupSchemeInfo: GroupSchemeInfo = all.getEntry[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER).getOrElse(new GroupSchemeInfo(None, None))
       val groupScheme: String = groupSchemeInfo.groupScheme.getOrElse("")
       val reportableEvents: String = all.getEntry[ReportableEvents](CacheUtil.reportableEvents).get.isNilReturn.get
-      val schemeId = request.session.get("screenSchemeInfo").get.split(" - ").head
+      val schemeId = request.schemeInfo.schemeId
       var fileType: String = ""
       var fileNames: String = ""
       var fileCount: Int = 0

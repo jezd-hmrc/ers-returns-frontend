@@ -42,7 +42,7 @@ import utils._
 import scala.concurrent.Future
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import views.html.confirmation
-import utils.Fixtures.fakeRequestToRequestWithSchemeRef
+import utils.Fixtures.fakeRequestToRequestWithSchemeInfo
 
 class ConfirmationPageControllerTest extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with BeforeAndAfterEach with OneAppPerSuite {
 
@@ -113,7 +113,7 @@ class ConfirmationPageControllerTest extends UnitSpec with ERSFakeApplicationCon
 
       override val cacheUtil: CacheUtil = mockCacheUtil
 
-      override def saveAndSubmit(alldata: ErsSummary, all: ErsMetaData, bundle: String)(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
+      override def saveAndSubmit(alldata: ErsSummary, all: ErsMetaData, bundle: String)(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyRef], hc: HeaderCarrier): Future[Result] = {
         Future(Ok)
       }
 

@@ -45,7 +45,7 @@ trait ReportableEventsController extends ERSReturnBaseController with Authentica
         showReportableEventsPage()(user, request, hc)
   }
 
-  def updateErsMetaData()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Object] = {
+  def updateErsMetaData()(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyRef], hc: HeaderCarrier): Future[Object] = {
     val schemeRef = request.schemeInfo.schemeRef
     ersConnector.connectToEtmpSapRequest(schemeRef).flatMap { sapNumber =>
       cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, schemeRef).map { metaData =>
@@ -66,7 +66,7 @@ trait ReportableEventsController extends ERSReturnBaseController with Authentica
     }
   }
 
-  def showReportableEventsPage()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showReportableEventsPage()(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyRef], hc: HeaderCarrier): Future[Result] = {
     cacheUtil.fetch[ReportableEvents](CacheUtil.reportableEvents, request.schemeInfo.schemeRef).map { activity =>
       Ok(views.html.reportable_events(activity.isNilReturn, RsFormMappings.chooseForm.fill(activity)))
     } recover {
@@ -86,7 +86,7 @@ trait ReportableEventsController extends ERSReturnBaseController with Authentica
         }
   }
 
-  def showReportableEventsSelected()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef]): Future[Result] = {
+  def showReportableEventsSelected()(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyRef]): Future[Result] = {
     RsFormMappings.chooseForm.bindFromRequest.fold(
       errors => {
         Future.successful(Ok(views.html.reportable_events(Some(""), errors)))

@@ -46,7 +46,7 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
         showUploadFilePage()(user, request, hc)
   }
 
-  def showUploadFilePage()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showUploadFilePage()(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyRef], hc: HeaderCarrier): Future[Result] = {
     cacheUtil.fetch[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, request.schemeInfo.schemeRef).flatMap { csvFilesCallbackList =>
       showAttachmentsPartial(csvFilesCallbackList.files)
     } recover {
@@ -75,14 +75,14 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
         showSuccess()
   }
 
-  def showSuccess()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showSuccess()(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyRef], hc: HeaderCarrier): Future[Result] = {
     Logger.info("success: Attachments Success: " + (System.currentTimeMillis() / 1000))
     sessionService.retrieveCallbackData().flatMap { callbackData =>
       proceedCallbackData(callbackData)
     }
   }
 
-  def proceedCallbackData(callbackData: Option[CallbackData])(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def proceedCallbackData(callbackData: Option[CallbackData])(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyRef], hc: HeaderCarrier): Future[Result] = {
     cacheUtil.fetch[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, request.schemeInfo.schemeRef).flatMap { csvFilesCallbackList =>
       val newCsvFilesCallbackList: List[CsvFilesCallback] = updateCallbackData(callbackData, csvFilesCallbackList.files)
       modifyCachedCallbackData(newCsvFilesCallbackList)
@@ -94,7 +94,7 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
     }
   }
 
-  def modifyCachedCallbackData(newCsvFilesCallbackList: List[CsvFilesCallback])(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def modifyCachedCallbackData(newCsvFilesCallbackList: List[CsvFilesCallback])(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyRef], hc: HeaderCarrier): Future[Result] = {
     cacheUtil.cache[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, CsvFilesCallbackList(newCsvFilesCallbackList), request.schemeInfo.schemeRef).map { cached =>
       if (newCsvFilesCallbackList.count(_.callbackData.isEmpty) > 0) {
         Redirect(routes.CsvFileUploadController.uploadFilePage())
@@ -127,7 +127,7 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
         processValidationResults()
   }
 
-  def processValidationResults()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def processValidationResults()(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyRef], hc: HeaderCarrier): Future[Result] = {
     cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, request.schemeInfo.schemeRef).flatMap { all =>
       removePresubmissionData(all.schemeInfo)
     } recover {
@@ -138,7 +138,7 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
     }
   }
 
-  def removePresubmissionData(schemeInfo: SchemeInfo)(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def removePresubmissionData(schemeInfo: SchemeInfo)(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyRef], hc: HeaderCarrier): Future[Result] = {
     ersConnector.removePresubmissionData(schemeInfo).flatMap { result =>
       result.status match {
         case 200 => extractCsvCallbackData(schemeInfo)
@@ -155,7 +155,7 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
     }
   }
 
-  def extractCsvCallbackData(schemeInfo: SchemeInfo)(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def extractCsvCallbackData(schemeInfo: SchemeInfo)(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyRef], hc: HeaderCarrier): Future[Result] = {
     cacheUtil.fetch[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, request.schemeInfo.schemeRef).flatMap { csvFilesCallbackList =>
       val csvCallbackValidatorData: List[CallbackData] = for (csvCallback <- csvFilesCallbackList.files) yield {
         csvCallback.callbackData.get
@@ -169,7 +169,7 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
     }
   }
 
-  def validateCsv(csvCallbackValidatorData: List[CallbackData], schemeInfo: SchemeInfo)(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def validateCsv(csvCallbackValidatorData: List[CallbackData], schemeInfo: SchemeInfo)(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyRef], hc: HeaderCarrier): Future[Result] = {
     ersConnector.validateCsvFileData(csvCallbackValidatorData, schemeInfo).map { res =>
       Logger.info(s"validateCsv: Response from validator: ${res.status}, timestamp: ${System.currentTimeMillis()}.")
       res.status match {
@@ -199,7 +199,7 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
         processValidationFailure()(user, request, hc)
   }
 
-  def processValidationFailure()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def processValidationFailure()(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyRef], hc: HeaderCarrier): Future[Result] = {
     Logger.info("validationFailure: Validation Failure: " + (System.currentTimeMillis() / 1000))
     val scRef = request.schemeInfo.schemeRef
     cacheUtil.fetch[CheckFileType](CacheUtil.FILE_TYPE_CACHE, scRef).flatMap { fileType =>

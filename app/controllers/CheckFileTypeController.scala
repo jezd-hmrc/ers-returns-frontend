@@ -47,7 +47,7 @@ trait CheckFileTypeController extends ERSReturnBaseController with Authenticator
         showCheckFileTypePage(authContext, request, hc)
   }
 
-  def showCheckFileTypePage(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyContent], hc: HeaderCarrier): Future[Result] =  {
+  def showCheckFileTypePage(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyContent], hc: HeaderCarrier): Future[Result] =  {
     cacheUtil.fetch[CheckFileType](CacheUtil.FILE_TYPE_CACHE, request.schemeInfo.schemeRef).map{ fileType =>
       Ok(views.html.check_file_type(fileType.checkFileType, RsFormMappings.checkFileTypeForm.fill(fileType)))
     } recover {
@@ -63,7 +63,7 @@ trait CheckFileTypeController extends ERSReturnBaseController with Authenticator
         showCheckFileTypeSelected(authContext, request, hc)
   }
 
-  def showCheckFileTypeSelected(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyContent], hc: HeaderCarrier): Future[Result] = {
+  def showCheckFileTypeSelected(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyContent], hc: HeaderCarrier): Future[Result] = {
     RsFormMappings.checkFileTypeForm.bindFromRequest.fold(
       errors => {
         Future.successful(Ok(views.html.check_file_type(Some(""), errors)))

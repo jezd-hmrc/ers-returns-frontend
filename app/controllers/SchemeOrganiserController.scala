@@ -42,7 +42,7 @@ trait SchemeOrganiserController extends ERSReturnBaseController with Authenticat
         showSchemeOrganiserPage()(user, request, hc)
   }
 
-  def showSchemeOrganiserPage()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyContent], hc: HeaderCarrier): Future[Result] = {
+  def showSchemeOrganiserPage()(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyContent], hc: HeaderCarrier): Future[Result] = {
     val schemeRef = request.schemeInfo.schemeRef
     Logger.warn(s"SchemeOrganiserController: showSchemeOrganiserPage:  schemeRef: ${schemeRef}.")
 
@@ -79,7 +79,7 @@ trait SchemeOrganiserController extends ERSReturnBaseController with Authenticat
         showSchemeOrganiserSubmit()(user, request, hc)
   }
 
-  def showSchemeOrganiserSubmit()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showSchemeOrganiserSubmit()(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyRef], hc: HeaderCarrier): Future[Result] = {
     RsFormMappings.schemeOrganiserForm.bindFromRequest.fold(
       errors => {
         val correctOrder = errors.errors.map(_.key).distinct

@@ -42,7 +42,7 @@ import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import utils.Fixtures.fakeRequestToRequestWithSchemeRef
+import utils.Fixtures.fakeRequestToRequestWithSchemeInfo
 
 class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
   with MockitoSugar with ERSUsers with ErsConstants with LegacyI18nSupport
@@ -205,7 +205,7 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
       override val ersConnector: ErsConnector = mock[ErsConnector]
       override val cacheUtil: CacheUtil = mock[CacheUtil]
 
-      override def showSuccess()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Ok)
+      override def showSuccess()(implicit authContext: AuthContext, request: RequestWithSchemeInfo[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Ok)
     }
 
     "redirect for unauthorised users to login page" in {
