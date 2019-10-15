@@ -47,7 +47,7 @@ class AuthenticatorTest extends UnitSpec with OneAppPerSuite with ERSFakeApplica
 
       "redirect to portal" when {
         "session has dropped" in new SUT {
-          val eitherResult: Either[Future[Result], RequestWithSchemeRef[AnyContent]] = FilterForSchemeRef2(body, FakeRequest(), authContext)
+          val eitherResult: Either[Future[Result], RequestWithSchemeRef[AnyContent]] = FilterForSchemeRef(body, FakeRequest(), authContext)
           val result: Future[Result] = eitherResult.left.value
 
           status(result) shouldBe 303
@@ -58,7 +58,7 @@ class AuthenticatorTest extends UnitSpec with OneAppPerSuite with ERSFakeApplica
       "continue to body" when {
         "scheme ref is present in the session" in new SUT {
           val request = Fixtures.buildFakeRequestWithSessionId()
-          val eitherResult: Either[Future[Result], RequestWithSchemeRef[AnyContent]] = FilterForSchemeRef2(body, request, authContext)
+          val eitherResult: Either[Future[Result], RequestWithSchemeRef[AnyContent]] = FilterForSchemeRef(body, request, authContext)
           val result: RequestWithSchemeRef[AnyContent] = eitherResult.right.value
 
           result.schemeRef shouldBe "XX12345678"

@@ -494,16 +494,19 @@ class CacheUtilSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach w
 
     "return schemeRef from given string" in {
       val screenSchemeInfo = "metaData.schemeInfo.schemeId - metaData.schemeInfo.schemeType - metaData.schemeInfo.schemeName - metaData.schemeInfo.schemeRef - taxYear"
-      cacheUtil.getSchemeRefFromScreenSchemeInfo(Some(screenSchemeInfo)) shouldBe "metaData.schemeInfo.schemeRef"
+      cacheUtil.getSchemeRefFromScreenSchemeInfo(Some(screenSchemeInfo)) shouldBe Some("metaData.schemeInfo.schemeRef")
     }
 
-    "throw NoSuchElementException if hyphens are replaced" in {
+    "return None if hyphens are replaced" in {
       val screenSchemeInfo = "metaData.schemeInfo.schemeId | metaData.schemeInfo.schemeType | metaData.schemeInfo.schemeName | metaData.schemeInfo.schemeRef | taxYear"
-      intercept[NoSuchElementException] {
-        cacheUtil.getSchemeRefFromScreenSchemeInfo(Some(screenSchemeInfo)) shouldBe "metaData.schemeInfo.schemeRef"
-      }
+
+      cacheUtil.getSchemeRefFromScreenSchemeInfo(Some(screenSchemeInfo)) shouldBe None
     }
 
+    "return None no scheme ref is present" in {
+
+      cacheUtil.getSchemeRefFromScreenSchemeInfo(None) shouldBe None
+    }
   }
 
   "cacheUtil" should {

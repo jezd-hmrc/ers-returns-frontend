@@ -249,16 +249,8 @@ trait CacheUtil {
     hc.sessionId.getOrElse(throw new RuntimeException("")).value
   }
 
-  def getSchemeRefFromScreenSchemeInfo(screenSchemeInfo:Option[String]): String = {
-    Logger.warn(s"CacheUtil: form getSchemeRefFromScreenSchemeInfo : ${screenSchemeInfo}.")
-    val schemeInfo = screenSchemeInfo.getOrElse("").split(" - ").init
-    if (schemeInfo.length == 0) {
-      Logger.error(s"CacheUtil: screenSchemeInfo not in valid format : ${screenSchemeInfo}.")}
-      schemeInfo.last
-  }
-
-  //TODO TEST
-  def getSchemeRefFromScreenSchemeInfo2(screenSchemeInfo:Option[String]): Option[String] = {
+  //TODO refactor - could use regex, could also extract more then just the ref?
+  def getSchemeRefFromScreenSchemeInfo(screenSchemeInfo:Option[String]): Option[String] = {
     Logger.warn(s"CacheUtil: form getSchemeRefFromScreenSchemeInfo : ${screenSchemeInfo}.")
     val schemeInfo = screenSchemeInfo.getOrElse("").split(" - ").init
     if (schemeInfo.length == 0) {

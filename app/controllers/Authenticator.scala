@@ -38,45 +38,31 @@ trait Authenticator extends Actions with ErsConstants {
   private type UserRequest = AuthContext => Request[AnyContent] => Future[Result]
 
 
-  def AuthorisedForAsync3()(body: UserRequest): Action[AnyContent] = {
-    AuthorisedFor(ERSRegime, pageVisibility = GGConfidence).async {
-      implicit user =>
-        implicit request => {
-          implicit val hc = HeaderCarrierConverter.fromHeadersAndSession(request.headers, Some(request.session))
-          cacheUtil.getSchemeRefFromScreenSchemeInfo2(request.session.get(screenSchemeInfo))
-            .fold{
-              Future.successful(Redirect("go get a new session")) //TODO NEEDS REDIRCT TO GET SESSION sign in
-            }{ schemeRef =>
-              FilterAgentsWrapperAsync(user, body)(hc, RequestWithSchemeRef(request, schemeRef))
-            }
-        }
-    }
-  }
-
   def AuthorisedForAsync()(body: AsyncUserRequest): Action[AnyContent] = {
     AuthorisedFor(ERSRegime, pageVisibility = GGConfidence).async {
       implicit user =>
         implicit request =>
           implicit val hc = HeaderCarrierConverter.fromHeadersAndSession(request.headers, Some(request.session))
-          FilterForSchemeRef2(body, request, user)
-            .fold(redirect => redirect, requestWithSchemeRef => FilterAgentsWrapperAsync2(user, body)(hc, requestWithSchemeRef))
+          FilterForSchemeRef(body, request, user)
+            .fold(redirect => redirect, requestWithSchemeRef => FilterAgentsWrapperAsync(user, body)(hc, requestWithSchemeRef))
     }
   }
 
+  //TODO CAN WE USE AuthorisedForAsync() INSTEAD
   def SchemeRef2(body:AsyncUserRequest): Action[AnyContent] = {
     AuthorisedFor(ERSRegime, new NonNegotiableIdentityConfidencePredicate(ConfidenceLevel.L50)).async {
       implicit user =>
         implicit request =>
-        FilterForSchemeRef2(body, request, user)
+        FilterForSchemeRef(body, request, user)
           .fold(redirect => redirect, requestWithSchemeRef => body(user)(requestWithSchemeRef))
     }
   }
 
 
-  def FilterForSchemeRef2(body: AsyncUserRequest, request: Request[AnyContent], user: AuthContext)
+  def FilterForSchemeRef(body: AsyncUserRequest, request: Request[AnyContent], user: AuthContext)
   : Either[Future[Result], RequestWithSchemeRef[AnyContent]] = {
     implicit val hc = HeaderCarrierConverter.fromHeadersAndSession(request.headers, Some(request.session))
-    cacheUtil.getSchemeRefFromScreenSchemeInfo2(request.session.get(screenSchemeInfo))
+    cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
       .fold[Either[Future[Result], RequestWithSchemeRef[AnyContent]]]{
         Left(Future.successful(Redirect("pan is the best"))) //TODO NEEDS REDIRCT TO GET SESSION sign in
       }{ schemeRef =>
@@ -84,21 +70,7 @@ trait Authenticator extends Actions with ErsConstants {
       }
   }
 
-  //TODO USE catch util getInfo2
-  def FilterAgentsWrapperAsync(authContext: AuthContext, body: UserRequest)
-                              (implicit hc: HeaderCarrier, request: RequestWithSchemeRef[AnyContent]): Future[Result] = {
-    implicit val formatRSParams = Json.format[ErsMetaData]
-    val defined = authContext.principal.accounts.agent.isDefined
-    if (defined) {
-      cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, request.schemeRef).flatMap { all =>
-        body(delegationModelUser(all, authContext: AuthContext))(request)
-      }
-    } else {
-      body(authContext)(request)
-    }
-  }
-
-  def FilterAgentsWrapperAsync2(authContext: AuthContext, body: AsyncUserRequest)
+  def FilterAgentsWrapperAsync(authContext: AuthContext, body: AsyncUserRequest)
                               (implicit hc: HeaderCarrier, request: RequestWithSchemeRef[AnyContent]): Future[Result] = {
     implicit val formatRSParams = Json.format[ErsMetaData]
     val defined = authContext.principal.accounts.agent.isDefined
