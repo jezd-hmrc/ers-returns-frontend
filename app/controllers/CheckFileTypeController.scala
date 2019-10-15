@@ -52,8 +52,8 @@ trait CheckFileTypeController extends ERSReturnBaseController with Authenticator
       Ok(views.html.check_file_type(fileType.checkFileType, RsFormMappings.checkFileTypeForm.fill(fileType)))
     } recover {
       case _: NoSuchElementException =>
-        val form = CheckFileType(Some("")) //TODO THIS SHOULD BE NONE ??? // ALL THE OPTIONS IN THIS VIEW A FUNKED - FIX
-        Ok(views.html.check_file_type(Some(""), RsFormMappings.checkFileTypeForm.fill(form)))
+        val form = CheckFileType(None)
+        Ok(views.html.check_file_type(None, RsFormMappings.checkFileTypeForm.fill(form)))
     }
   }
 

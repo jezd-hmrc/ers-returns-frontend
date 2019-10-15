@@ -35,12 +35,12 @@
 					@if(checkFileTypeForm.hasErrors){<span class="error-message">@Html(Messages("ers_check_file_type.err.message"))</span>}
 				</legend>
 				<div class="form-field">
-					<label for="csv" class="block-label @(if(checkFileType == OPTION_CSV) "selected")">
-						<input id="csv" type="radio" name="checkFileType" value=@OPTION_CSV @(if(checkFileType.get == OPTION_CSV) "checked" else "")>
+					<label for="csv" class="block-label @(if(checkFileType == Some(OPTION_CSV)) "selected")">
+						<input id="csv" type="radio" name="checkFileType" value=@OPTION_CSV @(if(checkFileType == Some(OPTION_CSV)) "checked" else "")>
 						@Html(Messages("ers_check_file_type.option_1"))<br>
 					</label>
-					<label for="ods" class="block-label @(if(checkFileType == OPTION_ODS) "selected")">
-						<input id="ods" type="radio" name="checkFileType" value=@OPTION_ODS @(if(checkFileType.get == OPTION_ODS) "checked" else "")>
+					<label for="ods" class="block-label @(if(checkFileType == Some(OPTION_ODS)) "selected")">
+						<input id="ods" type="radio" name="checkFileType" value=@OPTION_ODS @(if(checkFileType == Some(OPTION_ODS)) "checked" else "")>
 						@Html(Messages("ers_check_file_type.option_2"))<br>
 					</label>
 				</div>

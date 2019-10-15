@@ -46,7 +46,7 @@ object Fixtures {
   val loggedInUser = LoggedInUser("userId", Some(DateTime.now), Some(DateTime.now), Some("governmentGatewayToken"), CredentialStrength.Strong, ConfidenceLevel.L500,"")
 
   def buildFakeAuthContext = AuthContext(loggedInUser, Principal(Some("name"), accounts), Some(Attorney("name", Link("url", "text"))), None, None, None)
-  
+
   def fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
     .withSession("sessionId" -> "FAKE_SESSION_ID","screenSchemeInfo" -> "2 - EMI - MYScheme - XX12345678 - 2016")
 
