@@ -44,11 +44,7 @@ trait CheckCsvFilesController extends ERSReturnBaseController with Authenticator
   }
 
   def showCheckCsvFilesPage()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    //TODO DO we need to addd scheme type to request.. ??
-
-    val schemeType = request.session.get(screenSchemeInfo).get.split(" - ")(1).toUpperCase()
-
-    val csvFilesList: List[CsvFiles] = PageBuilder.getCsvFilesList(schemeType)
+    val csvFilesList: List[CsvFiles] = PageBuilder.getCsvFilesList(request.schemeInfo.schemeType)
     cacheUtil.fetch[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, request.schemeInfo.schemeRef).map { cacheData =>
       val mergeWithSelected: List[CsvFiles] = mergeCsvFilesListWithCsvFilesCallback(csvFilesList, cacheData)
       Ok(views.html.check_csv_file(CsvFilesList(mergeWithSelected)))

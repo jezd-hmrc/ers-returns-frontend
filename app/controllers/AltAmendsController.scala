@@ -124,15 +124,13 @@ trait AltAmendsController extends ERSReturnBaseController with Authenticator wit
           if (formData.altAmendsVariations.isDefined) formData.altAmendsVariations else Some("0"),
           if (formData.altAmendsOther.isDefined) formData.altAmendsOther else Some("0")
         )
-        //TODO add Scheme Id to request
-        val schemeId = request.session.get(screenSchemeInfo).get.split(" - ").head
         cacheUtil.cache(CacheUtil.ALT_AMENDS_CACHE_CONTROLLER, altAmends, schemeRef).flatMap { all =>
           if (formData.altAmendsTerms.isEmpty
             && formData.altAmendsEligibility.isEmpty
             && formData.altAmendsExchange.isEmpty
             && formData.altAmendsVariations.isEmpty
             && formData.altAmendsOther.isEmpty) {
-            Future.successful(Redirect(routes.AltAmendsController.altAmendsPage()).flashing("alt-amends-not-selected-error" -> PageBuilder.getPageElement(schemeId, PageBuilder.PAGE_ALT_AMENDS, "err.message")))
+            Future.successful(Redirect(routes.AltAmendsController.altAmendsPage()).flashing("alt-amends-not-selected-error" -> PageBuilder.getPageElement(request.schemeInfo.schemeId, PageBuilder.PAGE_ALT_AMENDS, "err.message")))
           } else {
             Future.successful(Redirect(routes.SummaryDeclarationController.summaryDeclarationPage()))
           }
