@@ -14,14 +14,14 @@
  * limitations under the License.
  *@
 
-@(groupSchemeActivity: String, index: Int, trusteeDetails: Form[models.TrusteeDetails])(implicit request: Request[AnyRef], flash: Flash, context: config.ErsContext, messages: Messages)
+@(requestObject: RequestObject, groupSchemeActivity: String, index: Int, trusteeDetails: Form[models.TrusteeDetails])(implicit request: Request[AnyRef], flash: Flash, context: config.ErsContext, messages: Messages)
 
 @import uk.gov.hmrc.play.views.html.helpers
 @import utils.PageBuilder._
 @import views.html.helpers.error_overview
 @import views.html.templates._
 
-@schemeId = @{request.session.get("screenSchemeInfo").get.split(" - ").head}
+@schemeId = @{requestObject.getSchemeId}
 
 @scripts = {
     <script src='@routes.AssetsController.at("javascripts/ers_company.js")'> </script>
@@ -29,7 +29,7 @@
 
 @ers_main(title = Messages("ers.add_trustee.page_title"), scripts) {
 
-    @reference()
+    @reference(requestObject.getPageTitle)
     <p class="font-xsmall"><a href="@getPageBackLink(schemeId, PAGE_TRUSTEE_DETAILS, groupSchemeActivity)" class="link-back">@Html(Messages("ers.back"))</a></p>
     @header(Messages("ers_trustee_details.title"))
     @helpers.form(action = routes.TrusteeController.trusteeDetailsSubmit(index)) {

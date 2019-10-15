@@ -32,6 +32,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.play.test.UnitSpec
+import utils.Fixtures.ersRequestObject
 import utils._
 
 import scala.concurrent.Future
@@ -98,12 +99,12 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
 
     "direct to ers errors page if fetching groupSchemeActivity throws exception" in {
       val controllerUnderTest = buildFakeTrusteePageController(groupSchemeActivityRes = false)
-      contentAsString(await(controllerUnderTest.showTrusteeDetailsPage(10000)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))) shouldBe contentAsString(controllerUnderTest.getGlobalErrorPage)
+      contentAsString(await(controllerUnderTest.showTrusteeDetailsPage(ersRequestObject, 10000)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))) shouldBe contentAsString(controllerUnderTest.getGlobalErrorPage)
     }
 
     "show alterations trustee details page with no data pre-filled" in {
       val controllerUnderTest = buildFakeTrusteePageController(groupSchemeActivityRes = true)
-      val result = controllerUnderTest.showTrusteeDetailsPage(10000)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
+      val result = controllerUnderTest.showTrusteeDetailsPage(ersRequestObject, 10000)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
       status(result) shouldBe Status.OK
     }
 
@@ -124,7 +125,7 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
       val trusteeData = Map("" -> "")
       val form = RsFormMappings.trusteeDetailsForm.bind(trusteeData)
       val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
-      val result = controllerUnderTest.showTrusteeDetailsSubmit(10000)(Fixtures.buildFakeUser, request, hc)
+      val result = controllerUnderTest.showTrusteeDetailsSubmit(ersRequestObject, 10000)(Fixtures.buildFakeUser, request, hc)
       status(result) shouldBe Status.OK
     }
 
@@ -133,7 +134,7 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
       val trusteeData = Map("" -> "")
       val form = RsFormMappings.trusteeDetailsForm.bind(trusteeData)
       val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
-      contentAsString(await(controllerUnderTest.showTrusteeDetailsSubmit(10000)(Fixtures.buildFakeUser, request, hc))) shouldBe contentAsString(controllerUnderTest.getGlobalErrorPage)
+      contentAsString(await(controllerUnderTest.showTrusteeDetailsSubmit(ersRequestObject, 10000)(Fixtures.buildFakeUser, request, hc))) shouldBe contentAsString(controllerUnderTest.getGlobalErrorPage)
     }
 
     "if no form errors with new trustee (index 10000) and fetch trustee details success" in {
@@ -141,7 +142,7 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
       val trusteeData = Map("name" -> "Name", "addressLine1" -> "1 The Street", "addressLine2" -> "", "addressLine3" -> "", "addressLine4" -> "", "country" -> "UK", "postcode" -> "")
       val form = RsFormMappings.trusteeDetailsForm.bind(trusteeData)
       val request = Fixtures.buildFakeRequestWithSessionIdSIP("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
-      val result = controllerUnderTest.showTrusteeDetailsSubmit(10000)(Fixtures.buildFakeUser, request, hc)
+      val result = controllerUnderTest.showTrusteeDetailsSubmit(ersRequestObject, 10000)(Fixtures.buildFakeUser, request, hc)
       status(result) shouldBe Status.SEE_OTHER
       result.header.headers.get("Location").get shouldBe routes.TrusteeController.trusteeSummaryPage.toString()
     }
@@ -151,7 +152,7 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
       val trusteeData = Map("name" -> "Name", "addressLine1" -> "1 The Street", "addressLine2" -> "", "addressLine3" -> "", "addressLine4" -> "", "country" -> "UK", "postcode" -> "")
       val form = RsFormMappings.trusteeDetailsForm.bind(trusteeData)
       val request = Fixtures.buildFakeRequestWithSessionIdSIP("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
-      val result = controllerUnderTest.showTrusteeDetailsSubmit(10000)(Fixtures.buildFakeUser, request, hc)
+      val result = controllerUnderTest.showTrusteeDetailsSubmit(ersRequestObject, 10000)(Fixtures.buildFakeUser, request, hc)
       status(result) shouldBe Status.SEE_OTHER
       result.header.headers.get("Location").get shouldBe routes.TrusteeController.trusteeSummaryPage.toString()
     }
@@ -161,7 +162,7 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
       val trusteeData = Map("name" -> "Name", "addressLine1" -> "1 The Street", "addressLine2" -> "", "addressLine3" -> "", "addressLine4" -> "", "country" -> "UK", "postcode" -> "")
       val form = RsFormMappings.trusteeDetailsForm.bind(trusteeData)
       val request = Fixtures.buildFakeRequestWithSessionIdSIP("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
-      val result = controllerUnderTest.showTrusteeDetailsSubmit(1)(Fixtures.buildFakeUser, request, hc)
+      val result = controllerUnderTest.showTrusteeDetailsSubmit(ersRequestObject, 1)(Fixtures.buildFakeUser, request, hc)
       status(result) shouldBe Status.SEE_OTHER
       result.header.headers.get("Location").get shouldBe routes.TrusteeController.trusteeSummaryPage.toString()
     }
@@ -171,7 +172,7 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
       val trusteeData = Map("name" -> "Name", "addressLine1" -> "1 The Street", "addressLine2" -> "", "addressLine3" -> "", "addressLine4" -> "", "country" -> "UK", "postcode" -> "")
       val form = RsFormMappings.trusteeDetailsForm.bind(trusteeData)
       val request = Fixtures.buildFakeRequestWithSessionIdSIP("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
-      val result = controllerUnderTest.showTrusteeDetailsSubmit(0)(Fixtures.buildFakeUser, request, hc)
+      val result = controllerUnderTest.showTrusteeDetailsSubmit(ersRequestObject, 0)(Fixtures.buildFakeUser, request, hc)
       status(result) shouldBe Status.SEE_OTHER
       result.header.headers.get("Location").get shouldBe routes.TrusteeController.trusteeSummaryPage.toString()
     }
@@ -303,23 +304,23 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
 
     "direct to ers errors page if fetching group scheme activity fails" in {
       val controllerUnderTest = buildFakeTrusteeController(groupSchemeActivityRes = false, trusteeDetailsRes = false)
-      contentAsString(await(controllerUnderTest.showEditTrustee(10000)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))) shouldBe contentAsString(controllerUnderTest.getGlobalErrorPage)
+      contentAsString(await(controllerUnderTest.showEditTrustee(ersRequestObject, 10000)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))) shouldBe contentAsString(controllerUnderTest.getGlobalErrorPage)
     }
 
     "direct to ers errors page if fetching trustee details list fails" in {
       val controllerUnderTest = buildFakeTrusteeController(groupSchemeActivityRes = true, trusteeDetailsRes = false)
-      contentAsString(await(controllerUnderTest.showEditTrustee(10000)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))) shouldBe contentAsString(controllerUnderTest.getGlobalErrorPage)
+      contentAsString(await(controllerUnderTest.showEditTrustee(ersRequestObject, 10000)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))) shouldBe contentAsString(controllerUnderTest.getGlobalErrorPage)
     }
 
     "edit trustee for given index and display trustee summary page pre-filled" in {
       val controllerUnderTest = buildFakeTrusteeController(groupSchemeActivityRes = true, trusteeDetailsRes = true)
-      val result = controllerUnderTest.showEditTrustee(0)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
+      val result = controllerUnderTest.showEditTrustee(ersRequestObject, 0)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
       status(result) shouldBe Status.OK
     }
 
     "traverse the trustee list and display trustee summary page" in {
       val controllerUnderTest = buildFakeTrusteeController(groupSchemeActivityRes = true, trusteeDetailsRes = true)
-      val result = controllerUnderTest.showEditTrustee(10)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
+      val result = controllerUnderTest.showEditTrustee(ersRequestObject, 10)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
       status(result) shouldBe Status.OK
     }
 
@@ -378,12 +379,12 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
 
     "direct to ers errors page if fetching trustee details list fails" in {
       val controllerUnderTest = buildFakeTrusteeController(groupSchemeActivityRes = true, trusteeDetailsRes = false)
-      contentAsString(await(controllerUnderTest.showTrusteeSummaryPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))) shouldBe contentAsString(controllerUnderTest.getGlobalErrorPage)
+      contentAsString(await(controllerUnderTest.showTrusteeSummaryPage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))) shouldBe contentAsString(controllerUnderTest.getGlobalErrorPage)
     }
 
     "display trustee summary page pre-filled" in {
       val controllerUnderTest = buildFakeTrusteeController(groupSchemeActivityRes = true, trusteeDetailsRes = true)
-      val result = controllerUnderTest.showTrusteeSummaryPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
+      val result = controllerUnderTest.showTrusteeSummaryPage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
       status(result) shouldBe Status.OK
     }
 
@@ -405,9 +406,5 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
       val result = controllerUnderTest.continueFromTrusteeSummaryPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
       status(result) shouldBe Status.SEE_OTHER
     }
-
-
   }
-
-
 }

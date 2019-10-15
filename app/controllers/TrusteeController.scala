@@ -39,13 +39,15 @@ trait TrusteeController extends ERSReturnBaseController with Authenticator {
   def trusteeDetailsPage(index: Int): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        showTrusteeDetailsPage(index)(user, request, hc)
+        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
+          showTrusteeDetailsPage(requestObject, index)(user, request, hc)
+        }
   }
 
-  def showTrusteeDetailsPage(index: Int)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Result] = {
+  def showTrusteeDetailsPage(requestObject: RequestObject, index: Int)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Result] = {
     val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
     cacheUtil.fetch[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, scRef).map { groupSchemeActivity =>
-      Ok(views.html.trustee_details(groupSchemeActivity.groupScheme.getOrElse(PageBuilder.DEFAULT), index, RsFormMappings.trusteeDetailsForm))
+      Ok(views.html.trustee_details(requestObject, groupSchemeActivity.groupScheme.getOrElse(PageBuilder.DEFAULT), index, RsFormMappings.trusteeDetailsForm))
     } recover {
       case e: Exception => {
         Logger.error(s"showTrusteeDetailsPage: Get data from cache failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
@@ -57,10 +59,12 @@ trait TrusteeController extends ERSReturnBaseController with Authenticator {
   def trusteeDetailsSubmit(index: Int): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        showTrusteeDetailsSubmit(index)(user, request, hc)
+        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
+          showTrusteeDetailsSubmit(requestObject, index)(user, request, hc)
+        }
   }
 
-  def showTrusteeDetailsSubmit(index: Int)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showTrusteeDetailsSubmit(requestObject: RequestObject, index: Int)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
     RsFormMappings.trusteeDetailsForm.bindFromRequest.fold(
       errors => {
@@ -69,7 +73,7 @@ trait TrusteeController extends ERSReturnBaseController with Authenticator {
           val incorrectOrderGrouped = errors.errors.groupBy(_.key).map(_._2.head).toSeq
           val correctOrderGrouped = correctOrder.flatMap(x => incorrectOrderGrouped.find(_.key == x))
           val firstErrors: Form[models.TrusteeDetails] = new Form[TrusteeDetails](errors.mapping, errors.data, correctOrderGrouped, errors.value)
-          Ok(views.html.trustee_details(groupSchemeActivity.groupScheme.getOrElse(PageBuilder.DEFAULT), index, firstErrors))
+          Ok(views.html.trustee_details(requestObject, groupSchemeActivity.groupScheme.getOrElse(PageBuilder.DEFAULT), index, firstErrors))
         } recover {
           case e: Exception => {
             Logger.error(s"showTrusteeDetailsSubmit: Get data from cache failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
@@ -165,10 +169,12 @@ trait TrusteeController extends ERSReturnBaseController with Authenticator {
   def editTrustee(id: Int): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        showEditTrustee(id)(user, request, hc)
+        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
+          showEditTrustee(requestObject, id)(user, request, hc)
+        }
   }
 
-  def showEditTrustee(id: Int)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showEditTrustee(requestObject: RequestObject, id: Int)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
 
     cacheUtil.fetch[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, scRef).flatMap { groupSchemeActivity =>
@@ -188,7 +194,7 @@ trait TrusteeController extends ERSReturnBaseController with Authenticator {
             )
           }
         }
-        Ok(views.html.trustee_details(groupSchemeActivity.groupScheme.getOrElse(PageBuilder.DEFAULT), id, RsFormMappings.trusteeDetailsForm.fill(trusteeDetails)))
+        Ok(views.html.trustee_details(requestObject, groupSchemeActivity.groupScheme.getOrElse(PageBuilder.DEFAULT), id, RsFormMappings.trusteeDetailsForm.fill(trusteeDetails)))
       } recover {
         case e: Exception => {
           Logger.error(s"showEditTrustee: Get data from cache failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
@@ -206,13 +212,15 @@ trait TrusteeController extends ERSReturnBaseController with Authenticator {
   def trusteeSummaryPage(): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        showTrusteeSummaryPage()(user, request, hc)
+        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
+          showTrusteeSummaryPage(requestObject)(user, request, hc)
+        }
   }
 
-  def showTrusteeSummaryPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showTrusteeSummaryPage(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
     cacheUtil.fetch[TrusteeDetailsList](CacheUtil.TRUSTEES_CACHE, scRef).map { trusteeDetailsList =>
-      Ok(views.html.trustee_summary(trusteeDetailsList))
+      Ok(views.html.trustee_summary(requestObject, trusteeDetailsList))
     } recover {
       case e: Exception => {
         Logger.error(s"showTrusteeSummaryPage: Get data from cache failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")

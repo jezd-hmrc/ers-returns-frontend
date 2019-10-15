@@ -44,13 +44,8 @@ POST        /choose-csv-files                               controllers.CheckCsv
 GET 		/group-scheme   			                    controllers.GroupSchemeController.groupSchemePage()
 POST 		/group-scheme   				                controllers.GroupSchemeController.groupSchemeSelected(scheme: String)
 
-#GET 		/group-type					                    controllers.GroupSchemeController.groupSchemeTypePage()
-#POST 		/group-type						                controllers.GroupSchemeController.groupSchemeTypeSelected(scheme: String)
-
 GET 		/subsidiary-company-summary	                    controllers.GroupSchemeController.groupPlanSummaryPage()
 POST 		/subsidiary-company-summary		                controllers.GroupSchemeController.groupPlanSummaryContinue(scheme: String)
-
-#GET 		/group-check-csv-file		                    controllers.GroupSchemeController.groupCheckCSVFilePage()
 
 GET         /choose-file-type				                controllers.CheckFileTypeController.checkFileTypePage()
 POST        /choose-file-type				                controllers.CheckFileTypeController.checkFileTypeSelected()
