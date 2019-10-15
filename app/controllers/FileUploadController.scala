@@ -122,12 +122,8 @@ trait FileUploadController extends FrontendController with Authenticator with Le
         Logger.info("validationFailure: Validation Failure: " + (System.currentTimeMillis() / 1000))
         val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
         cacheUtil.fetch[CheckFileType](CacheUtil.FILE_TYPE_CACHE, scRef).flatMap { fileType =>
-          cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, scRef).flatMap { all =>
-            cacheUtil.fetch[RequestObject](CacheUtil.ersRequestObject).map { requestObject =>
-              val scheme: String = all.schemeInfo.schemeId
-              val schemeName: String = all.schemeInfo.schemeName
-              Ok(views.html.file_upload_errors(requestObject, scheme, schemeName, scRef, fileType.checkFileType.get))
-            }
+          cacheUtil.fetch[RequestObject](CacheUtil.ersRequestObject).map { requestObject =>
+            Ok(views.html.file_upload_errors(requestObject, fileType.checkFileType.getOrElse("")))
           }
         }
   }

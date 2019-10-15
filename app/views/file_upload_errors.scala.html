@@ -14,8 +14,7 @@
  * limitations under the License.
  *@
 
-@(requestObject: RequestObject, scheme: String, schemeRef: String, sr: String, fileType: String)(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
-@schemeId = @{requestObject.getSchemeId}
+@(requestObject: RequestObject, fileType: String)(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
 @import utils.PageBuilder._
 @import views.html.templates._
 

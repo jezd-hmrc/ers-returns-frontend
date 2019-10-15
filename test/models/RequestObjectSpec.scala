@@ -16,9 +16,11 @@
 
 package models
 
+import org.joda.time.DateTime
 import org.scalatest.{MustMatchers, WordSpec}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.i18n.{Lang, Messages, MessagesApi}
+import play.api.test.FakeRequest
 import utils.Fixtures.ersRequestObject
 import utils.DateUtils
 
@@ -41,6 +43,69 @@ class RequestObjectSpec extends WordSpec with MustMatchers with GuiceOneAppPerSu
       val expected = "1"
 
       ersRequestObject.getSchemeId mustBe expected
+    }
+
+    "return an instance of SchemeInfo with the correct field" in {
+
+      val requestObject =
+        RequestObject(
+          None,
+          Some("2016/17"),
+          Some("AA0000000000000"),
+          Some("MyScheme"),
+          Some("CSOP"),
+          None,
+          None,
+          None,
+          None
+        )
+
+
+      val result = requestObject.toSchemeInfo
+
+      result.schemeName mustBe "MyScheme"
+      result.schemeId mustBe "1"
+      result.schemeType mustBe "CSOP"
+      result.schemeRef mustBe "AA0000000000000"
+      result.taxYear mustBe "2016/17"
+    }
+
+    "return an instance of ErsMetaData with the correct field" in {
+
+      implicit val request = FakeRequest("GET", "/foo")
+
+      val requestObject =
+        RequestObject(
+          None,
+          Some("2016/17"),
+          Some("AA0000000000000"),
+          Some("MyScheme"),
+          Some("CSOP"),
+          None,
+          Some("empRef"),
+          None,
+          None
+        )
+
+      val expectedSchemeInfo =
+        SchemeInfo(
+          "AA0000000000000",
+          DateTime.now(),
+          "1",
+          "2016/17",
+          "MyScheme",
+          "CSOP"
+        )
+
+
+      val result = requestObject.toErsMetaData
+
+      result.schemeInfo mustBe expectedSchemeInfo
+      result.ipRef mustBe request.remoteAddress
+      result.aoRef mustBe None
+      result.empRef mustBe "empRef"
+      result.agentRef mustBe None
+      result.sapNumber mustBe None
     }
   }
 }

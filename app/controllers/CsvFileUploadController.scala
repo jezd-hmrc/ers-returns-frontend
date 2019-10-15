@@ -19,6 +19,7 @@ package controllers
 import _root_.models._
 import config.ERSFileValidatorAuthConnector
 import connectors.{AttachmentsConnector, ErsConnector}
+import org.joda.time.DateTime
 import play.api.Logger
 import play.api.Play.current
 import play.api.i18n.Messages
@@ -212,18 +213,16 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
   }
 
   def processValidationFailure(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+
     Logger.info("validationFailure: Validation Failure: " + (System.currentTimeMillis() / 1000))
     val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    cacheUtil.fetch[CheckFileType](CacheUtil.FILE_TYPE_CACHE, scRef).flatMap { fileType =>
-      cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, scRef).map { all =>
-        val scheme: String = all.schemeInfo.schemeId
-        val schemeName: String = all.schemeInfo.schemeName
-        Ok(views.html.file_upload_errors(requestObject, scheme, schemeName, scRef, fileType.checkFileType.get))
-      }.recover {
-        case e: Exception => {
-          Logger.error(s"processValidationFailure: failed to save callback data list with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
-          getGlobalErrorPage
-        }
+
+    cacheUtil.fetch[CheckFileType](CacheUtil.FILE_TYPE_CACHE, scRef).map { fileType =>
+      Ok(views.html.file_upload_errors(requestObject, fileType.checkFileType.get))
+    }.recover {
+      case e: Exception => {
+        Logger.error(s"processValidationFailure: failed to save callback data list with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
+        getGlobalErrorPage
       }
     }
   }

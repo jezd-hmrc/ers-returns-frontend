@@ -22,6 +22,7 @@ import models._
 import org.joda.time.DateTime
 import org.mockito.Matchers._
 import org.mockito.Mockito._
+import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
@@ -43,7 +44,9 @@ import play.api.test.Helpers._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import utils.Fixtures.ersRequestObject
 
-class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSFakeApplicationConfig with ERSUsers with MockitoSugar {
+import scala.util.Success
+
+class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSFakeApplicationConfig with ERSUsers with MockitoSugar with ScalaFutures {
 
 
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
@@ -413,13 +416,8 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
       override val cacheUtil: CacheUtil = mockCacheUtil
     }
 
-    "return Ok if fetching metaData from cache is successful" in {
+    "return Ok if fetching CheckFileType from cache is successful" in {
       reset(mockCacheUtil)
-      when(
-        mockCacheUtil.fetch[ErsMetaData](anyString(), anyString())(any(), any(), any())
-      ).thenReturn(
-        Future.successful(ErsMetaData(SchemeInfo("", DateTime.now, "", "", "", ""), "", None, "", None, None))
-      )
       when(
         mockCacheUtil.fetch[CheckFileType](refEq(CacheUtil.FILE_TYPE_CACHE), anyString())(any(), any(), any())
       ).thenReturn(
@@ -431,18 +429,17 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
 
     }
 
-    "throws exception if fetching metaData from cache fails" in {
+    "return the globalErrorPage if fetching CheckFileType from cache fails" in {
       reset(mockCacheUtil)
       when(
-        mockCacheUtil.fetch[ErsMetaData](anyString(), anyString())(any(), any(), any())
+        mockCacheUtil.fetch[CheckFileType](refEq(CacheUtil.FILE_TYPE_CACHE), anyString())(any(), any(), any())
       ).thenReturn(
         Future.failed(new RuntimeException)
       )
 
-      intercept[Exception] {
-        await(csvFileUploadController.processValidationFailure(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
-      }
+      val result = csvFileUploadController.processValidationFailure(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc).futureValue
 
+      result.value shouldBe Some(Success(csvFileUploadController.getGlobalErrorPage))
     }
 
   }

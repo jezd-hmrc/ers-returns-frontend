@@ -81,6 +81,10 @@ class ReturnServiceControllerTest extends UnitSpec with ERSFakeApplicationConfig
         Future.successful(CacheMap("1", Map(key -> JsString("result"))))
       }
 
+      override def cache[T](key: String, body: T, ref: String)(implicit hc:HeaderCarrier, formats: json.Format[T], request: Request[AnyRef]) = {
+        Future.successful(CacheMap("1", Map(key -> JsString("result"))))
+      }
+
       @throws(classOf[NoSuchElementException])
       override def fetch[T](key: String, cacheId: String)(implicit hc: HeaderCarrier, formats: json.Format[T], request: Request[AnyRef]): Future[T] = {
 

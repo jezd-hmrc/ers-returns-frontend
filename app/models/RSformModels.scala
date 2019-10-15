@@ -16,8 +16,10 @@
 
 package models
 
+import org.joda.time.DateTime
 import play.api.i18n.Messages
 import play.api.libs.json.Json
+import play.api.mvc.Request
 import utils.{DateUtils, PageBuilder}
 
 case class RS_scheme(scheme: String)
@@ -112,6 +114,27 @@ case class RequestObject(
                           ts: Option[String],
                           hmac: Option[String]
                           ) {
+
+  def toSchemeInfo: SchemeInfo =
+    SchemeInfo(
+      getSchemeReference,
+      DateTime.now,
+      getSchemeId,
+      getTaxYear,
+      getSchemeName,
+      getSchemeType
+    )
+
+  def toErsMetaData(implicit request: Request[AnyRef]): ErsMetaData = {
+    ErsMetaData(
+      toSchemeInfo,
+      request.remoteAddress,
+      aoRef,
+      getEmpRef,
+      agentRef,
+      None
+    )
+  }
 
   def getPageTitle(implicit messages: Messages) =
     s"${messages(s"ers.scheme.$getSchemeType")} - ${messages(s"ers.scheme.title", getSchemeName)} - $getSchemeReference - ${DateUtils.getFullTaxYear(getTaxYear)}"

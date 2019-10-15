@@ -63,11 +63,16 @@ trait ReturnServiceController extends ERSReturnBaseController with Authenticator
 
     implicit val formatRSParams: OFormat[RequestObject] = Json.format[RequestObject]
 
+    Logger.debug("Meta Data created --> " + ersRequestObject)
     Logger.debug("Request Object created --> " + ersRequestObject)
-    cacheUtil.cache(CacheUtil.ersRequestObject, ersRequestObject).map {
-      _ => {
-        Logger.debug("Request Object Cached --> " + ersRequestObject); showInitialStartPage(ersRequestObject)(authContext, request, hc)
-      }
+    cacheUtil.cache(CacheUtil.ersMetaData, ersRequestObject.toErsMetaData, ersRequestObject.getSchemeReference).flatMap { _ =>
+      Logger.debug("Meta Data Cached --> " + ersRequestObject);
+      cacheUtil.cache(CacheUtil.ersRequestObject, ersRequestObject).map {
+        _ => {
+          Logger.debug("Request Object Cached --> " + ersRequestObject);
+          showInitialStartPage(ersRequestObject)(authContext, request, hc)
+        }
+    }
     } recover { case e: Exception =>
       Logger.warn(s"Caught exception ${e.getMessage}", e)
       getGlobalErrorPage
