@@ -16,9 +16,11 @@
 
 package utils
 
+import controllers.RequestWithSchemeRef
 import models._
 import org.joda.time.DateTime
 import play.api.libs.json._
+import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import uk.gov.hmrc.domain.{EmpRef, Generator}
 import uk.gov.hmrc.play.frontend.auth._
@@ -39,38 +41,53 @@ object Fixtures {
     60 seconds
   }
 
-  val accounts =  Accounts(None,		epaye = Some(EpayeAccount(s"/epaye/empRef", EmpRef("ABC", "1234"))))
-  val loggedInuser = LoggedInUser("userId", Some(DateTime.now), Some(DateTime.now), Some("governmentGatewayToken"), CredentialStrength.Strong, ConfidenceLevel.L500,"")
-  def buildFakeUser = AuthContext(loggedInuser,Principal(Some("name"), accounts),Some(Attorney("name", Link("url", "text"))), None, None, None)
+  val accounts =  Accounts(None, epaye = Some(EpayeAccount(s"/epaye/empRef", EmpRef("ABC", "1234"))))
+
+  val loggedInUser = LoggedInUser("userId", Some(DateTime.now), Some(DateTime.now), Some("governmentGatewayToken"), CredentialStrength.Strong, ConfidenceLevel.L500,"")
+
+  def buildFakeAuthContext = AuthContext(loggedInUser, Principal(Some("name"), accounts), Some(Attorney("name", Link("url", "text"))), None, None, None)
+
+  //TODO REFACTOR
+
+  val schemeRefID = "XX12345678"
+
+  def fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
+    .withSession("sessionId" -> "FAKE_SESSION_ID","screenSchemeInfo" -> s"2 - EMI - MYScheme - $schemeRefID - 2016")
+
+  def fakeRequestWithFormData(formData: Seq[(String, String)]) =
+    fakeRequest.withFormUrlEncodedBody(formData: _*)
+
+  implicit def fakeRequestToRequestWithSchemeRef[A](request: FakeRequest[A]): RequestWithSchemeRef[A] =
+    RequestWithSchemeRef(request, schemeRefID)
 
   def buildFakeRequestWithSessionId(method: String = "pointless") = FakeRequest()
     .withSession("sessionId" -> "FAKE_SESSION_ID","screenSchemeInfo" -> "2 - EMI - MYScheme - XX12345678 - 2016")
 
-  def buildFakeRequestWithNoScreenScheemeInfo(method: String) = FakeRequest()
+  def buildFakeRequestWithNoScreenScheemeInfo(method: String): FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
     .withSession("sessionId" -> "FAKE_SESSION_ID")
 
-  def buildFakeRequestWithBrokenScreenScheemeInfo(method: String) = FakeRequest()
+  def buildFakeRequestWithBrokenScreenScheemeInfo(method: String): FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
     .withSession("sessionId" -> "FAKE_SESSION_ID", "screenSchemeInfo" -> "-")
 
-  def buildFakeRequestWithSessionIdCSOP(method: String) = FakeRequest()
+  def buildFakeRequestWithSessionIdCSOP(method: String): FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
     .withSession("sessionId" -> "FAKE_SESSION_ID", "screenSchemeInfo" -> "1 - CSOP - MYScheme - XX12345678 - 2016")
 
-  def buildFakeRequestWithSessionIdSAYE(method: String) = FakeRequest()
+  def buildFakeRequestWithSessionIdSAYE(method: String): FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
     .withSession("sessionId" -> "FAKE_SESSION_ID", "screenSchemeInfo" -> "4 - SAYE - MYScheme - XX12345678 - 2016")
 
-  def buildFakeRequestWithSessionIdSIP(method: String) = FakeRequest()
+  def buildFakeRequestWithSessionIdSIP(method: String): FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
     .withSession("sessionId" -> "FAKE_SESSION_ID", "screenSchemeInfo" -> "5 - SIP - MYScheme - XX12345678 - 2016")
 
-  def buildFakeRequestWithSessionIdEMI(method: String) = FakeRequest()
+  def buildFakeRequestWithSessionIdEMI(method: String): FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
     .withSession("sessionId" -> "FAKE_SESSION_ID", "screenSchemeInfo" -> "2 - EMI - MYScheme - XX12345678 - 2016")
 
-  def buildFakeRequestWithSessionIdOTHER(method: String) = FakeRequest()
+  def buildFakeRequestWithSessionIdOTHER(method: String): FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
     .withSession("sessionId" -> "FAKE_SESSION_ID", "screenSchemeInfo" -> "3 - OTHER - MYScheme - XX12345678 - 2016")
 
-  def buildFakeRequest(method: String) = FakeRequest()
+  def buildFakeRequest(method: String):FakeRequest[_] = FakeRequest()
 
   def fetchAndGetMockScheme(): Future[Option[String]] = {
-    Future.successful(Option("1"))
+    Future.successful(Some("1"))
   }
 
   def schemeRef : String = {"XYZ12345"}

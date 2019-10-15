@@ -48,9 +48,8 @@ trait SummaryDeclarationController extends ERSReturnBaseController with Authenti
         showSummaryDeclarationPage()(user, request, hc)
   }
 
-  def showSummaryDeclarationPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    cacheUtil.fetchAll(schemeRef).flatMap { all =>
+  def showSummaryDeclarationPage()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
+    cacheUtil.fetchAll(request.schemeRef).flatMap { all =>
       val schemeOrganiser: SchemeOrganiserDetails = all.getEntry[SchemeOrganiserDetails](CacheUtil.SCHEME_ORGANISER_CACHE).get
       val groupSchemeInfo: GroupSchemeInfo = all.getEntry[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER).getOrElse(new GroupSchemeInfo(None, None))
       val groupScheme: String = groupSchemeInfo.groupScheme.getOrElse("")
@@ -60,6 +59,8 @@ trait SummaryDeclarationController extends ERSReturnBaseController with Authenti
       var fileNames: String = ""
       var fileCount: Int = 0
 
+
+      //TODO WRITE FUNCTIONALLY!
       if (reportableEvents == PageBuilder.OPTION_YES) {
         fileType = all.getEntry[CheckFileType](CacheUtil.FILE_TYPE_CACHE).get.checkFileType.get
         if (fileType == PageBuilder.OPTION_CSV) {

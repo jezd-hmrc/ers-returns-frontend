@@ -42,8 +42,8 @@ trait SchemeOrganiserController extends ERSReturnBaseController with Authenticat
         showSchemeOrganiserPage()(user, request, hc)
   }
 
-  def showSchemeOrganiserPage()(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Result] = {
-    val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
+  def showSchemeOrganiserPage()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyContent], hc: HeaderCarrier): Future[Result] = {
+    val schemeRef = request.schemeRef
     Logger.warn(s"SchemeOrganiserController: showSchemeOrganiserPage:  schemeRef: ${schemeRef}.")
 
     cacheUtil.fetch[ReportableEvents](CacheUtil.reportableEvents, schemeRef).flatMap { reportableEvent =>
@@ -79,18 +79,19 @@ trait SchemeOrganiserController extends ERSReturnBaseController with Authenticat
         showSchemeOrganiserSubmit()(user, request, hc)
   }
 
-  def showSchemeOrganiserSubmit()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showSchemeOrganiserSubmit()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
     RsFormMappings.schemeOrganiserForm.bindFromRequest.fold(
       errors => {
         val correctOrder = errors.errors.map(_.key).distinct
         val incorrectOrderGrouped = errors.errors.groupBy(_.key).map(_._2.head).toSeq
         val correctOrderGrouped = correctOrder.flatMap(x => incorrectOrderGrouped.find(_.key == x))
         val firstErrors: Form[models.SchemeOrganiserDetails] = new Form[SchemeOrganiserDetails](errors.mapping, errors.data, correctOrderGrouped, errors.value)
+        println(Console.RED + Console.BLINK + "PAN" + Console.RESET + correctOrderGrouped)
         Future.successful(Ok(views.html.scheme_organiser("", firstErrors)))
       },
       successful => {
-        val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-        Logger.warn(s"SchemeOrganiserController: showSchemeOrganiserSubmit:  schemeRef: ${schemeRef}.")
+        val schemeRef = request.schemeRef
+        Logger.warn(s"SchemeOrganiserController: showSchemeOrganiserSubmit:  schemeRef: $schemeRef.")
 
         cacheUtil.cache(CacheUtil.SCHEME_ORGANISER_CACHE, successful, schemeRef).map {
           res => Redirect(routes.GroupSchemeController.groupSchemePage)

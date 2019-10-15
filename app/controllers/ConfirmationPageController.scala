@@ -54,14 +54,13 @@ trait ConfirmationPageController extends ERSReturnBaseController with Authentica
         showConfirmationPage()(user, request, hc)
   }
 
-  def showConfirmationPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    if (request.session.get(screenSchemeInfo).isDefined == false) Logger.error(s"Session doesn't contain scheme info: ${request.session}")
-    val schemeRef: String = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
+  def showConfirmationPage()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
+    val schemeRef: String = request.schemeRef
     val sessionBundelRef: String = request.session.get("bundelRef").getOrElse("")
     val sessionDateTimeSubmitted: String = request.session.get("dateTimeSubmitted").getOrElse("")
     if (sessionBundelRef == "") {
       cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, schemeRef).flatMap { all =>
-        if (all.sapNumber.isDefined == false) Logger.error(s"Did cache util fail for scheme ${schemeRef} all.sapNumber is empty: ${all}")
+        if (all.sapNumber.isEmpty) Logger.error(s"Did cache util fail for scheme $schemeRef all.sapNumber is empty: $all")
         ersConnector.connectToEtmpSummarySubmit(all.sapNumber.get, jsonParser.getSubmissionJson(all.schemeInfo.schemeRef, all.schemeInfo.schemeType, all.schemeInfo.taxYear, "EOY-RETURN")).flatMap { bundle =>
           cacheUtil.getAllData(bundle, all).flatMap { alldata =>
             if (alldata.isNilReturn == PageBuilder.OPTION_NIL_RETURN) {
@@ -119,7 +118,7 @@ trait ConfirmationPageController extends ERSReturnBaseController with Authentica
     }
   }
 
-  def saveAndSubmit(alldata: ErsSummary, all: ErsMetaData, bundle: String)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def saveAndSubmit(alldata: ErsSummary, all: ErsMetaData, bundle: String)(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
     val jsonDateTimeFormat = new SimpleDateFormat("d MMMM yyyy, h:mma")
     val dateTimeSubmitted = jsonDateTimeFormat.format(alldata.confirmationDateTime.toDate()).replace("AM", "am").replace("PM", "pm")
@@ -152,7 +151,7 @@ trait ConfirmationPageController extends ERSReturnBaseController with Authentica
             }
           }
 
-          Logger.warn(s"Submission completed for schemeInfo: ${all.schemeInfo.toString}, bundle: ${bundle} ")
+          Logger.warn(s"Submission completed for schemeInfo: ${all.schemeInfo.toString}, bundle: $bundle ")
           val url: String = ExternalUrls.portalDomain
           Ok(views.html.confirmation(dateTimeSubmitted, bundle, all.schemeInfo.taxYear, url)(request, context, implicitly)).withSession(request.session + ("bundelRef" -> bundle) + ("dateTimeSubmitted" -> dateTimeSubmitted))
         }

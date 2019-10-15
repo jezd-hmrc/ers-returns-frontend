@@ -42,6 +42,7 @@ import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import utils.Fixtures.fakeRequestToRequestWithSchemeRef
 
 class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
   with MockitoSugar with ERSUsers with ErsConstants with LegacyI18nSupport
@@ -204,7 +205,7 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
       override val ersConnector: ErsConnector = mock[ErsConnector]
       override val cacheUtil: CacheUtil = mock[CacheUtil]
 
-      override def showSuccess()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Ok)
+      override def showSuccess()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Ok)
     }
 
     "redirect for unauthorised users to login page" in {
@@ -243,7 +244,7 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
       when(mockCacheUtil.cache[String](anyString(), anyString(), anyString())(any(), any(), any()))
         .thenReturn(Future.successful(mock[CacheMap]))
 
-      val result = fileUploadController.showSuccess()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
+      val result = fileUploadController.showSuccess()(Fixtures.buildFakeAuthContext, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
       contentAsString(result).contains(messages("ers.bulk.success.csop.info", "this file")) must be(true)
     }
 
@@ -257,7 +258,7 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
       when(mockCacheUtil.cache[String](anyString(), anyString(), anyString())(any(), any(), any()))
         .thenReturn(Future.failed(new Exception))
 
-      val result = fileUploadController.showSuccess()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
+      val result = fileUploadController.showSuccess()(Fixtures.buildFakeAuthContext, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
       contentAsString(result) must be(contentAsString(Future(fileUploadController.getGlobalErrorPage)))
     }
   }

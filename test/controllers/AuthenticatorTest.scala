@@ -16,9 +16,7 @@
 
 package controllers
 
-import org.scalactic.Fail
 import org.scalatest.EitherValues
-import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.mvc.{AnyContent, Result}
 import play.api.test.FakeRequest
@@ -27,11 +25,11 @@ import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, Authority, ConfidenceLevel, CredentialStrength}
 import uk.gov.hmrc.play.test.UnitSpec
-import utils.ERSFakeApplicationConfig
+import utils.{ERSFakeApplicationConfig, Fixtures}
 
 import scala.concurrent.Future
 
-class AuthenticatorTest extends UnitSpec with OneAppPerSuite with ERSFakeApplicationConfig with MockitoSugar with EitherValues  {
+class AuthenticatorTest extends UnitSpec with OneAppPerSuite with ERSFakeApplicationConfig with EitherValues  {
 
 
   class SUT extends Authenticator {
@@ -49,7 +47,7 @@ class AuthenticatorTest extends UnitSpec with OneAppPerSuite with ERSFakeApplica
 
       "redirect to portal" when {
         "session has dropped" in new SUT {
-          val eitherResult: Either[Future[Result], RequestWithSchemeRef[AnyContent]] = FilterForSchemeRef2(body, FakeRequest("GET", ""), authContext)
+          val eitherResult: Either[Future[Result], RequestWithSchemeRef[AnyContent]] = FilterForSchemeRef2(body, FakeRequest(), authContext)
           val result: Future[Result] = eitherResult.left.value
 
           status(result) shouldBe 303
@@ -59,9 +57,8 @@ class AuthenticatorTest extends UnitSpec with OneAppPerSuite with ERSFakeApplica
 
       "continue to body" when {
         "scheme ref is present in the session" in new SUT {
-          val rawRequest = FakeRequest()
-          val eitherResult: Either[Future[Result], RequestWithSchemeRef[AnyContent]] = FilterForSchemeRef2(body, rawRequest
-            .withSession("screenSchemeInfo" -> "2 - EMI - MYScheme - XX12345678 - 2016"), authContext)
+          val request = Fixtures.buildFakeRequestWithSessionId()
+          val eitherResult: Either[Future[Result], RequestWithSchemeRef[AnyContent]] = FilterForSchemeRef2(body, request, authContext)
           val result: RequestWithSchemeRef[AnyContent] = eitherResult.right.value
 
           result.schemeRef shouldBe "XX12345678"

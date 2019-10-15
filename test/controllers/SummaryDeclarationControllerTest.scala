@@ -43,6 +43,7 @@ import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures, PageBuilder}
 
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpPost, HttpResponse}
+import utils.Fixtures.fakeRequestToRequestWithSchemeRef
 
 class SummaryDeclarationControllerTest extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with OneAppPerSuite {
 
@@ -278,7 +279,7 @@ class SummaryDeclarationControllerTest extends UnitSpec with ERSFakeApplicationC
   "Calling SummaryDeclarationController.showSummaryDeclarationPage (GET) with authentication missing elements in the cache" should {
     "direct to ers errors page" in {
       val controllerUnderTest = buildFakeSummaryDeclarationController
-      contentAsString(await(controllerUnderTest.showSummaryDeclarationPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))) shouldBe contentAsString(controllerUnderTest.getGlobalErrorPage)
+      contentAsString(await(controllerUnderTest.showSummaryDeclarationPage()(Fixtures.buildFakeAuthContext, Fixtures.buildFakeRequestWithSessionId("GET"), hc))) shouldBe contentAsString(controllerUnderTest.getGlobalErrorPage)
     }
   }
 
@@ -286,7 +287,7 @@ class SummaryDeclarationControllerTest extends UnitSpec with ERSFakeApplicationC
     "show the scheme organiser page" in {
       val controllerUnderTest = buildFakeSummaryDeclarationController
       controllerUnderTest.fetchAllMapVal = "withAllNillReturn"
-      val result = controllerUnderTest.showSummaryDeclarationPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc)
+      val result = controllerUnderTest.showSummaryDeclarationPage()(Fixtures.buildFakeAuthContext, Fixtures.buildFakeRequestWithSessionId("GET"), hc)
       status(result) shouldBe Status.OK
     }
   }
@@ -295,7 +296,7 @@ class SummaryDeclarationControllerTest extends UnitSpec with ERSFakeApplicationC
     "show the scheme organiser page" in {
       val controllerUnderTest = buildFakeSummaryDeclarationController
       controllerUnderTest.fetchAllMapVal = "withAllCSVFile"
-      val result = controllerUnderTest.showSummaryDeclarationPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc)
+      val result = controllerUnderTest.showSummaryDeclarationPage()(Fixtures.buildFakeAuthContext, Fixtures.buildFakeRequestWithSessionId("GET"), hc)
       status(result) shouldBe Status.OK
     }
   }
@@ -304,7 +305,7 @@ class SummaryDeclarationControllerTest extends UnitSpec with ERSFakeApplicationC
     "show the scheme organiser page" in {
       val controllerUnderTest = buildFakeSummaryDeclarationController
       controllerUnderTest.fetchAllMapVal = "withAllODSFile"
-      val result = controllerUnderTest.showSummaryDeclarationPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc)
+      val result = controllerUnderTest.showSummaryDeclarationPage()(Fixtures.buildFakeAuthContext, Fixtures.buildFakeRequestWithSessionId("GET"), hc)
       status(result) shouldBe Status.OK
     }
   }
@@ -313,7 +314,7 @@ class SummaryDeclarationControllerTest extends UnitSpec with ERSFakeApplicationC
     "show the scheme organiser page" in {
       val controllerUnderTest = buildFakeSummaryDeclarationController
       controllerUnderTest.fetchAllMapVal = "odsFile"
-      val result = controllerUnderTest.showSummaryDeclarationPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc)
+      val result = controllerUnderTest.showSummaryDeclarationPage()(Fixtures.buildFakeAuthContext, Fixtures.buildFakeRequestWithSessionId("GET"), hc)
       status(result) shouldBe Status.OK
     }
   }
@@ -322,7 +323,7 @@ class SummaryDeclarationControllerTest extends UnitSpec with ERSFakeApplicationC
     "show the scheme organiser page" in {
       val controllerUnderTest = buildFakeSummaryDeclarationController
       controllerUnderTest.fetchAllMapVal = "noGroupSchemeInfo"
-      val result = controllerUnderTest.showSummaryDeclarationPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc)
+      val result = controllerUnderTest.showSummaryDeclarationPage()(Fixtures.buildFakeAuthContext, Fixtures.buildFakeRequestWithSessionId("GET"), hc)
       status(result) shouldBe Status.OK
     }
   }

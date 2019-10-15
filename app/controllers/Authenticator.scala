@@ -38,7 +38,7 @@ trait Authenticator extends Actions with ErsConstants {
   private type UserRequest = AuthContext => Request[AnyContent] => Future[Result]
 
 
-  def AuthorisedForAsync()(body: UserRequest): Action[AnyContent] = {
+  def AuthorisedForAsync3()(body: UserRequest): Action[AnyContent] = {
     AuthorisedFor(ERSRegime, pageVisibility = GGConfidence).async {
       implicit user =>
         implicit request => {
@@ -53,7 +53,7 @@ trait Authenticator extends Actions with ErsConstants {
     }
   }
 
-  def AuthorisedForAsync3()(body: AsyncUserRequest): Action[AnyContent] = {
+  def AuthorisedForAsync()(body: AsyncUserRequest): Action[AnyContent] = {
     AuthorisedFor(ERSRegime, pageVisibility = GGConfidence).async {
       implicit user =>
         implicit request =>

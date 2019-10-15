@@ -42,9 +42,8 @@ trait TrusteeController extends ERSReturnBaseController with Authenticator {
         showTrusteeDetailsPage(index)(user, request, hc)
   }
 
-  def showTrusteeDetailsPage(index: Int)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Result] = {
-    val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    cacheUtil.fetch[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, scRef).map { groupSchemeActivity =>
+  def showTrusteeDetailsPage(index: Int)(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyContent], hc: HeaderCarrier): Future[Result] = {
+    cacheUtil.fetch[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, request.schemeRef).map { groupSchemeActivity =>
       Ok(views.html.trustee_details(groupSchemeActivity.groupScheme.getOrElse(PageBuilder.DEFAULT), index, RsFormMappings.trusteeDetailsForm))
     } recover {
       case e: Exception => {
@@ -60,11 +59,10 @@ trait TrusteeController extends ERSReturnBaseController with Authenticator {
         showTrusteeDetailsSubmit(index)(user, request, hc)
   }
 
-  def showTrusteeDetailsSubmit(index: Int)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
+  def showTrusteeDetailsSubmit(index: Int)(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
     RsFormMappings.trusteeDetailsForm.bindFromRequest.fold(
       errors => {
-        cacheUtil.fetch[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, scRef).map { groupSchemeActivity =>
+        cacheUtil.fetch[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, request.schemeRef).map { groupSchemeActivity =>
           val correctOrder = errors.errors.map(_.key).distinct
           val incorrectOrderGrouped = errors.errors.groupBy(_.key).map(_._2.head).toSeq
           val correctOrderGrouped = correctOrder.flatMap(x => incorrectOrderGrouped.find(_.key == x))
@@ -78,7 +76,7 @@ trait TrusteeController extends ERSReturnBaseController with Authenticator {
         }
       },
       formData => {
-        val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
+        val scRef = request.schemeRef
         cacheUtil.fetch[TrusteeDetailsList](CacheUtil.TRUSTEES_CACHE, scRef).flatMap { cachedTrusteeList =>
           var cachedTrusteeListPlusNewTrustee = TrusteeDetailsList(List[TrusteeDetails]())
           var trusteeDetails: TrusteeDetails = TrusteeDetails("", "", Option(""), Option(""), Option(""), Option(""), Option(""))
@@ -133,8 +131,8 @@ trait TrusteeController extends ERSReturnBaseController with Authenticator {
         showDeleteTrustee(id)(user, request, hc)
   }
 
-  def showDeleteTrustee(id: Int)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
+  def showDeleteTrustee(id: Int)(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
+    val scRef = request.schemeRef
     cacheUtil.fetch[TrusteeDetailsList](CacheUtil.TRUSTEES_CACHE, scRef).flatMap { cachedTrusteeList =>
 
       var trusteeDetailsList = List[TrusteeDetails]()
@@ -168,8 +166,8 @@ trait TrusteeController extends ERSReturnBaseController with Authenticator {
         showEditTrustee(id)(user, request, hc)
   }
 
-  def showEditTrustee(id: Int)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
+  def showEditTrustee(id: Int)(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
+    val scRef = request.schemeRef
 
     cacheUtil.fetch[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, scRef).flatMap { groupSchemeActivity =>
       cacheUtil.fetch[TrusteeDetailsList](CacheUtil.TRUSTEES_CACHE, scRef).map { tdc =>
@@ -209,9 +207,8 @@ trait TrusteeController extends ERSReturnBaseController with Authenticator {
         showTrusteeSummaryPage()(user, request, hc)
   }
 
-  def showTrusteeSummaryPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    cacheUtil.fetch[TrusteeDetailsList](CacheUtil.TRUSTEES_CACHE, scRef).map { trusteeDetailsList =>
+  def showTrusteeSummaryPage()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
+    cacheUtil.fetch[TrusteeDetailsList](CacheUtil.TRUSTEES_CACHE, request.schemeRef).map { trusteeDetailsList =>
       Ok(views.html.trustee_summary(trusteeDetailsList))
     } recover {
       case e: Exception => {
@@ -227,7 +224,7 @@ trait TrusteeController extends ERSReturnBaseController with Authenticator {
         continueFromTrusteeSummaryPage()(user, request, hc)
   }
 
-  def continueFromTrusteeSummaryPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def continueFromTrusteeSummaryPage()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
     Future(Redirect(routes.AltAmendsController.altActivityPage()))
   }
 

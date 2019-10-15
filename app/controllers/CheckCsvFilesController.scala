@@ -43,12 +43,13 @@ trait CheckCsvFilesController extends ERSReturnBaseController with Authenticator
         showCheckCsvFilesPage()(user, request, hc)
   }
 
-  def showCheckCsvFilesPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showCheckCsvFilesPage()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
+    //TODO DO wwe need to addd scheme type to request.. ??
+
     val schemeType = request.session.get(screenSchemeInfo).get.split(" - ")(1).toUpperCase()
-    val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
 
     val csvFilesList: List[CsvFiles] = PageBuilder.getCsvFilesList(schemeType)
-    cacheUtil.fetch[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, schemeRef).map { cacheData =>
+    cacheUtil.fetch[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, request.schemeRef).map { cacheData =>
       val mergeWithSelected: List[CsvFiles] = mergeCsvFilesListWithCsvFilesCallback(csvFilesList, cacheData)
       Ok(views.html.check_csv_file(CsvFilesList(mergeWithSelected)))
     }.recover {
@@ -74,7 +75,7 @@ trait CheckCsvFilesController extends ERSReturnBaseController with Authenticator
         validateCsvFilesPageSelected()
   }
 
-  def validateCsvFilesPageSelected()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def validateCsvFilesPageSelected()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
     RsFormMappings.csvFileCheckForm.bindFromRequest.fold(
       formWithErrors => {
         reloadWithError()
@@ -85,15 +86,14 @@ trait CheckCsvFilesController extends ERSReturnBaseController with Authenticator
     )
   }
 
-  def performCsvFilesPageSelected(formData: CsvFilesList)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def performCsvFilesPageSelected(formData: CsvFilesList)(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
     val csvFilesCallbackList: List[CsvFilesCallback] = createCacheData(formData.files)
-    if (csvFilesCallbackList.length == 0) {
+    if (csvFilesCallbackList.isEmpty) {
       reloadWithError()
     }
     else {
-      val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-      cacheUtil.cache(CacheUtil.CHECK_CSV_FILES, CsvFilesCallbackList(csvFilesCallbackList), schemeRef).map { data =>
+      cacheUtil.cache(CacheUtil.CHECK_CSV_FILES, CsvFilesCallbackList(csvFilesCallbackList), request.schemeRef).map { data =>
         Redirect(routes.CsvFileUploadController.uploadFilePage())
       }.recover {
         case e: Throwable => {

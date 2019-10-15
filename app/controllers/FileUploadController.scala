@@ -57,11 +57,10 @@ trait FileUploadController extends FrontendController with Authenticator with Le
   }
 
 
-  def showSuccess()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
+  def showSuccess()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
     Logger.info("success: Attachments Success: " + (System.currentTimeMillis() / 1000))
     sessionService.retrieveCallbackData().flatMap { callbackData =>
-      cacheUtil.cache[String](CacheUtil.FILE_NAME_CACHE, callbackData.get.name.get, scRef).map { cached =>
+      cacheUtil.cache[String](CacheUtil.FILE_NAME_CACHE, callbackData.get.name.get, request.schemeRef).map { cached =>
         Ok(views.html.success(None, Some(callbackData.get.name.get)))
       } recover {
         case e: Exception => {
@@ -73,10 +72,10 @@ trait FileUploadController extends FrontendController with Authenticator with Le
   }
 
 
-  def validationResults() = AuthorisedFor(ERSRegime, pageVisibility = GGConfidence).async {
+  def validationResults() = AuthorisedForAsync() {
     implicit user =>
       implicit request => {
-        val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
+        val scRef = request.schemeRef
         cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, scRef).flatMap { all =>
           sessionService.retrieveCallbackData().flatMap { callbackData =>
             ersConnector.removePresubmissionData(all.schemeInfo).flatMap(result =>
@@ -86,12 +85,12 @@ trait FileUploadController extends FrontendController with Authenticator with Le
                     Logger.info(s"validationResults: Response from validator: ${res.status}, timestamp: ${System.currentTimeMillis()}.")
                     res.status match {
                       case 200 => {
-                        Logger.warn(s"validationResults: Validation is successful for schemeRef: ${scRef}, callback: ${callbackData.get}, timestamp: ${System.currentTimeMillis()}.")
+                        Logger.warn(s"validationResults: Validation is successful for schemeRef: $scRef, callback: ${callbackData.get}, timestamp: ${System.currentTimeMillis()}.")
                         cacheUtil.cache(cacheUtil.VALIDATED_SHEEETS, res.body, scRef)
                         Redirect(routes.SchemeOrganiserController.schemeOrganiserPage())
                       }
                       case 202 => {
-                        Logger.warn(s"validationResults: Validation is not successful for schemeRef: ${scRef}, callback: ${callbackData.get}, timestamp: ${System.currentTimeMillis()}.")
+                        Logger.warn(s"validationResults: Validation is not successful for schemeRef: $scRef, callback: ${callbackData.get}, timestamp: ${System.currentTimeMillis()}.")
                         Redirect(routes.FileUploadController.validationFailure())
                       }
                       case _ => Logger.error(s"validationResults: Validate file data failed with Status ${res.status}, timestamp: ${System.currentTimeMillis()}.")
@@ -111,11 +110,11 @@ trait FileUploadController extends FrontendController with Authenticator with Le
       }
   }
 
-  def validationFailure() = AuthorisedFor(ERSRegime, pageVisibility = GGConfidence).async {
+  def validationFailure() = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
         Logger.info("validationFailure: Validation Failure: " + (System.currentTimeMillis() / 1000))
-        val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
+        val scRef = request.schemeRef
         cacheUtil.fetch[CheckFileType](CacheUtil.FILE_TYPE_CACHE, scRef).flatMap { fileType =>
           cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, scRef).map { all =>
             val scheme: String = all.schemeInfo.schemeId

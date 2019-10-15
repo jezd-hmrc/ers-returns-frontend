@@ -35,7 +35,7 @@ import play.api.i18n.Messages
 import play.api.i18n.Messages.Implicits._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json
-import play.api.mvc.Request
+import play.api.mvc.{Request, Result}
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers}
 import services.SessionService
@@ -45,7 +45,7 @@ import utils.ContentUtil._
 import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures}
 
 import scala.concurrent.Future
-import uk.gov.hmrc.http.{ HeaderCarrier, HttpGet, HttpPost, HttpResponse }
+import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpPost, HttpResponse}
 
 
 class ReturnServiceControllerTest extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with OneAppPerSuite {
@@ -130,7 +130,7 @@ class ReturnServiceControllerTest extends UnitSpec with ERSFakeApplicationConfig
       val ts: Option[String] = None
       val hmac: Option[String] = Option("hmac")
       val ersRequestObject = new RequestObject(aoRef, taxYear, ersSchemeRef, schemeName, schemeType, agentRef, empRef, ts, hmac)
-      val result = controllerUnderTest.cacheParams(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc)
+      val result = controllerUnderTest.cacheParams(ersRequestObject)(Fixtures.buildFakeAuthContext, Fixtures.buildFakeRequestWithSessionId("GET"), hc)
       status(result) shouldBe Status.OK
       val document = Jsoup.parse(contentAsString(result))
       val scheme = "1"
@@ -152,7 +152,7 @@ class ReturnServiceControllerTest extends UnitSpec with ERSFakeApplicationConfig
       val ts: Option[String] = None
       val hmac: Option[String] = Option("hmac")
       val ersRequestObject = new RequestObject(aoRef, taxYear, ersSchemeRef, schemeName, schemeType, agentRef, empRef, ts, hmac)
-      val result = controllerUnderTest.cacheParams(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc)
+      val result = controllerUnderTest.cacheParams(ersRequestObject)(Fixtures.buildFakeAuthContext, Fixtures.buildFakeRequestWithSessionId("GET"), hc)
       status(result) shouldBe Status.OK
     }
   }

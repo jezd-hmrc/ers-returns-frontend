@@ -26,7 +26,7 @@ import play.api.Application
 import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, Json}
-import play.api.mvc.Request
+import play.api.mvc.{Request, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.play.test.UnitSpec
@@ -76,7 +76,7 @@ class SubmissionDataControllerSpec extends UnitSpec with ERSFakeApplicationConfi
     }
 
     "redirect to login page if user is not authenticated" in {
-      val result = submissionDataController.retrieveSubmissionData()(Fixtures.buildFakeRequestWithSessionIdCSOP("GET"))
+      val result: Future[Result] = submissionDataController.retrieveSubmissionData()(Fixtures.buildFakeRequestWithSessionIdCSOP("GET"))
       status(result) shouldBe SEE_OTHER
     }
   }
@@ -92,7 +92,7 @@ class SubmissionDataControllerSpec extends UnitSpec with ERSFakeApplicationConfi
 
         override def createSchemeInfoFromURL(request: Request[Any]): Option[JsObject] = None
       }
-      val result = submissionDataController.getRetrieveSubmissionData()(Fixtures.buildFakeUser, FakeRequest(), hc)
+      val result = submissionDataController.getRetrieveSubmissionData()(Fixtures.buildFakeAuthContext, FakeRequest(), hc)
       status(result) shouldBe NOT_FOUND
     }
 
@@ -108,7 +108,7 @@ class SubmissionDataControllerSpec extends UnitSpec with ERSFakeApplicationConfi
       ).thenReturn(
         Future.successful(HttpResponse(OK, Some(Json.obj())))
       )
-      val result = submissionDataController.getRetrieveSubmissionData()(Fixtures.buildFakeUser, FakeRequest(), hc)
+      val result = submissionDataController.getRetrieveSubmissionData()(Fixtures.buildFakeAuthContext, FakeRequest(), hc)
       status(result) shouldBe OK
       bodyOf(result).contains("Retrieve Failure") shouldBe false
     }
@@ -125,7 +125,7 @@ class SubmissionDataControllerSpec extends UnitSpec with ERSFakeApplicationConfi
       ).thenReturn(
         Future.successful(HttpResponse(INTERNAL_SERVER_ERROR))
       )
-      val result = submissionDataController.getRetrieveSubmissionData()(Fixtures.buildFakeUser, FakeRequest(), hc)
+      val result = submissionDataController.getRetrieveSubmissionData()(Fixtures.buildFakeAuthContext, FakeRequest(), hc)
       status(result) shouldBe OK
       bodyOf(result).contains(messages("ers.global_errors.message")) shouldBe true
     }
@@ -142,7 +142,7 @@ class SubmissionDataControllerSpec extends UnitSpec with ERSFakeApplicationConfi
       ).thenReturn(
         Future.failed(new RuntimeException)
       )
-      val result = submissionDataController.getRetrieveSubmissionData()(Fixtures.buildFakeUser, FakeRequest(), hc)
+      val result = submissionDataController.getRetrieveSubmissionData()(Fixtures.buildFakeAuthContext, FakeRequest(), hc)
       status(result) shouldBe OK
       bodyOf(result).contains(messages("ers.global_errors.message")) shouldBe true
     }

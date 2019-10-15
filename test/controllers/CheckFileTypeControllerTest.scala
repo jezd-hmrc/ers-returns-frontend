@@ -80,7 +80,7 @@ class CheckFileTypeControllerTest extends UnitSpec with OneAppPerSuite with ERSF
     "give a status OK if fetch successful and shows check file type page with file type selected" in {
       val controllerUnderTest = buildFakeCheckingServiceController()
       val request = RequestWithSchemeRef(Fixtures.buildFakeRequestWithSessionId("GET"), "")
-      val result = controllerUnderTest.showCheckFileTypePage(Fixtures.buildFakeUser, request, hc)
+      val result = controllerUnderTest.showCheckFileTypePage(Fixtures.buildFakeAuthContext, request, hc)
       status(result) shouldBe Status.OK
       val document = Jsoup.parse(contentAsString(result))
       document.select("input[id=csv]").hasAttr("checked") shouldEqual true
@@ -90,7 +90,7 @@ class CheckFileTypeControllerTest extends UnitSpec with OneAppPerSuite with ERSF
     "give a status OK if fetch fails then show check file type page with nothing selected" in {
       val controllerUnderTest = buildFakeCheckingServiceController(fileTypeRes = false)
       val request = RequestWithSchemeRef(Fixtures.buildFakeRequestWithSessionId("GET"), "")
-      val result = controllerUnderTest.showCheckFileTypePage(Fixtures.buildFakeUser, request, hc)
+      val result = controllerUnderTest.showCheckFileTypePage(Fixtures.buildFakeAuthContext, request, hc)
       status(result) shouldBe Status.OK
       val document = Jsoup.parse(contentAsString(result))
       document.select("input[id=csv]").hasAttr("checked") shouldEqual false
@@ -131,7 +131,7 @@ class CheckFileTypeControllerTest extends UnitSpec with OneAppPerSuite with ERSF
       val fileTypeData = Map("" -> "")
       val form = RsFormMappings.checkFileTypeForm.bind(fileTypeData)
       val request = RequestWithSchemeRef(Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*), "")
-      val result = controllerUnderTest.showCheckFileTypeSelected(Fixtures.buildFakeUser, request, hc)
+      val result = controllerUnderTest.showCheckFileTypeSelected(Fixtures.buildFakeAuthContext, request, hc)
       status(result) shouldBe Status.OK
     }
 
@@ -140,7 +140,7 @@ class CheckFileTypeControllerTest extends UnitSpec with OneAppPerSuite with ERSF
       val checkFileTypeData = Map("checkFileType" -> "csv")
       val form = RsFormMappings.schemeTypeForm.bind(checkFileTypeData)
       val request = RequestWithSchemeRef(Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*), "")
-      val result = controllerUnderTest.showCheckFileTypeSelected(Fixtures.buildFakeUser, request, hc)
+      val result = controllerUnderTest.showCheckFileTypeSelected(Fixtures.buildFakeAuthContext, request, hc)
       status(result) shouldBe Status.SEE_OTHER
       result.header.headers("Location") shouldBe routes.CheckCsvFilesController.checkCsvFilesPage().url
     }
@@ -150,7 +150,7 @@ class CheckFileTypeControllerTest extends UnitSpec with OneAppPerSuite with ERSF
       val checkFileTypeData = Map("checkFileType" -> "ods")
       val form = RsFormMappings.schemeTypeForm.bind(checkFileTypeData)
       val request = RequestWithSchemeRef(Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*), "")
-      val result = controllerUnderTest.showCheckFileTypeSelected(Fixtures.buildFakeUser, request, hc)
+      val result = controllerUnderTest.showCheckFileTypeSelected(Fixtures.buildFakeAuthContext, request, hc)
       status(result) shouldBe Status.SEE_OTHER
       result.header.headers("Location") shouldBe routes.FileUploadController.uploadFilePage().url
     }
@@ -160,7 +160,7 @@ class CheckFileTypeControllerTest extends UnitSpec with OneAppPerSuite with ERSF
       val schemeTypeData = Map("checkFileType" -> "csv")
       val form = RsFormMappings.schemeTypeForm.bind(schemeTypeData)
       val request = RequestWithSchemeRef(Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*), "")
-      val result = await(controllerUnderTest.showCheckFileTypeSelected(Fixtures.buildFakeUser, request, hc))
+      val result = await(controllerUnderTest.showCheckFileTypeSelected(Fixtures.buildFakeAuthContext, request, hc))
       contentAsString(result) shouldBe contentAsString(controllerUnderTest.getGlobalErrorPage)
       contentAsString(result) should include(messages("ers.global_errors.message"))
     }

@@ -45,8 +45,8 @@ trait ReportableEventsController extends ERSReturnBaseController with Authentica
         showReportableEventsPage()(user, request, hc)
   }
 
-  def updateErsMetaData()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Object] = {
-    val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
+  def updateErsMetaData()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Object] = {
+    val schemeRef = request.schemeRef
     ersConnector.connectToEtmpSapRequest(schemeRef).flatMap { sapNumber =>
       cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, schemeRef).map { metaData =>
         val ersMetaData = ErsMetaData(
@@ -66,9 +66,8 @@ trait ReportableEventsController extends ERSReturnBaseController with Authentica
     }
   }
 
-  def showReportableEventsPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    cacheUtil.fetch[ReportableEvents](CacheUtil.reportableEvents, schemeRef).map { activity =>
+  def showReportableEventsPage()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef], hc: HeaderCarrier): Future[Result] = {
+    cacheUtil.fetch[ReportableEvents](CacheUtil.reportableEvents, request.schemeRef).map { activity =>
       Ok(views.html.reportable_events(activity.isNilReturn, RsFormMappings.chooseForm.fill(activity)))
     } recover {
       case e: NoSuchElementException =>
@@ -87,14 +86,13 @@ trait ReportableEventsController extends ERSReturnBaseController with Authentica
         }
   }
 
-  def showReportableEventsSelected()(implicit authContext: AuthContext, request: Request[AnyRef]): Future[Result] = {
+  def showReportableEventsSelected()(implicit authContext: AuthContext, request: RequestWithSchemeRef[AnyRef]): Future[Result] = {
     RsFormMappings.chooseForm.bindFromRequest.fold(
       errors => {
         Future.successful(Ok(views.html.reportable_events(Some(""), errors)))
       },
       formData => {
-        val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-        cacheUtil.cache(CacheUtil.reportableEvents, formData, schemeRef).map { _ =>
+        cacheUtil.cache(CacheUtil.reportableEvents, formData, request.schemeRef).map { _ =>
           if (formData.isNilReturn.get == PageBuilder.OPTION_NIL_RETURN) {
             Redirect(routes.SchemeOrganiserController.schemeOrganiserPage())
           } else {

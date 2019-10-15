@@ -257,6 +257,7 @@ trait CacheUtil {
       schemeInfo.last
   }
 
+  //TODO TEST
   def getSchemeRefFromScreenSchemeInfo2(screenSchemeInfo:Option[String]): Option[String] = {
     Logger.warn(s"CacheUtil: form getSchemeRefFromScreenSchemeInfo : ${screenSchemeInfo}.")
     val schemeInfo = screenSchemeInfo.getOrElse("").split(" - ").init
