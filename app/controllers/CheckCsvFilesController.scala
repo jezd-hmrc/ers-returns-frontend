@@ -40,21 +40,34 @@ trait CheckCsvFilesController extends ERSReturnBaseController with Authenticator
   def checkCsvFilesPage(): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
-          showCheckCsvFilesPage(requestObject)(user, request, hc)
-        }
+        showCheckCsvFilesPage()(user, request, hc)
   }
 
-  def showCheckCsvFilesPage(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showCheckCsvFilesPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     val schemeType = request.session.get(screenSchemeInfo).get.split(" - ")(1).toUpperCase()
     val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
 
-    val csvFilesList: List[CsvFiles] = PageBuilder.getCsvFilesList(schemeType)
-    cacheUtil.fetch[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, schemeRef).map { cacheData =>
-      val mergeWithSelected: List[CsvFiles] = mergeCsvFilesListWithCsvFilesCallback(csvFilesList, cacheData)
-      Ok(views.html.check_csv_file(requestObject, CsvFilesList(mergeWithSelected)))
-    }.recover {
-      case ex: NoSuchElementException => Ok(views.html.check_csv_file(requestObject, CsvFilesList(csvFilesList)))
+    (for {
+      requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
+      cacheData     <- cacheUtil.fetchOption[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, schemeRef).recover{
+        case _: NoSuchElementException => None
+      }
+    } yield {
+
+      val csvFilesList: List[CsvFiles] = PageBuilder.getCsvFilesList(schemeType)
+
+      cacheData match {
+
+        case Some(data) =>
+          val mergeWithSelected: List[CsvFiles] = mergeCsvFilesListWithCsvFilesCallback(csvFilesList, data)
+
+          Ok(views.html.check_csv_file(requestObject, CsvFilesList(mergeWithSelected)))
+
+        case None =>
+          Ok(views.html.check_csv_file(requestObject, CsvFilesList(csvFilesList)))
+      }
+    })
+    .recover {
       case _: Throwable => getGlobalErrorPage
     }
   }

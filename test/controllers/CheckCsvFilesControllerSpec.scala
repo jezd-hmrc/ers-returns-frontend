@@ -25,6 +25,7 @@ import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
 import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.JsString
 import play.api.mvc.{Request, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -49,7 +50,7 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
       override val cacheUtil: CacheUtil = mock[CacheUtil]
       override val pageBuilder: PageBuilder = mock[PageBuilder]
 
-      override def showCheckCsvFilesPage(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future.successful(Ok)
+      override def showCheckCsvFilesPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future.successful(Ok)
     }
 
     "redirect to company authentication frontend if user is not authenticated" in {
@@ -73,33 +74,43 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
     "show CheckCsvFilesPage if data is successfully extracted from cache" in {
       reset(mockCacheUtil)
       when(
-        mockCacheUtil.fetch[CsvFilesCallbackList](anyString(), anyString())(any(), any(), any())
+        mockCacheUtil.fetchOption[CsvFilesCallbackList](anyString(), anyString())(any(), any(), any())
       ).thenReturn(
-        Future.successful(mock[CsvFilesCallbackList])
+        Future.successful(Some(mock[CsvFilesCallbackList]))
       )
-      val result = await(checkCsvFilesController.showCheckCsvFilesPage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+      when(
+        mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
+      ).thenReturn(ersRequestObject)
+
+      val result = await(checkCsvFilesController.showCheckCsvFilesPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       status(result) shouldBe OK
     }
 
     "show CheckCsvFilesPage if there is no data in cache" in {
       reset(mockCacheUtil)
       when(
-        mockCacheUtil.fetch[CsvFilesCallbackList](anyString(), anyString())(any(), any(), any())
+        mockCacheUtil.fetchOption[CsvFilesCallbackList](anyString(), anyString())(any(), any(), any())
       ).thenReturn(
         Future.failed(new NoSuchElementException)
       )
-      val result = await(checkCsvFilesController.showCheckCsvFilesPage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+      when(
+        mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
+      ).thenReturn(ersRequestObject)
+      val result = await(checkCsvFilesController.showCheckCsvFilesPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       status(result) shouldBe OK
     }
 
     "direct to ers errors page if fetching data throws exception" in {
       reset(mockCacheUtil)
       when(
-        mockCacheUtil.fetch[CsvFilesCallbackList](anyString(), anyString())(any(), any(), any())
+        mockCacheUtil.fetchOption[CsvFilesCallbackList](anyString(), anyString())(any(), any(), any())
       ).thenReturn(
         Future.failed(new Exception)
       )
-      val result = await(checkCsvFilesController.showCheckCsvFilesPage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+      when(
+        mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
+      ).thenReturn(ersRequestObject)
+      val result = await(checkCsvFilesController.showCheckCsvFilesPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       contentAsString(result) shouldBe contentAsString(checkCsvFilesController.getGlobalErrorPage)
       contentAsString(result) should include(messages("ers.global_errors.message"))
     }
