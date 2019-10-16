@@ -41,50 +41,45 @@ trait AltAmendsController extends ERSReturnBaseController with Authenticator wit
   def altActivityPage(): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
-          showAltActivityPage(requestObject)(user, request, hc)
-        }
+        showAltActivityPage()(user, request, hc)
   }
 
-  def showAltActivityPage(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showAltActivityPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+
     val schemeRef: String = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    cacheUtil.fetch[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, schemeRef).flatMap { groupSchemeActivity =>
-      cacheUtil.fetch[AltAmendsActivity](CacheUtil.altAmendsActivity, schemeRef).map { altAmendsActivity =>
-        Ok(views.html.alterations_activity(requestObject, altAmendsActivity.altActivity,
-          groupSchemeActivity.groupScheme.getOrElse(PageBuilder.DEFAULT),
-          RsFormMappings.altActivityForm.fill(altAmendsActivity)))
-      } recover {
-        case e: NoSuchElementException => {
-          val form = AltAmendsActivity("")
-          Ok(views.html.alterations_activity(requestObject, "", groupSchemeActivity.groupScheme.getOrElse(PageBuilder.DEFAULT), RsFormMappings.altActivityForm.fill(form)))
-        }
+
+    (for {
+      requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
+      groupSchemeInfo <- cacheUtil.fetch[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, schemeRef)
+      altAmendsActivity <- cacheUtil.fetch[AltAmendsActivity](CacheUtil.altAmendsActivity, schemeRef)
+    } yield {
+      Ok(views.html.alterations_activity(requestObject, altAmendsActivity.altActivity,
+        groupSchemeInfo.groupScheme.getOrElse(PageBuilder.DEFAULT),
+        RsFormMappings.altActivityForm.fill(altAmendsActivity)))
+      }).recover {
+        case e: Throwable => Logger.error(s"Rendering AltAmends view failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
+
+          getGlobalErrorPage
       }
-    } recover {
-      case e: Throwable => {
-        Logger.error(s"showAltActivityPage: Get data from cache failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
-        getGlobalErrorPage
-      }
-    }
   }
+
 
   def altActivitySelected(): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
-          showAltActivitySelected(requestObject)(user, request, hc)
-        }
+          showAltActivitySelected()(user, request, hc)
+
   }
 
-  def showAltActivitySelected(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val schemeRef = try {
-      cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    } catch {
-      case _: Throwable => return Future(getGlobalErrorPage)
-    }
+  def showAltActivitySelected()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+
+    val schemeRef: String = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
 
     RsFormMappings.altActivityForm.bindFromRequest.fold(
       errors => {
-        Future.successful(Ok(views.html.alterations_activity(requestObject, "", "", errors)))
+        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).map { requestObject =>
+          Ok(views.html.alterations_activity(requestObject, "", "", errors))
+        }
       },
       formData => {
         cacheUtil.cache(CacheUtil.altAmendsActivity, formData, schemeRef).map { _ =>
@@ -92,7 +87,7 @@ trait AltAmendsController extends ERSReturnBaseController with Authenticator wit
             case PageBuilder.OPTION_NO => Redirect(routes.SummaryDeclarationController.summaryDeclarationPage())
             case PageBuilder.OPTION_YES => Redirect(routes.AltAmendsController.altAmendsPage())
           }
-        } recover {
+        }.recover {
           case e: Throwable =>
             Logger.error(s"showAltActivitySelected: Save data to cache failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
             getGlobalErrorPage
@@ -104,17 +99,19 @@ trait AltAmendsController extends ERSReturnBaseController with Authenticator wit
   def altAmendsPage(): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
-          showAltAmendsPage(requestObject)(user, request, hc)
-        }
+          showAltAmendsPage()(user, request, hc)
   }
 
-  def showAltAmendsPage(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showAltAmendsPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     val schemeRef: String = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    cacheUtil.fetch[AltAmends](CacheUtil.ALT_AMENDS_CACHE_CONTROLLER, schemeRef).map { altAmends =>
-      Ok(views.html.alterations_amends(requestObject, altAmends))
-    } recover {
-      case e: NoSuchElementException => Ok(views.html.alterations_amends(requestObject, AltAmends(None, None, None, None, None)))
+
+    for {
+      requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
+      altAmends     <- cacheUtil.fetchOption[AltAmends](CacheUtil.ALT_AMENDS_CACHE_CONTROLLER, schemeRef).recover {
+        case _: Throwable => None
+      }
+    } yield {
+      Ok(views.html.alterations_amends(requestObject, altAmends.getOrElse(AltAmends(None, None, None, None, None))))
     }
   }
 
