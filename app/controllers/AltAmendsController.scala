@@ -57,8 +57,8 @@ trait AltAmendsController extends ERSReturnBaseController with Authenticator wit
         groupSchemeInfo.groupScheme.getOrElse(PageBuilder.DEFAULT),
         RsFormMappings.altActivityForm.fill(altAmendsActivity)))
       }).recover {
-        case e: Throwable => Logger.error(s"Rendering AltAmends view failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
-
+        case e: Throwable =>
+          Logger.error(s"Rendering AltAmends view failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
           getGlobalErrorPage
       }
   }
