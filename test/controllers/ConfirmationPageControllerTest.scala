@@ -117,7 +117,7 @@ class ConfirmationPageControllerTest extends UnitSpec with ERSFakeApplicationCon
 
       override val cacheUtil: CacheUtil = mockCacheUtil
 
-      override def saveAndSubmit(ersRequestObject: RequestObject, alldata: ErsSummary, all: ErsMetaData, bundle: String)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+      override def saveAndSubmit(alldata: ErsSummary, all: ErsMetaData, bundle: String)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
         Future(Ok)
       }
 
@@ -146,14 +146,14 @@ class ConfirmationPageControllerTest extends UnitSpec with ERSFakeApplicationCon
 
     "direct to ers errors page if bundle request throws exception" in {
       val controllerUnderTest = buildFakeConfirmationPageController(bundleRes = false)
-      val result = await(controllerUnderTest.showConfirmationPage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
+      val result = await(controllerUnderTest.showConfirmationPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
       contentAsString(result) shouldBe contentAsString(controllerUnderTest.getGlobalErrorPage)
       contentAsString(result) should include(messages("ers.global_errors.message"))
     }
 
     "direct to ers errors page if fetching all data throws exception" in {
       val controllerUnderTest = buildFakeConfirmationPageController(allDataRes = false)
-      val result = await(controllerUnderTest.showConfirmationPage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
+      val result = await(controllerUnderTest.showConfirmationPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
       contentAsString(result) shouldBe contentAsString(controllerUnderTest.getGlobalErrorPage)
       contentAsString(result) should include(messages("ers.global_errors.message"))
     }
@@ -172,13 +172,13 @@ class ConfirmationPageControllerTest extends UnitSpec with ERSFakeApplicationCon
         mockedSession
       )
       val controllerUnderTest = buildFakeConfirmationPageController(isNilReturn = "2")
-      val result = controllerUnderTest.showConfirmationPage(ersRequestObject)(Fixtures.buildFakeUser, mockedRequest, hc)
+      val result = controllerUnderTest.showConfirmationPage()(Fixtures.buildFakeUser, mockedRequest, hc)
       status(result) shouldBe Status.OK
     }
 
     "direct to ers errors page if fetching metadata throws exception" in {
       val controllerUnderTest = buildFakeConfirmationPageController(ersMetaRes = false)
-      val result = await(controllerUnderTest.showConfirmationPage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
+      val result = await(controllerUnderTest.showConfirmationPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
       contentAsString(result) shouldBe contentAsString(controllerUnderTest.getGlobalErrorPage)
       contentAsString(result) should include(messages("ers.global_errors.message"))
     }
@@ -186,26 +186,26 @@ class ConfirmationPageControllerTest extends UnitSpec with ERSFakeApplicationCon
     "returns OK for NilReturn if there are no exceptions thrown" in {
       val request = FakeRequest().withSession("screenSchemeInfo" -> "10 MAR 2016")
       val controllerUnderTest = buildFakeConfirmationPageController(isNilReturn = "2")
-      val result = controllerUnderTest.showConfirmationPage(ersRequestObject)(Fixtures.buildFakeUser, request, hc)
+      val result = controllerUnderTest.showConfirmationPage()(Fixtures.buildFakeUser, request, hc)
       status(result) shouldBe Status.OK
     }
 
     "returns OK for submission if there are no exceptions thrown" in {
       val controllerUnderTest = buildFakeConfirmationPageController()
-      val result = controllerUnderTest.showConfirmationPage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc)
+      val result = controllerUnderTest.showConfirmationPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc)
       status(result) shouldBe Status.OK
     }
 
     "direct to ers errors page if check for presubmission returns status != OK" in {
       val controllerUnderTest = buildFakeConfirmationPageController(presubmission = 500)
-      val result = await(controllerUnderTest.showConfirmationPage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
+      val result = await(controllerUnderTest.showConfirmationPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
       contentAsString(result) shouldBe contentAsString(controllerUnderTest.getGlobalErrorPage)
       contentAsString(result) should include(messages("ers.global_errors.message"))
     }
 
     "direct to ers errors page if check for presubmission fails" in {
       val controllerUnderTest = buildFakeConfirmationPageController(presubmissionSuccess = false)
-      val result = await(controllerUnderTest.showConfirmationPage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
+      val result = await(controllerUnderTest.showConfirmationPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
       contentAsString(result) shouldBe contentAsString(controllerUnderTest.getGlobalErrorPage)
       contentAsString(result) should include(messages("ers.global_errors.message"))
     }
@@ -241,26 +241,26 @@ class ConfirmationPageControllerTest extends UnitSpec with ERSFakeApplicationCon
 
     "returns OK for Submission if there are no exceptions thrown - submit to backend successful" in {
       val controllerUnderTest = buildFakeConfirmationPageController()
-      val result = controllerUnderTest.saveAndSubmit(ersRequestObject, ersSummary, ersSummary.metaData, ersSummary.bundleRef)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc)
+      val result = controllerUnderTest.saveAndSubmit(ersSummary, ersSummary.metaData, ersSummary.bundleRef)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc)
       status(result) shouldBe Status.OK
     }
 
     "returns OK for Submission if there are no exceptions thrown - submit to backend fails" in {
       val controllerUnderTest = buildFakeConfirmationPageController(submitReturnToBackendResponse = 500)
-      val result = controllerUnderTest.saveAndSubmit(ersRequestObject, ersSummary, ersSummary.metaData, ersSummary.bundleRef)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc)
+      val result = controllerUnderTest.saveAndSubmit(ersSummary, ersSummary.metaData, ersSummary.bundleRef)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc)
       status(result) shouldBe Status.OK
     }
 
     "returns OK for Submission if there are no exceptions thrown - save meta data to backend fails" in {
       val controllerUnderTest = buildFakeConfirmationPageController(saveMetadataResponse = 500)
-      val result = await(controllerUnderTest.saveAndSubmit(ersRequestObject, ersSummary, ersSummary.metaData, ersSummary.bundleRef)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
+      val result = await(controllerUnderTest.saveAndSubmit(ersSummary, ersSummary.metaData, ersSummary.bundleRef)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
       contentAsString(result) shouldBe contentAsString(controllerUnderTest.getGlobalErrorPage)
       contentAsString(result) should include(messages("ers.global_errors.message"))
     }
 
     "displays the global error page for Submission if save meta data to backend throws an exception" in {
       val controllerUnderTest = buildFakeConfirmationPageController(saveMetadataRes = false)
-      val result = await(controllerUnderTest.saveAndSubmit(ersRequestObject, ersSummary, ersSummary.metaData, ersSummary.bundleRef)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
+      val result = await(controllerUnderTest.saveAndSubmit(ersSummary, ersSummary.metaData, ersSummary.bundleRef)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
       contentAsString(result) shouldBe contentAsString(controllerUnderTest.getGlobalErrorPage)
       contentAsString(result) should include(messages("ers.global_errors.message"))
     }
