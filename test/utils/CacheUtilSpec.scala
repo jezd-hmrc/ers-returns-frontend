@@ -495,7 +495,7 @@ class CacheUtilSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach w
     "return schemeRef from given string" in {
       val screenSchemeInfo = "2 - EMI - MYScheme - XX12345678 - 2016"
 
-      val result: SchemeInfo = cacheUtil.getSchemeRefFromScreenSchemeInfo(Some(screenSchemeInfo)).get
+      val result: SchemeInfo = cacheUtil.getSchemeRefFromScreenSchemeInfo(screenSchemeInfo)
 
       result.schemeRef shouldBe "XX12345678"
       result.taxYear shouldBe "2016"
@@ -504,23 +504,13 @@ class CacheUtilSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach w
       result.schemeName shouldBe "MYScheme"
     }
 
-    "return None" when {
+    "throw exception" when {
 
       "hyphens are replaced" in {
         val screenSchemeInfo = "2 | EMI | MYScheme | XX12345678 | 2016"
 
-        cacheUtil.getSchemeRefFromScreenSchemeInfo(Some(screenSchemeInfo)) shouldBe None
-      }
-
-      "fails regex match" in {
-        val screenSchemeInfo = "fail - fail - fail - fail - fail"
-
-        cacheUtil.getSchemeRefFromScreenSchemeInfo(Some(screenSchemeInfo)) shouldBe None
-      }
-
-      "no scheme ref is present" in {
-
-        cacheUtil.getSchemeRefFromScreenSchemeInfo(None) shouldBe None
+        val result = intercept[Exception](cacheUtil.getSchemeRefFromScreenSchemeInfo(screenSchemeInfo))
+        result.getMessage shouldBe "CacheUtil: screenSchemeInfo not in valid format : 2 | EMI | MYScheme | XX12345678 | 2016."
       }
     }
   }

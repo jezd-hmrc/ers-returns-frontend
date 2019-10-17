@@ -50,12 +50,12 @@ trait Authenticator extends Actions with ErsConstants {
   def FilterForSchemeRef(body: AsyncUserRequest, request: Request[AnyContent], user: AuthContext)
   : Either[Future[Result], RequestWithSchemeInfo[AnyContent]] = {
     implicit val hc = HeaderCarrierConverter.fromHeadersAndSession(request.headers, Some(request.session))
-    cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-      .fold[Either[Future[Result], RequestWithSchemeInfo[AnyContent]]]{
-        Left(Future.successful(Redirect(routes.AuthorizationController.timedOut().url)))
-      }{ schemeInfo =>
-        Right(RequestWithSchemeInfo(request, schemeInfo))
-      }
+
+    request.session.get(screenSchemeInfo).fold[Either[Future[Result], RequestWithSchemeInfo[AnyContent]]]{
+      Left(Future.successful(Redirect(routes.AuthorizationController.timedOut().url)))
+    }{ssi =>
+      Right(RequestWithSchemeInfo(request, cacheUtil.getSchemeRefFromScreenSchemeInfo(ssi)))
+    }
   }
 
   def FilterAgentsWrapperAsync(authContext: AuthContext, body: AsyncUserRequest)

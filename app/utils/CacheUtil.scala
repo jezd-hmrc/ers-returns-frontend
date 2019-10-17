@@ -246,27 +246,25 @@ trait CacheUtil {
   }
 
   private def getCacheId (implicit hc: HeaderCarrier): String = {
-    hc.sessionId.getOrElse(throw new RuntimeException("")).value
+    hc.sessionId.get.value
   }
 
 
-  def getSchemeRefFromScreenSchemeInfo(screenSchemeInfo:Option[String]): Option[SchemeInfo] = {
-    val screenSchemeRegex = """([\w ]+)\ -\ ([\w ]+)\ -\ ([\w ]+)\ -\ ([\w ]+)\ -\ ([\w ]+)"""
-      .r("schemeId", "schemeType", "schemeName", "schemeRef", "taxYear")
-
+  def getSchemeRefFromScreenSchemeInfo(screenSchemeInfo: String): SchemeInfo = {
     Logger.warn(s"CacheUtil: form getSchemeRefFromScreenSchemeInfo : $screenSchemeInfo.")
-    screenSchemeInfo.flatMap{
-      screenSchemeRegex.findFirstMatchIn(_).fold[Option[SchemeInfo]]{
-        Logger.error(s"CacheUtil: screenSchemeInfo not in valid format : $screenSchemeInfo.")
-        None
-      }{matched =>
-        Some(SchemeInfo(
-          schemeRef = matched.group("schemeRef"),
-          schemeId = matched.group("schemeId"),
-          taxYear = matched.group("taxYear"),
-          schemeName = matched.group("schemeName"),
-          schemeType = matched.group("schemeType")))
-      }
+    val screenSchemeRegex =
+    """([\w ]+)\ -\ ([\w ]+)\ -\ ([\w ]+)\ -\ ([\w ]+)\ -\ ([\w ]+)"""
+      .r("schemeId", "schemeType", "schemeName", "schemeRef", "taxYear")
+    screenSchemeRegex.findFirstMatchIn(screenSchemeInfo).map { matched =>
+      SchemeInfo(
+        schemeRef = matched.group("schemeRef"),
+        schemeId = matched.group("schemeId"),
+        taxYear = matched.group("taxYear"),
+        schemeName = matched.group("schemeName"),
+        schemeType = matched.group("schemeType"))
+    }.getOrElse {
+      Logger.error(s"CacheUtil: screenSchemeInfo not in valid format : $screenSchemeInfo.")
+      throw new Exception(s"CacheUtil: screenSchemeInfo not in valid format : $screenSchemeInfo.")
     }
   }
 

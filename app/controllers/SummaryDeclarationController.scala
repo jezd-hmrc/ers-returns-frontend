@@ -60,6 +60,8 @@ trait SummaryDeclarationController extends ERSReturnBaseController with Authenti
       var fileCount: Int = 0
 
 
+
+
       //TODO WRITE FUNCTIONALLY!
       if (reportableEvents == PageBuilder.OPTION_YES) {
         fileType = all.getEntry[CheckFileType](CacheUtil.FILE_TYPE_CACHE).get.checkFileType.get

@@ -86,13 +86,11 @@ trait SchemeOrganiserController extends ERSReturnBaseController with Authenticat
         val incorrectOrderGrouped = errors.errors.groupBy(_.key).map(_._2.head).toSeq
         val correctOrderGrouped = correctOrder.flatMap(x => incorrectOrderGrouped.find(_.key == x))
         val firstErrors: Form[models.SchemeOrganiserDetails] = new Form[SchemeOrganiserDetails](errors.mapping, errors.data, correctOrderGrouped, errors.value)
-        println(Console.RED + Console.BLINK + "PAN" + Console.RESET + correctOrderGrouped)
         Future.successful(Ok(views.html.scheme_organiser("", firstErrors)))
       },
       successful => {
         val schemeRef = request.schemeInfo.schemeRef
         Logger.warn(s"SchemeOrganiserController: showSchemeOrganiserSubmit:  schemeRef: $schemeRef.")
-
         cacheUtil.cache(CacheUtil.SCHEME_ORGANISER_CACHE, successful, schemeRef).map {
           res => Redirect(routes.GroupSchemeController.groupSchemePage)
         } recover {
