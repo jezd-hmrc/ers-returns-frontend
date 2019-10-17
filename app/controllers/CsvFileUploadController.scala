@@ -44,32 +44,22 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
   def uploadFilePage(): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
-          showUploadFilePage(requestObject)(user, request, hc)
-        }
+          showUploadFilePage()(user, request, hc)
   }
 
-  def showUploadFilePage(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showUploadFilePage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    cacheUtil.fetch[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, scRef).flatMap { csvFilesCallbackList =>
-      showAttachmentsPartial(requestObject, csvFilesCallbackList.files)
-    } recover {
-      case e: Throwable => {
-        Logger.error(s"Fetch csvFilesCallback failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
-        getGlobalErrorPage
-      }
-    }
-  }
 
-  def showAttachmentsPartial(requestObject: RequestObject, csvFilesList: List[CsvFilesCallback])(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    attachmentsConnector.getCsvFileUploadPartial().map {
-      Logger.info(s"uploadFilePage: Response received from Attachments for partial, timestamp: ${System.currentTimeMillis()}.")
-      partial => Ok(views.html.csv_file_upload(requestObject, Html(partial.body), csvFilesList))
-    }.recover {
-      case ex: Exception => {
-        Logger.error(s"Failing retrieving attachments partial. Error: ${ex.getMessage}, timestamp: ${System.currentTimeMillis()}")
+    (for {
+      requestObject        <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
+      csvFilesCallbackList <- cacheUtil.fetch[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, scRef)
+      partial              <- attachmentsConnector.getCsvFileUploadPartial
+    } yield {
+      Ok(views.html.csv_file_upload(requestObject, Html(partial.body), csvFilesCallbackList.files))
+  }) recover {
+      case e: Throwable =>
+        Logger.error(s"showUploadFilePage failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
         getGlobalErrorPage
-      }
     }
   }
 
@@ -207,19 +197,20 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
   def validationFailure(): Action[AnyContent] = AuthorisedFor(ERSRegime, pageVisibility = GGConfidence).async {
     implicit user =>
       implicit request =>
-        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
-          processValidationFailure(requestObject)(user, request, hc)
-        }
+          processValidationFailure()(user, request, hc)
   }
 
-  def processValidationFailure(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def processValidationFailure()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
     Logger.info("validationFailure: Validation Failure: " + (System.currentTimeMillis() / 1000))
     val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
 
-    cacheUtil.fetch[CheckFileType](CacheUtil.FILE_TYPE_CACHE, scRef).map { fileType =>
+    (for {
+      requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
+      fileType      <- cacheUtil.fetch[CheckFileType](CacheUtil.FILE_TYPE_CACHE, scRef)
+    } yield {
       Ok(views.html.file_upload_errors(requestObject, fileType.checkFileType.get))
-    }.recover {
+    }).recover {
       case e: Exception => {
         Logger.error(s"processValidationFailure: failed to save callback data list with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
         getGlobalErrorPage
