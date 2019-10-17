@@ -42,17 +42,8 @@ trait Authenticator extends Actions with ErsConstants {
         implicit request =>
           implicit val hc = HeaderCarrierConverter.fromHeadersAndSession(request.headers, Some(request.session))
           FilterForSchemeRef(body, request, user)
-            .fold(redirect => redirect, requestWithSchemeInfo => FilterAgentsWrapperAsync(user, body)(hc, requestWithSchemeInfo))
-    }
-  }
-
-  //TODO CAN WE USE AuthorisedForAsync() INSTEAD
-  def SchemeRef2(body: AsyncUserRequest): Action[AnyContent] = {
-    AuthorisedFor(ERSRegime, new NonNegotiableIdentityConfidencePredicate(ConfidenceLevel.L50)).async {
-      implicit user =>
-        implicit request =>
-        FilterForSchemeRef(body, request, user)
-          .fold(redirect => redirect, requestWithSchemeInfo => body(user)(requestWithSchemeInfo))
+            .fold(redirect => redirect,
+              requestWithSchemeInfo => FilterAgentsWrapperAsync(user, body)(hc, requestWithSchemeInfo))
     }
   }
 

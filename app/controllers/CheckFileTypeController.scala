@@ -39,9 +39,7 @@ trait CheckFileTypeController extends ERSReturnBaseController with Authenticator
   val contentUtil = ContentUtil
   val cacheUtil: CacheUtil
 
- // val whatItUsedToBe: AuthenticatedBy = AuthenticatedBy(ERSGovernmentGateway, pageVisibilityPredicate)
-
-  def checkFileTypePage() = SchemeRef2 {
+  def checkFileTypePage() = AuthorisedForAsync() {
     implicit authContext =>
       implicit request =>
         showCheckFileTypePage(authContext, request, hc)
@@ -57,7 +55,7 @@ trait CheckFileTypeController extends ERSReturnBaseController with Authenticator
     }
   }
 
-  def checkFileTypeSelected() = SchemeRef2 {
+  def checkFileTypeSelected() = AuthorisedForAsync() {
     implicit authContext =>
       implicit request =>
         showCheckFileTypeSelected(authContext, request, hc)

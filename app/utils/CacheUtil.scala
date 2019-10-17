@@ -251,7 +251,7 @@ trait CacheUtil {
 
 
   def getSchemeRefFromScreenSchemeInfo(screenSchemeInfo:Option[String]): Option[SchemeInfo] = {
-    val screenSchemeRegex = """(\d)\ -\ ([A-Z]+)\ -\ (\w+)\ -\ (\w+)\ -\ (\d{4})"""
+    val screenSchemeRegex = """([\w ]+)\ -\ ([\w ]+)\ -\ ([\w ]+)\ -\ ([\w ]+)\ -\ ([\w ]+)"""
       .r("schemeId", "schemeType", "schemeName", "schemeRef", "taxYear")
 
     Logger.warn(s"CacheUtil: form getSchemeRefFromScreenSchemeInfo : $screenSchemeInfo.")
