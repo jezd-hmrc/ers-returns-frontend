@@ -203,12 +203,31 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
   }
 
   "showDeleteCompany" should {
-    "direct to ers errors page if showDeleteCompany is called with authentication and missing cache" in {
+    "direct to ers errors page if fetchAll fails" in {
+
       when(
         mockCacheUtil.fetchAll(anyString())(any(), any())
-      ).thenReturn(
-        Future.failed(new NoSuchElementException("Nothing in cache"))
-      )
+      ) thenReturn Future.failed(new NoSuchElementException("Nothing in cache"))
+
+      when(
+        mockCacheUtil.fetch[RequestObject](refEq(mockCacheUtil.ersRequestObject))(any(), any(), any(), any())
+      ) thenReturn Future.successful(ersRequestObject)
+
+      val result = await(testGroupSchemeController.showDeleteCompany(0)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
+      status(result) shouldBe OK
+      bodyOf(result).contains(Messages("ers.global_errors.title")) shouldBe true
+    }
+
+    "direct to ers errors page if fetch request object fails" in {
+
+      when(
+        mockCacheUtil.fetchAll(anyString())(any(), any())
+      ) thenReturn Future.successful(mock[CacheMap])
+
+      when(
+        mockCacheUtil.fetch[RequestObject](refEq(mockCacheUtil.ersRequestObject))(any(), any(), any(), any())
+      ) thenReturn Future.failed(new Exception)
+
       val result = await(testGroupSchemeController.showDeleteCompany(0)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
       status(result) shouldBe OK
       bodyOf(result).contains(Messages("ers.global_errors.title")) shouldBe true
@@ -227,11 +246,15 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
           )
         )
       )
+
+      when(
+        mockCacheUtil.fetch[RequestObject](refEq(mockCacheUtil.ersRequestObject))(any(), any(), any(), any())
+      ) thenReturn Future.successful(ersRequestObject)
+
       when(
         mockCacheUtil.cache(refEq(CacheUtil.GROUP_SCHEME_COMPANIES), any[CompanyDetailsList](), anyString())(any(), any(), any())
-      ).thenReturn(
-        mock[CacheMap]
-      )
+      ) thenReturn mock[CacheMap]
+
 
       val result = await(testGroupSchemeController.showDeleteCompany(0)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
       status(result) shouldBe SEE_OTHER
@@ -253,24 +276,47 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
   }
 
   "showEditCompany" should {
-    "display error page if showEditCompany is called with authentication and missing cache" in {
+    "display error page if fetch company details list fails" in {
+
       when(
         mockCacheUtil.fetch[CompanyDetailsList](refEq(CacheUtil.GROUP_SCHEME_COMPANIES), anyString())(any(), any(), any())
-      ).thenReturn(
-        Future.failed(new NoSuchElementException("Nothing in cache"))
-      )
-      val result = await(testGroupSchemeController.showEditCompany(ersRequestObject, 0)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
+      ) thenReturn Future.failed(new NoSuchElementException("Nothing in cache"))
+
+      when(
+        mockCacheUtil.fetch[RequestObject](refEq(mockCacheUtil.ersRequestObject))(any(), any(), any(), any())
+      ) thenReturn Future.successful(ersRequestObject)
+
+      val result = await(testGroupSchemeController.showEditCompany(0)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
+      status(result) shouldBe OK
+      bodyOf(result).contains(Messages("ers.global_errors.title")) shouldBe true
+    }
+
+    "display error page if fetch request object fails" in {
+
+      when(
+        mockCacheUtil.fetch[CompanyDetailsList](refEq(CacheUtil.GROUP_SCHEME_COMPANIES), anyString())(any(), any(), any())
+      ) thenReturn Future.successful(companyDetailsList)
+
+      when(
+        mockCacheUtil.fetch[RequestObject](refEq(mockCacheUtil.ersRequestObject))(any(), any(), any(), any())
+      ) thenReturn Future.failed(new Exception)
+
+      val result = await(testGroupSchemeController.showEditCompany(0)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
       status(result) shouldBe OK
       bodyOf(result).contains(Messages("ers.global_errors.title")) shouldBe true
     }
 
     "display manualCompanyDetailsPage with the selected company details if showEditCompany is called with authentication and correct cache" in {
+
       when(
         mockCacheUtil.fetch[CompanyDetailsList](refEq(CacheUtil.GROUP_SCHEME_COMPANIES), anyString())(any(), any(), any())
-      ).thenReturn(
-        Future.successful(companyDetailsList)
-      )
-      val result = await(testGroupSchemeController.showEditCompany(ersRequestObject, 0)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+      ) thenReturn Future.successful(companyDetailsList)
+
+      when(
+        mockCacheUtil.fetch[RequestObject](refEq(mockCacheUtil.ersRequestObject))(any(), any(), any(), any())
+      ) thenReturn Future.successful(ersRequestObject)
+
+      val result = await(testGroupSchemeController.showEditCompany(0)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       status(result) shouldBe OK
       bodyOf(result).contains(Messages("ers_manual_company_details.csop.title"))
     }
@@ -493,13 +539,33 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
   }
 
   "showGroupPlanSummaryPage" should {
-    "display error page if showGroupPlanSummaryPage is called with authentication and missing cache" in {
+
+    "display error page if fetch company details list fails" in {
+
       when(
         mockCacheUtil.fetch[CompanyDetailsList](refEq(CacheUtil.GROUP_SCHEME_COMPANIES), anyString())(any(), any(), any())
-      ).thenReturn(
-        Future.failed(new NoSuchElementException("Nothing in cache"))
-      )
-      val result = await(testGroupSchemeController.showGroupPlanSummaryPage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
+      ) thenReturn Future.failed(new NoSuchElementException("Nothing in cache"))
+
+      when(
+        mockCacheUtil.fetch[RequestObject](refEq(mockCacheUtil.ersRequestObject))(any(), any(), any(), any())
+      ) thenReturn Future.successful(ersRequestObject)
+
+      val result = await(testGroupSchemeController.showGroupPlanSummaryPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
+      status(result) shouldBe OK
+      bodyOf(result).contains(Messages("ers.global_errors.title")) shouldBe true
+    }
+
+    "display error page if fetch request object fails" in {
+
+      when(
+        mockCacheUtil.fetch[CompanyDetailsList](refEq(CacheUtil.GROUP_SCHEME_COMPANIES), anyString())(any(), any(), any())
+      ) thenReturn Future.successful(mock[CompanyDetailsList])
+
+      when(
+        mockCacheUtil.fetch[RequestObject](refEq(mockCacheUtil.ersRequestObject))(any(), any(), any(), any())
+      ) thenReturn Future.failed(new Exception)
+
+      val result = await(testGroupSchemeController.showGroupPlanSummaryPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
       status(result) shouldBe OK
       bodyOf(result).contains(Messages("ers.global_errors.title")) shouldBe true
     }
@@ -507,10 +573,13 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
     "display group plan summary if showGroupPlanSummaryPage is called with authentication and correct cache" in {
       when(
         mockCacheUtil.fetch[CompanyDetailsList](refEq(CacheUtil.GROUP_SCHEME_COMPANIES), anyString())(any(), any(), any())
-      ).thenReturn(
-        Future.successful(companyDetailsList)
-      )
-      val result = await(testGroupSchemeController.showGroupPlanSummaryPage(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+      ) thenReturn Future.successful(companyDetailsList)
+
+      when(
+        mockCacheUtil.fetch[RequestObject](refEq(mockCacheUtil.ersRequestObject))(any(), any(), any(), any())
+      ) thenReturn Future.successful(ersRequestObject)
+
+      val result = await(testGroupSchemeController.showGroupPlanSummaryPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       status(result) shouldBe OK
       bodyOf(result).contains(Messages("ers_group_summary.csop.title"))
     }

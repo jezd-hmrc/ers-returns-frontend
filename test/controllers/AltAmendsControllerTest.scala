@@ -78,12 +78,6 @@ class AltAmendsControllerTest extends UnitSpec with ERSFakeApplicationConfig wit
           mockCacheUtil.cache(Matchers.eq(CacheUtil.altAmendsActivity), anyString(), anyString())(any(), any(), any())
       ).thenReturn(cache)
 
-      when(
-        mockCacheUtil.getSchemeRefFromScreenSchemeInfo(Some(anyString()))
-      ).thenReturn(
-        "test"
-      )
-
     }
 
     "give a redirect status (to company authentication frontend) on GET if user is not authenticated" in {

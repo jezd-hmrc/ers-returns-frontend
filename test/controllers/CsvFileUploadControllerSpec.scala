@@ -260,7 +260,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
       override val cacheUtil: CacheUtil = mockCacheUtil
 
       override def updateCallbackData(callbackData: Option[CallbackData], csvFilesCallbackList: List[CsvFilesCallback])(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): List[CsvFilesCallback] = List()
-      override def modifyCachedCallbackData(newCsvFilesCallbackList: List[CsvFilesCallback])(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Ok)
+      override def modifyCachedCallbackData(requestObject: RequestObject, newCsvFilesCallbackList: List[CsvFilesCallback])(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Ok)
     }
 
     "direct to ers errors page if fetching CsvFilesCallbackList fails" in {
@@ -270,6 +270,10 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
       ).thenReturn(
         Future.failed(new RuntimeException)
       )
+
+      when(
+        mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
+      ) thenReturn Future.successful(ersRequestObject)
 
       contentAsString(await(csvFileUploadController.proceedCallbackData(Some(mock[CallbackData]))(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))) shouldBe contentAsString(csvFileUploadController.getGlobalErrorPage)
     }
@@ -281,6 +285,10 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
       ).thenReturn(
         Future.successful(mock[CsvFilesCallbackList])
       )
+
+      when(
+        mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
+      ) thenReturn Future.successful(ersRequestObject)
 
       val result = await(csvFileUploadController.proceedCallbackData(Some(mock[CallbackData]))(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       status(result) shouldBe OK
@@ -310,7 +318,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
         Future.failed(new RuntimeException)
       )
 
-      contentAsBytes(await(csvFileUploadController.modifyCachedCallbackData(List())(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))) shouldBe contentAsBytes(csvFileUploadController.getGlobalErrorPage)
+      contentAsBytes(await(csvFileUploadController.modifyCachedCallbackData(ersRequestObject, List())(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))) shouldBe contentAsBytes(csvFileUploadController.getGlobalErrorPage)
 
     }
 
@@ -328,7 +336,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
         CsvFilesCallback("file1", Some(callbackData))
       )
 
-      val result = await(csvFileUploadController.modifyCachedCallbackData(csvFilesCallbackList)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+      val result = await(csvFileUploadController.modifyCachedCallbackData(ersRequestObject, csvFilesCallbackList)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       status(result) shouldBe SEE_OTHER
       result.header.headers("Location") shouldBe routes.CsvFileUploadController.uploadFilePage().toString()
     }
@@ -347,7 +355,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
         CsvFilesCallback("file1", Some(callbackData))
       )
 
-      val result = await(csvFileUploadController.modifyCachedCallbackData(csvFilesCallbackList)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+      val result = await(csvFileUploadController.modifyCachedCallbackData(ersRequestObject, csvFilesCallbackList)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       status(result) shouldBe OK
     }
 

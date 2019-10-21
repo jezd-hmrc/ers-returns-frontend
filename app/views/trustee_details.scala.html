@@ -40,11 +40,11 @@
                     <span class="form-label">@Messages("ers_trustee_details.question")</span>
                 </legend>
                 <div class="form-field">
-                    <label class="block-label @if(trusteeDetails(trusteeDetailsFields.country).value == Some(DEFAULT_COUNTRY) || trusteeDetails(trusteeDetailsFields.country).value == None) {selected}" for="uk-radio-button">
-                        <input id="uk-radio-button" name="radio-inline-group" value="1" type="radio" @if(trusteeDetails(trusteeDetailsFields.country).value == Some(DEFAULT_COUNTRY) || trusteeDetails(trusteeDetailsFields.country).value == None) {checked="checked"}>@Messages("ers_trustee_details.uk")
+                    <label class="block-label @if(trusteeDetails(trusteeDetailsFields.country).value.contains(DEFAULT_COUNTRY) || trusteeDetails(trusteeDetailsFields.country).value.isEmpty) {selected}" for="uk-radio-button">
+                        <input id="uk-radio-button" name="radio-inline-group" value="1" type="radio" @if(trusteeDetails(trusteeDetailsFields.country).value.contains(DEFAULT_COUNTRY) || trusteeDetails(trusteeDetailsFields.country).value.isEmpty) {checked="checked"}>@Messages("ers_trustee_details.uk")
                     </label>
-                    <label class="block-label @if(trusteeDetails(trusteeDetailsFields.country).value != Some(DEFAULT_COUNTRY) && trusteeDetails(trusteeDetailsFields.country).value != None) {selected}" for="overseas-radio-button">
-                        <input id="overseas-radio-button" name="radio-inline-group" value="2" type="radio" @if(trusteeDetails(trusteeDetailsFields.country).value != Some(DEFAULT_COUNTRY) && trusteeDetails(trusteeDetailsFields.country).value != None) {checked="checked"}>@Messages("ers_trustee_details.overseas")
+                    <label class="block-label @if(!trusteeDetails(trusteeDetailsFields.country).value.contains(DEFAULT_COUNTRY) && trusteeDetails(trusteeDetailsFields.country).value.isDefined) {selected}" for="overseas-radio-button">
+                        <input id="overseas-radio-button" name="radio-inline-group" value="2" type="radio" @if(!trusteeDetails(trusteeDetailsFields.country).value.contains(DEFAULT_COUNTRY) && trusteeDetails(trusteeDetailsFields.country).value.isDefined) {checked="checked"}>@Messages("ers_trustee_details.overseas")
                     </label>
                 </div>
             </fieldset>

@@ -29,8 +29,8 @@ import play.api.Application
 import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.inject.Injector
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsObject, JsValue, Json}
-import play.api.mvc.{AnyContentAsEmpty, LegacyI18nSupport, Request, Result}
+import play.api.libs.json.{JsObject, JsString, JsValue, Json}
+import play.api.mvc._
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import services.SessionService
@@ -53,19 +53,25 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
   def messagesApi: MessagesApi = injector.instanceOf[MessagesApi]
   implicit val messages: Messages = messagesApi.preferred(Seq(Lang.get("en").get))
 
-  val testString = Some("test")
-
-  val testRequestObject: RequestObject = RequestObject(testString, testString, testString, testString, testString, testString, testString, testString, testString)
-
   "FileUploadController" must {
 
     "return with a successful HTTP response on validationResults call" in {
       val mockCallbackData = mock[CallbackData]
-      when(mockSessionService.retrieveCallbackData()(Matchers.any(), Matchers.any())).thenReturn(Future.successful(Some(mockCallbackData)))
-      when(mockCacheUtil.fetch[ErsMetaData](Matchers.any[String](), Matchers.any[String]())(Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(Future.successful(validErsMetaData))
-      when(mockErsConnector.validateFileData(Matchers.any[CallbackData](), Matchers.any())(Matchers.any[AuthContext](), Matchers.any(), Matchers.any[HeaderCarrier]())).thenReturn(Future.successful(HttpResponse(200)))
-      when(mockErsConnector.removePresubmissionData(Matchers.any[SchemeInfo]())(Matchers.any[AuthContext](), Matchers.any[HeaderCarrier]()))
-        .thenReturn(Future.successful(HttpResponse(OK)))
+
+      when(
+        mockSessionService.retrieveCallbackData()(Matchers.any(), Matchers.any())
+      ) thenReturn Future.successful(Some(mockCallbackData))
+      when(
+        mockCacheUtil.fetch[ErsMetaData](Matchers.any[String](), Matchers.any[String]())(Matchers.any(), Matchers.any(), Matchers.any())
+      ) thenReturn Future.successful(validErsMetaData)
+
+      when(
+        mockErsConnector.validateFileData(Matchers.any[CallbackData](), Matchers.any())(Matchers.any[AuthContext](), Matchers.any(), Matchers.any[HeaderCarrier]())
+      ) thenReturn Future.successful(HttpResponse(200))
+
+      when(
+        mockErsConnector.removePresubmissionData(Matchers.any[SchemeInfo]())(Matchers.any[AuthContext](), Matchers.any[HeaderCarrier]())
+      ) thenReturn Future.successful(HttpResponse(OK))
 
       withAuthorisedUser { user =>
         validationResults(Fixtures.buildFakeRequestWithSessionId("GET")) { result =>
@@ -76,12 +82,25 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
 
     "redirect to Scheme Organizer page if validation is successful" in {
 
-      when(mockSessionService.retrieveCallbackData()(Matchers.any(), Matchers.any())).thenReturn(Future.successful(Some(callbackData)))
-      when(mockCacheUtil.fetch[ErsMetaData](Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(Future.successful(validErsMetaData))
-      when(mockErsConnector.validateFileData(Matchers.any[CallbackData](), Matchers.any())(Matchers.any[AuthContext](), Matchers.any(), Matchers.any[HeaderCarrier]()))
-        .thenReturn(Future.successful(HttpResponse(OK)))
-      when(mockErsConnector.removePresubmissionData(Matchers.any[SchemeInfo]())(Matchers.any[AuthContext](), Matchers.any[HeaderCarrier]()))
-        .thenReturn(Future.successful(HttpResponse(OK)))
+      when(
+        mockSessionService.retrieveCallbackData()(Matchers.any(), Matchers.any())
+      ) thenReturn Future.successful(Some(callbackData))
+
+      when(
+        mockCacheUtil.fetch[ErsMetaData](Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any())
+      ) thenReturn Future.successful(validErsMetaData)
+
+      when(
+        mockErsConnector.validateFileData(Matchers.any[CallbackData](), Matchers.any())(Matchers.any[AuthContext](), Matchers.any(), Matchers.any[HeaderCarrier]())
+      ) thenReturn Future.successful(HttpResponse(OK))
+
+      when(
+        mockErsConnector.removePresubmissionData(Matchers.any[SchemeInfo]())(Matchers.any[AuthContext](), Matchers.any[HeaderCarrier]())
+      ) thenReturn Future.successful(HttpResponse(OK))
+
+      when(
+        mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
+      ) thenReturn Future.successful(ersRequestObject)
 
       withAuthorisedUser { user =>
         validationResults(user) { result =>
@@ -93,12 +112,26 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
 
     "redirect to Validation Failure page if validation fails with status 202" in {
 
-      when(mockSessionService.retrieveCallbackData()(Matchers.any(), Matchers.any())).thenReturn(Future.successful(Some(callbackData)))
-      when(mockCacheUtil.fetch[ErsMetaData](Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(Future.successful(validErsMetaData))
-      when(mockErsConnector.validateFileData(Matchers.any[CallbackData](), Matchers.any())(Matchers.any[AuthContext](), Matchers.any(), Matchers.any[HeaderCarrier]()))
-        .thenReturn(Future.successful(HttpResponse(ACCEPTED)))
-      when(mockErsConnector.removePresubmissionData(Matchers.any[SchemeInfo]())(Matchers.any[AuthContext](), Matchers.any[HeaderCarrier]()))
-        .thenReturn(Future.successful(HttpResponse(OK)))
+      when(
+        mockSessionService.retrieveCallbackData()(Matchers.any(), Matchers.any())
+      ) thenReturn Future.successful(Some(callbackData))
+
+      when(
+        mockCacheUtil.fetch[ErsMetaData](Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any())
+      ) thenReturn Future.successful(validErsMetaData)
+
+      when(
+        mockErsConnector.validateFileData(Matchers.any[CallbackData](), Matchers.any())(Matchers.any[AuthContext](), Matchers.any(), Matchers.any[HeaderCarrier]())
+      ) thenReturn Future.successful(HttpResponse(ACCEPTED))
+
+      when(
+        mockErsConnector.removePresubmissionData(Matchers.any[SchemeInfo]())(Matchers.any[AuthContext](), Matchers.any[HeaderCarrier]())
+      ) thenReturn Future.successful(HttpResponse(OK))
+
+      when(
+        mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
+      ) thenReturn Future.successful(ersRequestObject)
+
       withAuthorisedUser { user =>
         validationResults(user) { result =>
           status(result) must equal(SEE_OTHER)
@@ -121,7 +154,6 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
     }
 
     "return with a error page if deleting old presubmission data fails" in {
-      val mockCallbackData = mock[CallbackData]
       when(mockSessionService.retrieveCallbackData()(Matchers.any(), Matchers.any())).thenReturn(Future.successful(Some(callbackData)))
       when(mockCacheUtil.fetch[ErsMetaData](Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(Future.successful(validErsMetaData))
       when(mockErsConnector.validateFileData(Matchers.any[CallbackData](), Matchers.any())(Matchers.any[AuthContext](), Matchers.any(), Matchers.any[HeaderCarrier]())).thenReturn(Future.successful(HttpResponse(200)))
@@ -163,22 +195,33 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
 
     "authorised users" must {
       "respond with a status of OK" in {
+
+        when(
+          mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
+        ).thenReturn(
+          Future.successful(ersRequestObject)
+        )
+
         withAuthorisedUser { user =>
-          getRequestObject() { _ =>
-            getFileUploadPartial(user) { result =>
-              status(result) must be(OK)
-            }
+          getFileUploadPartial(user) { result =>
+            status(result) must be(OK)
           }
         }
       }
 
       "display the attachments partial" in {
+
+        when(
+          mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
+        ).thenReturn(
+          Future.successful(ersRequestObject)
+        )
+
         withAuthorisedUser { user =>
-          getRequestObject() { _ =>
-            getFileUploadPartial(user) { result =>
-              contentAsString(result) must include("id=\"file-uploader\"")
-            }
+          getFileUploadPartial(user) { result =>
+            contentAsString(result) must include("id=\"file-uploader\"")
           }
+
         }
       }
     }
@@ -212,7 +255,7 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
       override val ersConnector: ErsConnector = mock[ErsConnector]
       override val cacheUtil: CacheUtil = mock[CacheUtil]
 
-      override def showSuccess(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Ok)
+      override def showSuccess()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Ok)
     }
 
     "redirect for unauthorised users to login page" in {
@@ -222,7 +265,7 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
     }
 
     "show the result of showUploadFilePage() for authorised users" in {
-      withAuthorisedUser { user =>
+      withAuthorisedUser { _ =>
         fileUploadController.success().apply(Fixtures.buildFakeRequestWithSessionIdCSOP("GET")).map { result =>
           status(Future(result)) must be(OK)
         }
@@ -252,8 +295,34 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
       when(mockCacheUtil.cache[String](anyString(), anyString(), anyString())(any(), any(), any()))
         .thenReturn(Future.successful(mock[CacheMap]))
 
-      val result = fileUploadController.showSuccess(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
+      when(
+        mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
+      ) thenReturn Future.successful(ersRequestObject)
+
+
+      val result = fileUploadController.showSuccess()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
       contentAsString(result) must include(messages("ers.bulk.success.csop.info", "this file"))
+    }
+
+    "direct to ers errors page if fetching requestObject fails" in {
+
+      reset(mockSessionService)
+      when(mockSessionService.retrieveCallbackData()(any(), any()))
+        .thenReturn(Future.successful(Some(CallbackData("", "", 5, Some("file_name"), None, None, None, None))))
+
+      reset(mockCacheUtil)
+      when(mockCacheUtil.cache[String](anyString(), anyString(), anyString())(any(), any(), any()))
+        .thenReturn(Future.successful(mock[CacheMap]))
+
+      when(
+        mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
+      ).thenReturn(
+        Future.failed(new Exception)
+      )
+
+
+      val result = fileUploadController.showSuccess()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
+      contentAsString(result) must be(contentAsString(Future(fileUploadController.getGlobalErrorPage)))
     }
 
     "direct to ers errors page if fetching fileName fails" in {
@@ -266,7 +335,13 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
       when(mockCacheUtil.cache[String](anyString(), anyString(), anyString())(any(), any(), any()))
         .thenReturn(Future.failed(new Exception))
 
-      val result = fileUploadController.showSuccess(testRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
+      when(
+        mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
+      ).thenReturn(
+        Future.successful(ersRequestObject)
+      )
+
+      val result = fileUploadController.showSuccess()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
       contentAsString(result) must be(contentAsString(Future(fileUploadController.getGlobalErrorPage)))
     }
   }
@@ -284,15 +359,191 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
     "authorised users" must {
       "respond with a status of OK" in {
 
-        getRequestObject() { _ =>
-          when(mockCacheUtil.fetch[CheckFileType](Matchers.refEq(CacheUtil.FILE_TYPE_CACHE), Matchers.any[String]())(Matchers.any(), Matchers.any(), Matchers.any()))
-            .thenReturn(Future.successful(CheckFileType(Some("csv"))))
+        when(
+          mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
+        ).thenReturn(
+          Future.successful(ersRequestObject)
+        )
 
-          withAuthorisedUser { user =>
-            validationFailure(user) { result =>
-              status(result) must be(OK)
-              contentAsString(result) must include(messages("file_upload_errors.title"))
-            }
+        when(mockCacheUtil.fetch[CheckFileType](Matchers.refEq(CacheUtil.FILE_TYPE_CACHE), Matchers.any[String]())(Matchers.any(), Matchers.any(), Matchers.any()))
+          .thenReturn(Future.successful(CheckFileType(Some("csv"))))
+
+        withAuthorisedUser { user =>
+          validationFailure(user) { result =>
+            status(result) must be(OK)
+            contentAsString(result) must include(messages("file_upload_errors.title"))
+          }
+        }
+      }
+    }
+  }
+
+  "validationResults" must {
+
+    "redirect user" when {
+
+      "all calls are successful" in {
+
+        when(
+          mockCacheUtil.fetch[ErsMetaData](Matchers.eq(mockCacheUtil.ersMetaData), any())(any(), any(), any())
+        ) thenReturn Future.successful(validErsMetaData)
+
+        when(
+          mockSessionService.retrieveCallbackData()(any(), any())
+        ) thenReturn Future.successful(Some(callbackData))
+
+        when(
+          mockErsConnector.removePresubmissionData(any())(any(), any())
+        ) thenReturn Future.successful(HttpResponse(OK))
+
+        when(
+          mockErsConnector.validateFileData(any(), any())(any(), any(), any())
+        ) thenReturn Future.successful(HttpResponse(OK))
+
+        when(
+          mockCacheUtil.cache(Matchers.eq(mockCacheUtil.VALIDATED_SHEEETS), any(), anyString())(any(), any(), any())
+        ) thenReturn Future.successful(mock[CacheMap])
+
+        withAuthorisedUser { user =>
+          validationResults(user) { result =>
+
+            status(result) mustBe SEE_OTHER
+            redirectLocation(result).get must include("/company-details")
+
+          }
+        }
+      }
+
+      "ers connector returns Accepted to show a validation failure" in {
+
+        when(
+          mockCacheUtil.fetch[ErsMetaData](Matchers.eq(mockCacheUtil.ersMetaData), any())(any(), any(), any())
+        ) thenReturn Future.successful(validErsMetaData)
+
+        when(
+          mockSessionService.retrieveCallbackData()(any(), any())
+        ) thenReturn Future.successful(Some(callbackData))
+
+        when(
+          mockErsConnector.removePresubmissionData(any())(any(), any())
+        ) thenReturn Future.successful(HttpResponse(OK))
+
+        when(
+          mockErsConnector.validateFileData(any(), any())(any(), any(), any())
+        ) thenReturn Future.successful(HttpResponse(ACCEPTED))
+
+        when(
+          mockCacheUtil.cache(Matchers.eq(mockCacheUtil.VALIDATED_SHEEETS), any(), anyString())(any(), any(), any())
+        ) thenReturn Future.successful(CacheMap("1", Map("something" -> JsString("that"))))
+
+        withAuthorisedUser { user =>
+          validationResults(user) { result =>
+
+            status(result) mustBe SEE_OTHER
+            redirectLocation(result).get must include("/errors-have-been-found-ods")
+          }
+        }
+      }
+    }
+
+    "show global error page" when {
+
+      "ers connector returns a non 2xx status" in {
+
+        when(
+          mockCacheUtil.fetch[ErsMetaData](Matchers.eq(mockCacheUtil.ersMetaData), any())(any(), any(), any())
+        ) thenReturn Future.successful(validErsMetaData)
+
+        when(
+          mockSessionService.retrieveCallbackData()(any(), any())
+        ) thenReturn Future.successful(Some(callbackData))
+
+        when(
+          mockErsConnector.removePresubmissionData(any())(any(), any())
+        ) thenReturn Future.successful(HttpResponse(OK))
+
+        when(
+          mockErsConnector.validateFileData(any(), any())(any(), any(), any())
+        ) thenReturn Future.successful(HttpResponse(INTERNAL_SERVER_ERROR))
+
+        withAuthorisedUser { user =>
+          validationResults(user) { result =>
+
+            status(result) mustBe OK
+            contentAsString(result) must include(messages("ers.global_errors.title"))
+
+          }
+        }
+      }
+
+      "fetching ersMetaData fails" in {
+
+        when(
+          mockCacheUtil.fetch[ErsMetaData](Matchers.eq(mockCacheUtil.ersMetaData), any())(any(), any(), any())
+        ) thenReturn Future.failed(new Exception)
+
+        when(
+          mockSessionService.retrieveCallbackData()(any(), any())
+        ) thenReturn Future.successful(Some(callbackData))
+
+        when(
+          mockErsConnector.removePresubmissionData(any())(any(), any())
+        ) thenReturn Future.successful(HttpResponse(OK))
+
+        withAuthorisedUser { user =>
+          validationResults(user) { result =>
+
+            status(result) mustBe OK
+            contentAsString(result) must include(messages("ers.global_errors.title"))
+
+          }
+        }
+      }
+
+      "fetching callbackData fails" in {
+
+        when(
+          mockCacheUtil.fetch[ErsMetaData](Matchers.eq(mockCacheUtil.ersMetaData), any())(any(), any(), any())
+        ) thenReturn Future.successful(validErsMetaData)
+
+        when(
+          mockSessionService.retrieveCallbackData()(any(), any())
+        ) thenReturn Future.failed(new Exception)
+
+        when(
+          mockErsConnector.removePresubmissionData(any())(any(), any())
+        ) thenReturn Future.successful(HttpResponse(OK))
+
+        withAuthorisedUser { user =>
+          validationResults(user) { result =>
+
+            status(result) mustBe OK
+            contentAsString(result) must include(messages("ers.global_errors.title"))
+
+          }
+        }
+      }
+
+      "removing pre-submission data fails" in {
+
+        when(
+          mockCacheUtil.fetch[ErsMetaData](Matchers.eq(mockCacheUtil.ersMetaData), any())(any(), any(), any())
+        ) thenReturn Future.successful(validErsMetaData)
+
+        when(
+          mockSessionService.retrieveCallbackData()(any(), any())
+        ) thenReturn Future.successful(Some(callbackData))
+
+        when(
+          mockErsConnector.removePresubmissionData(any())(any(), any())
+        ) thenReturn Future.successful(HttpResponse(INTERNAL_SERVER_ERROR))
+
+        withAuthorisedUser { user =>
+          validationResults(user) { result =>
+
+            status(result) mustBe OK
+            contentAsString(result) must include(messages("ers.global_errors.title"))
+
           }
         }
       }
@@ -333,12 +584,6 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
       .thenReturn(Future.successful(HttpResponse(OK, responseString = Some(html))))
     handler(TestFileUploadController.uploadFilePage().apply(request))
   }
-
-  def getRequestObject(request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest())(handler: Future[Result] => Any) = {
-    when(mockCacheUtil.fetch[RequestObject](Matchers.refEq(CacheUtil.ersRequestObject))(Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any()))
-      .thenReturn(Future.successful(ersRequestObject))
-  }
-
 
   def errorCountIs(result: Future[Result], count: Int): Unit = {
     val errors = contentAsString(result).split("class=\"error\"")
@@ -390,7 +635,6 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
     Matchers.any(), Matchers.any())).thenReturn(Future.successful(CheckFileType(Some("csv"))))
   when(mockCacheUtil.fetchOption[CsvFilesCallbackList](Matchers.any[String](), Matchers.any[String]())(Matchers.any(),
     Matchers.any(), Matchers.any())).thenReturn(Future.successful(Some(csvCallBackList)))
-  when(mockCacheUtil.getSchemeRefFromScreenSchemeInfo(Some(anyString()))).thenReturn("")
 
   object TestFileUploadController extends FileUploadController {
     val attachmentsConnector = mockAttachmentsConnector

@@ -48,11 +48,10 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
   }
 
   def showUploadFilePage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
 
     (for {
       requestObject        <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
-      csvFilesCallbackList <- cacheUtil.fetch[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, scRef)
+      csvFilesCallbackList <- cacheUtil.fetch[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, requestObject.getSchemeReference)
       partial              <- attachmentsConnector.getCsvFileUploadPartial
     } yield {
       Ok(views.html.csv_file_upload(requestObject, Html(partial.body), csvFilesCallbackList.files))
@@ -77,27 +76,29 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
   }
 
   def proceedCallbackData(callbackData: Option[CallbackData])(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    cacheUtil.fetch[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, scRef).flatMap { csvFilesCallbackList =>
-      val newCsvFilesCallbackList: List[CsvFilesCallback] = updateCallbackData(callbackData, csvFilesCallbackList.files)
-      modifyCachedCallbackData(newCsvFilesCallbackList)
-    } recover {
-      case e: Exception => {
+
+    (for {
+      requestObject           <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
+      csvFilesCallbackList    <- cacheUtil.fetch[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, requestObject.getSchemeReference)
+      newCsvFilesCallbackList <- Future.successful(updateCallbackData(callbackData, csvFilesCallbackList.files))
+      result                  <- modifyCachedCallbackData(requestObject, newCsvFilesCallbackList)
+    } yield {
+
+      result
+    }) recover {
+      case e: Exception =>
         Logger.error(s"success: failed to fetch callback data with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
         getGlobalErrorPage
-      }
     }
   }
 
-  def modifyCachedCallbackData(newCsvFilesCallbackList: List[CsvFilesCallback])(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    cacheUtil.cache[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, CsvFilesCallbackList(newCsvFilesCallbackList), scRef).flatMap { cached =>
+  def modifyCachedCallbackData(requestObject: RequestObject, newCsvFilesCallbackList: List[CsvFilesCallback])(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+
+    cacheUtil.cache[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, CsvFilesCallbackList(newCsvFilesCallbackList), requestObject.getSchemeReference).map { _ =>
       if (newCsvFilesCallbackList.count(_.callbackData.isEmpty) > 0) {
-        Future.successful(Redirect(routes.CsvFileUploadController.uploadFilePage()))
+        Redirect(routes.CsvFileUploadController.uploadFilePage())
       } else {
-        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).map { requestObject =>
-          Ok(views.html.success(requestObject, Some(CsvFilesCallbackList(newCsvFilesCallbackList)), None))
-        }
+        Ok(views.html.success(requestObject, Some(CsvFilesCallbackList(newCsvFilesCallbackList)), None))
       }
     } recover {
       case e: Exception => {
@@ -126,10 +127,14 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
   }
 
   def processValidationResults()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, scRef).flatMap { all =>
-      removePresubmissionData(all.schemeInfo)
-    } recover {
+
+    (for {
+      requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
+      all           <- cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, requestObject.getSchemeReference)
+      result        <- removePresubmissionData(all.schemeInfo)
+    } yield {
+      result
+    }) recover {
       case e: Exception => {
         Logger.error(s"Failed to fetch metadata data with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
         getGlobalErrorPage
@@ -141,10 +146,9 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
     ersConnector.removePresubmissionData(schemeInfo).flatMap { result =>
       result.status match {
         case 200 => extractCsvCallbackData(schemeInfo)
-        case _ => {
+        case _ =>
           Logger.error(s"validationResults: removePresubmissionData failed with status ${result.status}, timestamp: ${System.currentTimeMillis()}.")
           Future(getGlobalErrorPage)
-        }
       }
     } recover {
       case e: Exception => {
@@ -155,8 +159,8 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
   }
 
   def extractCsvCallbackData(schemeInfo: SchemeInfo)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    cacheUtil.fetch[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, scRef).flatMap { csvFilesCallbackList =>
+
+    cacheUtil.fetch[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, schemeInfo.schemeRef).flatMap { csvFilesCallbackList =>
       val csvCallbackValidatorData: List[CallbackData] = for (csvCallback <- csvFilesCallbackList.files) yield {
         csvCallback.callbackData.get
       }
@@ -170,17 +174,16 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
   }
 
   def validateCsv(csvCallbackValidatorData: List[CallbackData], schemeInfo: SchemeInfo)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
     ersConnector.validateCsvFileData(csvCallbackValidatorData, schemeInfo).map { res =>
       Logger.info(s"validateCsv: Response from validator: ${res.status}, timestamp: ${System.currentTimeMillis()}.")
       res.status match {
         case 200 => {
-          Logger.warn(s"validateCsv: Validation is successful for schemeRef: ${scRef}, callback: ${csvCallbackValidatorData.toString}, timestamp: ${System.currentTimeMillis()}.")
-          cacheUtil.cache(cacheUtil.VALIDATED_SHEEETS, res.body, scRef)
+          Logger.warn(s"validateCsv: Validation is successful for schemeRef: ${schemeInfo.schemeRef}, callback: ${csvCallbackValidatorData.toString}, timestamp: ${System.currentTimeMillis()}.")
+          cacheUtil.cache(cacheUtil.VALIDATED_SHEEETS, res.body, schemeInfo.schemeRef)
           Redirect(routes.SchemeOrganiserController.schemeOrganiserPage())
         }
         case 202 => {
-          Logger.warn(s"validateCsv: Validation is not successful for schemeRef: ${scRef}, callback: ${csvCallbackValidatorData.toString}, timestamp: ${System.currentTimeMillis()}.")
+          Logger.warn(s"validateCsv: Validation is not successful for schemeRef: ${schemeInfo.schemeRef}, callback: ${csvCallbackValidatorData.toString}, timestamp: ${System.currentTimeMillis()}.")
           Redirect(routes.CsvFileUploadController.validationFailure())
         }
         case _ => Logger.error(s"validateCsv: Validate file data failed with Status ${res.status}, timestamp: ${System.currentTimeMillis()}.")
@@ -203,11 +206,10 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
   def processValidationFailure()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
     Logger.info("validationFailure: Validation Failure: " + (System.currentTimeMillis() / 1000))
-    val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
 
     (for {
       requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
-      fileType      <- cacheUtil.fetch[CheckFileType](CacheUtil.FILE_TYPE_CACHE, scRef)
+      fileType      <- cacheUtil.fetch[CheckFileType](CacheUtil.FILE_TYPE_CACHE, requestObject.getSchemeReference)
     } yield {
       Ok(views.html.file_upload_errors(requestObject, fileType.checkFileType.get))
     }).recover {

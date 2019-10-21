@@ -33,7 +33,7 @@ trait HMACUtil {
 
   def verifyHMAC(urlParams: RequestObject): Boolean = {
 
-    val generatedHMAC: Array[Byte] = sha1Bytes(urlParams.concatenateParameters())
+    val generatedHMAC: Array[Byte] = sha1Bytes(urlParams.concatenateParameters)
     val urlParamsHMAC: Array[Byte] = Base64.decodeBase64(urlParams.getHMAC)
 
     val hmacIsEqual: Boolean = java.util.Arrays.equals(generatedHMAC, urlParamsHMAC)
@@ -62,17 +62,15 @@ trait HMACUtil {
 
   def timeIsValid(urlParams: RequestObject): Boolean = {
     try {
-      val longTime: Long = urlParams.getTS().toLong * 1000
+      val longTime: Long = urlParams.getTS.toLong * 1000
       val urlTime: DateTime = new DateTime(longTime)
       val now: DateTime = DateTime.now()
       val diff: Int = Seconds.secondsBetween(urlTime, now).getSeconds
 
-      if (diff <= TIME_RANGE) {
-        return true
-      }
+      if (diff <= TIME_RANGE) true
     }
     catch {
-      case ne: NumberFormatException => {}
+      case ne: NumberFormatException =>
     }
 
     false

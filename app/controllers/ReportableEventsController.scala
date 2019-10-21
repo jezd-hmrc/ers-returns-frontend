@@ -43,18 +43,17 @@ trait ReportableEventsController extends ERSReturnBaseController with Authentica
       implicit request =>
         cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObj =>
 
-          updateErsMetaData()(user, request, hc)
+          updateErsMetaData(requestObj)(user, request, hc)
           showReportableEventsPage(requestObj)(user, request, hc)
         }
   }
 
-  def updateErsMetaData()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Object] = {
-    val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    ersConnector.connectToEtmpSapRequest(schemeRef).flatMap { sapNumber =>
-      cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, schemeRef).map { metaData =>
+  def updateErsMetaData(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Object] = {
+    ersConnector.connectToEtmpSapRequest(requestObject.getSchemeReference).flatMap { sapNumber =>
+      cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, requestObject.getSchemeReference).map { metaData =>
         val ersMetaData = ErsMetaData(
           metaData.schemeInfo, metaData.ipRef, metaData.aoRef, metaData.empRef, metaData.agentRef, Some(sapNumber))
-        cacheUtil.cache(CacheUtil.ersMetaData, ersMetaData, schemeRef).recover {
+        cacheUtil.cache(CacheUtil.ersMetaData, ersMetaData, requestObject.getSchemeReference).recover {
           case e: Exception => {
             Logger.error(s"updateErsMetaData save failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
             getGlobalErrorPage
@@ -70,8 +69,7 @@ trait ReportableEventsController extends ERSReturnBaseController with Authentica
   }
 
   def showReportableEventsPage(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    cacheUtil.fetch[ReportableEvents](CacheUtil.reportableEvents, schemeRef).map { activity =>
+    cacheUtil.fetch[ReportableEvents](CacheUtil.reportableEvents, requestObject.getSchemeReference).map { activity =>
       Ok(views.html.reportable_events(requestObject, activity.isNilReturn, RsFormMappings.chooseForm.fill(activity)))
     } recover {
       case e: NoSuchElementException =>
@@ -98,8 +96,7 @@ trait ReportableEventsController extends ERSReturnBaseController with Authentica
         Future.successful(Ok(views.html.reportable_events(requestObject, Some(""), errors)))
       },
       formData => {
-        val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-        cacheUtil.cache(CacheUtil.reportableEvents, formData, schemeRef).map { _ =>
+        cacheUtil.cache(CacheUtil.reportableEvents, formData, requestObject.getSchemeReference).map { _ =>
           if (formData.isNilReturn.get == PageBuilder.OPTION_NIL_RETURN) {
             Redirect(routes.SchemeOrganiserController.schemeOrganiserPage())
           } else {

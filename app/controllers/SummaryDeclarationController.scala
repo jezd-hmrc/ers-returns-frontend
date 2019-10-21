@@ -16,8 +16,6 @@
 
 package controllers
 
-import java.time.LocalDateTime
-
 import _root_.models._
 import connectors.ErsConnector
 import play.api.Logger
@@ -51,13 +49,11 @@ trait SummaryDeclarationController extends ERSReturnBaseController with Authenti
   }
 
   def showSummaryDeclarationPage(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    cacheUtil.fetchAll(schemeRef).flatMap { all =>
+    cacheUtil.fetchAll(requestObject.getSchemeReference).flatMap { all =>
       val schemeOrganiser: SchemeOrganiserDetails = all.getEntry[SchemeOrganiserDetails](CacheUtil.SCHEME_ORGANISER_CACHE).get
       val groupSchemeInfo: GroupSchemeInfo = all.getEntry[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER).getOrElse(new GroupSchemeInfo(None, None))
       val groupScheme: String = groupSchemeInfo.groupScheme.getOrElse("")
       val reportableEvents: String = all.getEntry[ReportableEvents](CacheUtil.reportableEvents).get.isNilReturn.get
-      val schemeId = request.session.get("screenSchemeInfo").get.split(" - ").head
       var fileType: String = ""
       var fileNames: String = ""
       var fileCount: Int = 0
@@ -67,7 +63,7 @@ trait SummaryDeclarationController extends ERSReturnBaseController with Authenti
         if (fileType == PageBuilder.OPTION_CSV) {
           val csvFilesCallback: List[CsvFilesCallback] = all.getEntry[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES).get.files
           for (file <- csvFilesCallback if file.callbackData.isDefined) {
-            fileNames = fileNames + Messages(PageBuilder.getPageElement(schemeId, PageBuilder.PAGE_CHECK_CSV_FILE, file.fileId + ".file_name")) + "<br/>"
+            fileNames = fileNames + Messages(PageBuilder.getPageElement(requestObject.getSchemeId, PageBuilder.PAGE_CHECK_CSV_FILE, file.fileId + ".file_name")) + "<br/>"
             fileCount += 1
           }
         } else {
@@ -77,7 +73,7 @@ trait SummaryDeclarationController extends ERSReturnBaseController with Authenti
       }
 
       val altAmendsActivity = all.getEntry[AltAmendsActivity](CacheUtil.altAmendsActivity).getOrElse(AltAmendsActivity(""))
-      val altActivity = schemeId match {
+      val altActivity = requestObject.getSchemeId match {
         case PageBuilder.SCHEME_CSOP | PageBuilder.SCHEME_SIP | PageBuilder.SCHEME_SAYE => altAmendsActivity.altActivity
         case _ => ""
       }

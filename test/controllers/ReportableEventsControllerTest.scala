@@ -123,12 +123,12 @@ class ReportableEventsControllerTest extends UnitSpec with ERSFakeApplicationCon
 
     "direct to ers errors page if fetching ersMetaData throws exception" in {
       val controllerUnderTest = buildFakeReportableEventsController(ersMetaDataRes = false)
-      val result = controllerUnderTest.updateErsMetaData()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
+      val result = controllerUnderTest.updateErsMetaData(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
     }
 
     "direct to ers errors page if saving ersMetaData throws exception" in {
       val controllerUnderTest = buildFakeReportableEventsController(ersMetaDataCachedOk = false)
-      val result = controllerUnderTest.updateErsMetaData()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
+      val result = controllerUnderTest.updateErsMetaData(ersRequestObject)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
     }
 
     "show blank reportable events page if fetching reportableEvents throws exception" in {

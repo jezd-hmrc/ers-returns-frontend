@@ -64,52 +64,20 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
         Future(Ok(views.html.manual_company_details(requestObject, index, errors)))
       },
       successful => {
-        val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-        cacheUtil.fetch[CompanyDetailsList](CacheUtil.GROUP_SCHEME_COMPANIES, scRef).flatMap { cachedCompaniesList =>
+        cacheUtil.fetch[CompanyDetailsList](CacheUtil.GROUP_SCHEME_COMPANIES, requestObject.getSchemeReference).flatMap { cachedCompaniesList =>
 
-          var cachedCompaniesListPlusNewCompany = CompanyDetailsList(List[CompanyDetails]())
-          var companyDetails: CompanyDetails = CompanyDetails(PageBuilder.DEFAULT, PageBuilder.DEFAULT, Option(PageBuilder.DEFAULT), Option(PageBuilder.DEFAULT), Option(PageBuilder.DEFAULT), Option(PageBuilder.DEFAULT), Option(PageBuilder.DEFAULT), Option(PageBuilder.DEFAULT), Option(PageBuilder.DEFAULT))
-          if (index == 10000) {
-            cachedCompaniesListPlusNewCompany = CompanyDetailsList(cachedCompaniesList.companies :+ successful)
+          val companyList = if (index == 10000 || cachedCompaniesList.companies.size >= index) {
+            CompanyDetailsList(cachedCompaniesList.companies :+ successful)
           } else {
-            for ((company, id) <- cachedCompaniesList.companies.zipWithIndex) {
-              if (index == id) {
-                // Update company details
-                companyDetails = CompanyDetails(
-                  (successful.companyName), //Company Name
-                  (successful.addressLine1), //Address line 1
-                  (successful.addressLine2), //Address line 2
-                  (successful.addressLine3), //Address line 3
-                  (successful.addressLine4), //Address line 4
-                  (successful.country), //Country
-                  (successful.postcode), //Postcode
-                  (successful.companyReg), //Company Reg
-                  (successful.corporationRef) //Corporation Ref
-                )
-
-              } else {
-                companyDetails = CompanyDetails(
-                  (company.companyName), //Company Name
-                  (company.addressLine1), //Address line 1
-                  (company.addressLine2), //Address line 2
-                  (company.addressLine3), //Address line 3
-                  (company.addressLine4), //Address line 4
-                  (company.country), //Country
-                  (company.postcode), //Postcode
-                  (company.companyReg), //Company Reg
-                  (company.corporationRef) //Corporation Ref
-                )
-              }
-              cachedCompaniesListPlusNewCompany = CompanyDetailsList(cachedCompaniesListPlusNewCompany.companies :+ companyDetails)
-            }
+            CompanyDetailsList(cachedCompaniesList.companies)
           }
-          cacheUtil.cache(CacheUtil.GROUP_SCHEME_COMPANIES, cachedCompaniesListPlusNewCompany, scRef).map { all =>
+          cacheUtil.cache(CacheUtil.GROUP_SCHEME_COMPANIES, companyList, requestObject.getSchemeReference).map { _ =>
             Redirect(routes.GroupSchemeController.groupPlanSummaryPage)
           }
         } recoverWith {
-          case e: NoSuchElementException => {
+          case _: NoSuchElementException => {
             val companiesList = CompanyDetailsList(List(successful))
-            cacheUtil.cache(CacheUtil.GROUP_SCHEME_COMPANIES, companiesList, scRef).map { all =>
+            cacheUtil.cache(CacheUtil.GROUP_SCHEME_COMPANIES, companiesList, requestObject.getSchemeReference).map { _ =>
               Redirect(routes.GroupSchemeController.groupPlanSummaryPage)
             }
           }
@@ -125,70 +93,49 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
   }
 
   def showDeleteCompany(id: Int)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    cacheUtil.fetchAll(scRef).flatMap { all =>
-      val companies: CompanyDetailsList = (all.getEntry[CompanyDetailsList](CacheUtil.GROUP_SCHEME_COMPANIES).get)
-      var companyDetailsList = List[CompanyDetails]()
-      for ((company, index) <- companies.companies.zipWithIndex) {
-        if (index != id) {
-          val companyDetiails = CompanyDetails(
-            (company.companyName), //Company Name
-            (company.addressLine1), //Address line 1
-            (company.addressLine2), //Address line 2
-            (company.addressLine3), //Address line 3
-            (company.addressLine4), //Address line 4
-            (company.country), //Country
-            (company.postcode), //Postcode
-            (company.companyReg), //Company Reg
-            (company.corporationRef) //Corporation Ref
-          )
-          companyDetailsList = companyDetailsList :+ companyDetiails
-        }
-      }
-      cacheUtil.cache(CacheUtil.GROUP_SCHEME_COMPANIES, CompanyDetailsList(companyDetailsList), scRef).map { all =>
+
+    (for {
+      requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
+      all           <- cacheUtil.fetchAll(requestObject.getSchemeReference)
+
+      companies =  all.getEntry[CompanyDetailsList](CacheUtil.GROUP_SCHEME_COMPANIES).getOrElse(CompanyDetailsList(Nil))
+      companyDetailsList = CompanyDetailsList(companies.companies.drop(id))
+
+      _ <- cacheUtil.cache(CacheUtil.GROUP_SCHEME_COMPANIES, companyDetailsList, requestObject.getSchemeReference)
+    } yield {
+
         Redirect(routes.GroupSchemeController.groupPlanSummaryPage)
-      }
-    } recover {
-      case e: NoSuchElementException => {
+
+    }) recover {
+      case e: Exception =>
         Logger.error(s"Fetch all data failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
         getGlobalErrorPage
-      }
     }
   }
 
   def editCompany(id: Int) = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
-          showEditCompany(requestObject, id)(user, request, hc)
-        }
+          showEditCompany(id)(user, request, hc)
   }
 
-  def showEditCompany(requestObject: RequestObject, id: Int)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    cacheUtil.fetch[CompanyDetailsList](CacheUtil.GROUP_SCHEME_COMPANIES, schemeRef).map { companies =>
-      var companyDetails: CompanyDetails = CompanyDetails(PageBuilder.DEFAULT, PageBuilder.DEFAULT, Some(PageBuilder.DEFAULT), Some(PageBuilder.DEFAULT), Some(PageBuilder.DEFAULT), Some(PageBuilder.DEFAULT), Some(PageBuilder.DEFAULT), Some(PageBuilder.DEFAULT), Some(PageBuilder.DEFAULT))
-      for ((company, index) <- companies.companies.zipWithIndex) {
-        if (index == id) {
-          companyDetails = CompanyDetails(
-            (company.companyName), //Company Name
-            (company.addressLine1), //Address line 1
-            (company.addressLine2), //Address line 2
-            (company.addressLine3), //Address line 3
-            (company.addressLine4), //Address line 4
-            (company.country), //Country
-            (company.postcode), //Postcode
-            (company.companyReg), //Company Reg
-            (company.corporationRef) //Corporation Ref
-          )
-        }
-      }
+  def showEditCompany(id: Int)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+
+    (for {
+      requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
+      all           <- cacheUtil.fetchAll(requestObject.getSchemeReference)
+
+      companies =  all.getEntry[CompanyDetailsList](CacheUtil.GROUP_SCHEME_COMPANIES).getOrElse(CompanyDetailsList(Nil))
+      companyDetails = companies.companies(id)
+
+    } yield {
+
       Ok(views.html.manual_company_details(requestObject, id, RsFormMappings.companyDetailsForm.fill(companyDetails)))
-    } recover {
-      case e: NoSuchElementException => {
+
+    }) recover {
+      case e: Exception =>
         Logger.error(s"Fetch group scheme companies for edit failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
         getGlobalErrorPage
-      }
     }
   }
 
@@ -201,14 +148,12 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
   }
 
   def showGroupSchemePage(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    cacheUtil.fetch[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, schemeRef).map { groupSchemeInfo =>
+    cacheUtil.fetch[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, requestObject.getSchemeReference).map { groupSchemeInfo =>
       Ok(views.html.group(requestObject, groupSchemeInfo.groupScheme, RsFormMappings.groupForm.fill(RS_groupScheme(groupSchemeInfo.groupScheme))))
     } recover {
-      case e: NoSuchElementException => {
+      case e: Exception =>
         val form = RS_groupScheme(Some(""))
         Ok(views.html.group(requestObject, Some(PageBuilder.DEFAULT), RsFormMappings.groupForm.fill(form)))
-      }
     }
   }
 
@@ -232,41 +177,35 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
       },
       formData => {
         val gsc: GroupSchemeInfo = GroupSchemeInfo(Some(formData.groupScheme.get),
-          if (formData.groupScheme.get == PageBuilder.OPTION_YES) Some(PageBuilder.OPTION_MANUAL)
+          if (formData.groupScheme.contains(PageBuilder.OPTION_YES)) Some(PageBuilder.OPTION_MANUAL)
           else None)
-        val schRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-        cacheUtil.cache(CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, gsc, schRef).map { all =>
-          request.session.get(screenSchemeInfo).get.split(" - ").head match {
-            case PageBuilder.SCHEME_CSOP => {
-              formData.groupScheme.get match {
-                case PageBuilder.OPTION_NO => Redirect(routes.AltAmendsController.altActivityPage())
-                case PageBuilder.OPTION_YES => Redirect(routes.GroupSchemeController.manualCompanyDetailsPage())
+        cacheUtil.cache(CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, gsc, requestObject.getSchemeReference).map { _ =>
+          requestObject.getSchemeId match {
+            case PageBuilder.SCHEME_CSOP =>
+              formData.groupScheme match {
+                case Some(PageBuilder.OPTION_YES) => Redirect(routes.GroupSchemeController.manualCompanyDetailsPage())
+                case _ => Redirect(routes.AltAmendsController.altActivityPage())
               }
-            }
-            case PageBuilder.SCHEME_SAYE => {
-              formData.groupScheme.get match {
-                case PageBuilder.OPTION_NO => Redirect(routes.AltAmendsController.altActivityPage())
-                case PageBuilder.OPTION_YES => Redirect(routes.GroupSchemeController.manualCompanyDetailsPage())
+            case PageBuilder.SCHEME_SAYE =>
+              formData.groupScheme match {
+                case Some(PageBuilder.OPTION_YES) => Redirect(routes.GroupSchemeController.manualCompanyDetailsPage())
+                case _ => Redirect(routes.AltAmendsController.altActivityPage())
               }
-            }
-            case PageBuilder.SCHEME_EMI => {
-              formData.groupScheme.get match {
-                case PageBuilder.OPTION_NO => Redirect(routes.SummaryDeclarationController.summaryDeclarationPage())
-                case PageBuilder.OPTION_YES => Redirect(routes.GroupSchemeController.manualCompanyDetailsPage())
+            case PageBuilder.SCHEME_EMI =>
+              formData.groupScheme match {
+                case Some(PageBuilder.OPTION_YES) => Redirect(routes.GroupSchemeController.manualCompanyDetailsPage())
+                case _ => Redirect(routes.SummaryDeclarationController.summaryDeclarationPage())
               }
-            }
-            case PageBuilder.SCHEME_SIP => {
-              formData.groupScheme.get match {
-                case PageBuilder.OPTION_NO => Redirect(routes.TrusteeController.trusteeDetailsPage())
-                case PageBuilder.OPTION_YES => Redirect(routes.GroupSchemeController.manualCompanyDetailsPage())
+            case PageBuilder.SCHEME_SIP =>
+              formData.groupScheme match {
+                case Some(PageBuilder.OPTION_YES) => Redirect(routes.GroupSchemeController.manualCompanyDetailsPage())
+                case _ => Redirect(routes.TrusteeController.trusteeDetailsPage())
               }
-            }
-            case PageBuilder.SCHEME_OTHER => {
-              formData.groupScheme.get match {
-                case PageBuilder.OPTION_NO => Redirect(routes.SummaryDeclarationController.summaryDeclarationPage())
-                case PageBuilder.OPTION_YES => Redirect(routes.GroupSchemeController.manualCompanyDetailsPage())
+            case PageBuilder.SCHEME_OTHER =>
+              formData.groupScheme match {
+                case Some(PageBuilder.OPTION_YES) => Redirect(routes.GroupSchemeController.manualCompanyDetailsPage())
+                case _ => Redirect(routes.SummaryDeclarationController.summaryDeclarationPage())
               }
-            }
           }
         }
 
@@ -278,20 +217,20 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
   def groupPlanSummaryPage() = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
-          showGroupPlanSummaryPage(requestObject)(user, request, hc)
-        }
+          showGroupPlanSummaryPage()(user, request, hc)
   }
 
-  def showGroupPlanSummaryPage(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    cacheUtil.fetch[CompanyDetailsList](CacheUtil.GROUP_SCHEME_COMPANIES, schemeRef).map { compDetails =>
+  def showGroupPlanSummaryPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+
+    (for {
+      requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
+      compDetails   <- cacheUtil.fetch[CompanyDetailsList](CacheUtil.GROUP_SCHEME_COMPANIES, requestObject.getSchemeReference)
+    } yield {
       Ok(views.html.group_plan_summary(requestObject, OPTION_MANUAL, compDetails))
-    } recover {
-      case e: NoSuchElementException => {
+    }) recover {
+      case e: Exception =>
         Logger.error(s"Fetch group scheme companies before call to group plan summary page failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
         getGlobalErrorPage
-      }
     }
   }
 
@@ -303,21 +242,20 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
 
   def continueFromGroupPlanSummaryPage(scheme: String)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     scheme match {
-      case SCHEME_CSOP => {
+      case SCHEME_CSOP =>
         Future(Redirect(routes.AltAmendsController.altActivityPage()))
-      }
-      case SCHEME_SAYE => {
+
+      case SCHEME_SAYE =>
         Future(Redirect(routes.AltAmendsController.altActivityPage()))
-      }
-      case SCHEME_EMI => {
+
+      case SCHEME_EMI =>
         Future(Redirect(routes.SummaryDeclarationController.summaryDeclarationPage()))
-      }
-      case SCHEME_SIP => {
+
+      case SCHEME_SIP =>
         Future(Redirect(routes.TrusteeController.trusteeDetailsPage()))
-      }
-      case SCHEME_OTHER => {
+
+      case SCHEME_OTHER =>
         Future(Redirect(routes.SummaryDeclarationController.summaryDeclarationPage()))
-      }
     }
   }
 

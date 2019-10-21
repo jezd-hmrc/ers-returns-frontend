@@ -47,11 +47,10 @@ trait CheckFileTypeController extends ERSReturnBaseController with Authenticator
   }
 
   def showCheckFileTypePage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
 
     (for {
       requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
-      fileType      <- cacheUtil.fetch[CheckFileType](CacheUtil.FILE_TYPE_CACHE, schemeRef).recover{
+      fileType      <- cacheUtil.fetch[CheckFileType](CacheUtil.FILE_TYPE_CACHE, requestObject.getSchemeReference).recover{
         case _: NoSuchElementException => CheckFileType(Some(""))
       }
     } yield {
@@ -70,28 +69,26 @@ trait CheckFileTypeController extends ERSReturnBaseController with Authenticator
   }
 
   def showCheckFileTypeSelected()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    RsFormMappings.checkFileTypeForm.bindFromRequest.fold(
-      errors => {
-        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).map { requestObject =>
-          Ok(views.html.check_file_type(requestObject, Some(""), errors))
-        }
-      },
-      formData => {
-        val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-        cacheUtil.cache(CacheUtil.FILE_TYPE_CACHE, formData, schemeRef).map { res =>
-          if (formData.checkFileType.contains(PageBuilder.OPTION_ODS)) {
-            Redirect(routes.FileUploadController.uploadFilePage())
-          } else {
-            Redirect(routes.CheckCsvFilesController.checkCsvFilesPage())
-          }
-        }.recover {
-          case e: Exception => {
-            Logger.error("showCheckFileTypeSelected: Unable to save file type. Error: " + e.getMessage)
-            getGlobalErrorPage
+    cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
+      RsFormMappings.checkFileTypeForm.bindFromRequest.fold(
+        errors => {
+          Future.successful(Ok(views.html.check_file_type(requestObject, Some(""), errors)))
+        },
+        formData => {
+          cacheUtil.cache(CacheUtil.FILE_TYPE_CACHE, formData, requestObject.getSchemeReference).map { _ =>
+            if (formData.checkFileType.contains(PageBuilder.OPTION_ODS)) {
+              Redirect(routes.FileUploadController.uploadFilePage())
+            } else {
+              Redirect(routes.CheckCsvFilesController.checkCsvFilesPage())
+            }
+          }.recover {
+            case e: Exception =>
+              Logger.error("showCheckFileTypeSelected: Unable to save file type. Error: " + e.getMessage)
+              getGlobalErrorPage
           }
         }
-      }
-    )
+      )
+    }
   }
 
   def getGlobalErrorPage(implicit messages: Messages): Result = Ok(views.html.global_error(

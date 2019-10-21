@@ -17,7 +17,7 @@
 @import utils.CacheUtil
 @(requestObject: RequestObject, dateSubmitted: String, bundle: String, taxYear: String, url: String)(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
 @schemeId = @{requestObject.getSchemeId}
-@schemeRef = @{CacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get("screenSchemeInfo"))}
+@schemeRef = @{requestObject.getSchemeReference}
 
 @import play.api.Play.current
 @import utils.ContentUtil

@@ -45,8 +45,7 @@ trait TrusteeController extends ERSReturnBaseController with Authenticator {
   }
 
   def showTrusteeDetailsPage(requestObject: RequestObject, index: Int)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Result] = {
-    val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    cacheUtil.fetch[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, scRef).map { groupSchemeActivity =>
+    cacheUtil.fetch[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, requestObject.getSchemeReference).map { groupSchemeActivity =>
       Ok(views.html.trustee_details(requestObject, groupSchemeActivity.groupScheme.getOrElse(PageBuilder.DEFAULT), index, RsFormMappings.trusteeDetailsForm))
     } recover {
       case e: Exception => {
@@ -65,10 +64,9 @@ trait TrusteeController extends ERSReturnBaseController with Authenticator {
   }
 
   def showTrusteeDetailsSubmit(requestObject: RequestObject, index: Int)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
     RsFormMappings.trusteeDetailsForm.bindFromRequest.fold(
       errors => {
-        cacheUtil.fetch[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, scRef).map { groupSchemeActivity =>
+        cacheUtil.fetch[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, requestObject.getSchemeReference).map { groupSchemeActivity =>
           val correctOrder = errors.errors.map(_.key).distinct
           val incorrectOrderGrouped = errors.errors.groupBy(_.key).map(_._2.head).toSeq
           val correctOrderGrouped = correctOrder.flatMap(x => incorrectOrderGrouped.find(_.key == x))
@@ -82,50 +80,23 @@ trait TrusteeController extends ERSReturnBaseController with Authenticator {
         }
       },
       formData => {
-        val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-        cacheUtil.fetch[TrusteeDetailsList](CacheUtil.TRUSTEES_CACHE, scRef).flatMap { cachedTrusteeList =>
-          var cachedTrusteeListPlusNewTrustee = TrusteeDetailsList(List[TrusteeDetails]())
-          var trusteeDetails: TrusteeDetails = TrusteeDetails("", "", Option(""), Option(""), Option(""), Option(""), Option(""))
-          if (index == 10000) {
-            cachedTrusteeListPlusNewTrustee = TrusteeDetailsList(cachedTrusteeList.trustees :+ formData)
+        cacheUtil.fetch[TrusteeDetailsList](CacheUtil.TRUSTEES_CACHE, requestObject.getSchemeReference).flatMap { cachedTrusteeList =>
+
+          val trusteesList = if (index == 10000 || cachedTrusteeList.trustees.size >= index) {
+            TrusteeDetailsList(cachedTrusteeList.trustees :+ formData)
           } else {
-            for ((trustee, id) <- cachedTrusteeList.trustees.zipWithIndex) {
-              if (index == id) {
-                // Update trustee details
-                trusteeDetails = TrusteeDetails(
-                  (formData.name), //trustee Name
-                  (formData.addressLine1), //Address line 1
-                  (formData.addressLine2), //Address line 2
-                  (formData.addressLine3), //Address line 3
-                  (formData.addressLine4), //Address line 4
-                  (formData.country), //Country
-                  (formData.postcode) //Postcode
-                )
-              } else {
-                trusteeDetails = TrusteeDetails(
-                  (trustee.name), //trustee Name
-                  (trustee.addressLine1), //Address line 1
-                  (trustee.addressLine2), //Address line 2
-                  (trustee.addressLine3), //Address line 3
-                  (trustee.addressLine4), //Address line 4
-                  (trustee.country), //Country
-                  (trustee.postcode) //Postcode
-                )
-              }
-              cachedTrusteeListPlusNewTrustee = TrusteeDetailsList(cachedTrusteeListPlusNewTrustee.trustees :+ trusteeDetails)
-            }
+            TrusteeDetailsList(cachedTrusteeList.trustees)
           }
-          cacheUtil.cache(CacheUtil.TRUSTEES_CACHE, cachedTrusteeListPlusNewTrustee, scRef).map { all =>
+          cacheUtil.cache(CacheUtil.TRUSTEES_CACHE, trusteesList, requestObject.getSchemeReference).map { all =>
             Redirect(routes.TrusteeController.trusteeSummaryPage())
           }
 
         } recoverWith {
-          case e: NoSuchElementException => {
+          case _: Exception =>
             val trusteeList = TrusteeDetailsList(List(formData))
-            cacheUtil.cache(CacheUtil.TRUSTEES_CACHE, trusteeList, scRef).map {
-              all => Redirect(routes.TrusteeController.trusteeSummaryPage())
+            cacheUtil.cache(CacheUtil.TRUSTEES_CACHE, trusteeList, requestObject.getSchemeReference).map {
+              _ => Redirect(routes.TrusteeController.trusteeSummaryPage())
             }
-          }
         }
       }
     )
@@ -138,94 +109,63 @@ trait TrusteeController extends ERSReturnBaseController with Authenticator {
   }
 
   def showDeleteTrustee(id: Int)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    cacheUtil.fetch[TrusteeDetailsList](CacheUtil.TRUSTEES_CACHE, scRef).flatMap { cachedTrusteeList =>
 
-      var trusteeDetailsList = List[TrusteeDetails]()
-      for ((trustee, index) <- cachedTrusteeList.trustees.zipWithIndex) {
-        if (index != id) {
-          val trusteeDetails = TrusteeDetails(
-            (trustee.name), //trustee Name
-            (trustee.addressLine1), //Address line 1
-            (trustee.addressLine2), //Address line 2
-            (trustee.addressLine3), //Address line 3
-            (trustee.addressLine4), //Address line 4
-            (trustee.country), //Country
-            (trustee.postcode) //Postcode
-          )
-          trusteeDetailsList = trusteeDetailsList :+ trusteeDetails
-        }
-      }
+    (for {
+      requestObject      <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
+      cachedTrusteeList  <- cacheUtil.fetch[TrusteeDetailsList](CacheUtil.TRUSTEES_CACHE, requestObject.getSchemeReference)
+      trusteeDetailsList = TrusteeDetailsList(cachedTrusteeList.trustees.drop(id))
+      _                  <- cacheUtil.cache(CacheUtil.TRUSTEES_CACHE, trusteeDetailsList, requestObject.getSchemeReference)
+    } yield {
 
-      cacheUtil.cache(CacheUtil.TRUSTEES_CACHE, TrusteeDetailsList(trusteeDetailsList), scRef).map { all =>
-        Redirect(routes.TrusteeController.trusteeSummaryPage())
-      }
+      Redirect(routes.TrusteeController.trusteeSummaryPage())
 
-    } recover {
-      case e: NoSuchElementException => getGlobalErrorPage
+    }) recover {
+      case _: Exception => getGlobalErrorPage
     }
   }
 
   def editTrustee(id: Int): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
-          showEditTrustee(requestObject, id)(user, request, hc)
-        }
+          showEditTrustee(id)(user, request, hc)
   }
 
-  def showEditTrustee(requestObject: RequestObject, id: Int)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
+  def showEditTrustee(id: Int)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
-    cacheUtil.fetch[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, scRef).flatMap { groupSchemeActivity =>
-      cacheUtil.fetch[TrusteeDetailsList](CacheUtil.TRUSTEES_CACHE, scRef).map { tdc =>
-        val trustees: TrusteeDetailsList = tdc
-        var trusteeDetails: TrusteeDetails = TrusteeDetails("", "", Option(""), Option(""), Option(""), Option(""), Option(""))
-        for ((trustee, index) <- trustees.trustees.zipWithIndex) {
-          if (index == id) {
-            trusteeDetails = TrusteeDetails(
-              (trustee.name), //trustee Name
-              (trustee.addressLine1), //Address line 1
-              (trustee.addressLine2), //Address line 2
-              (trustee.addressLine3), //Address line 3
-              (trustee.addressLine4), //Address line 4
-              (trustee.country), //Country
-              (trustee.postcode) //Postcode
-            )
-          }
-        }
-        Ok(views.html.trustee_details(requestObject, groupSchemeActivity.groupScheme.getOrElse(PageBuilder.DEFAULT), id, RsFormMappings.trusteeDetailsForm.fill(trusteeDetails)))
-      } recover {
-        case e: Exception => {
-          Logger.error(s"showEditTrustee: Get data from cache failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
-          getGlobalErrorPage
-        }
-      }
-    } recover {
-      case e: Exception => {
+    (for {
+      requestObject       <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
+      groupSchemeActivity <- cacheUtil.fetch[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, requestObject.getSchemeReference)
+      trusteeDetailsList  <- cacheUtil.fetch[TrusteeDetailsList](CacheUtil.TRUSTEES_CACHE, requestObject.getSchemeReference)
+      formDetails         = trusteeDetailsList.trustees(id)
+    } yield {
+
+        Ok(views.html.trustee_details(requestObject, groupSchemeActivity.groupScheme.get, id, RsFormMappings.trusteeDetailsForm.fill(formDetails)))
+
+    }) recover {
+      case e: Exception =>
         Logger.error(s"showEditTrustee: Get data from cache failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
         getGlobalErrorPage
-      }
     }
   }
 
   def trusteeSummaryPage(): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
-          showTrusteeSummaryPage(requestObject)(user, request, hc)
-        }
+          showTrusteeSummaryPage()(user, request, hc)
   }
 
-  def showTrusteeSummaryPage(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val scRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    cacheUtil.fetch[TrusteeDetailsList](CacheUtil.TRUSTEES_CACHE, scRef).map { trusteeDetailsList =>
+  def showTrusteeSummaryPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+
+    (for {
+      requestObject      <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
+      trusteeDetailsList <- cacheUtil.fetch[TrusteeDetailsList](CacheUtil.TRUSTEES_CACHE, requestObject.getSchemeReference)
+    } yield {
+
       Ok(views.html.trustee_summary(requestObject, trusteeDetailsList))
-    } recover {
-      case e: Exception => {
+    }) recover {
+      case e: Exception =>
         Logger.error(s"showTrusteeSummaryPage: Get data from cache failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
         getGlobalErrorPage
-      }
     }
   }
 

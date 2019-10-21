@@ -45,12 +45,11 @@ trait SchemeOrganiserController extends ERSReturnBaseController with Authenticat
   }
 
   def showSchemeOrganiserPage(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Result] = {
-    val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    Logger.warn(s"SchemeOrganiserController: showSchemeOrganiserPage:  schemeRef: ${schemeRef}.")
+    Logger.warn(s"SchemeOrganiserController: showSchemeOrganiserPage:  schemeRef: ${requestObject.getSchemeReference}.")
 
-    cacheUtil.fetch[ReportableEvents](CacheUtil.reportableEvents, schemeRef).flatMap { reportableEvent =>
-      cacheUtil.fetchOption[CheckFileType](CacheUtil.FILE_TYPE_CACHE, schemeRef).flatMap { fileType =>
-        cacheUtil.fetch[SchemeOrganiserDetails](CacheUtil.SCHEME_ORGANISER_CACHE, schemeRef).map { res =>
+    cacheUtil.fetch[ReportableEvents](CacheUtil.reportableEvents, requestObject.getSchemeReference).flatMap { reportableEvent =>
+      cacheUtil.fetchOption[CheckFileType](CacheUtil.FILE_TYPE_CACHE, requestObject.getSchemeReference).flatMap { fileType =>
+        cacheUtil.fetch[SchemeOrganiserDetails](CacheUtil.SCHEME_ORGANISER_CACHE, requestObject.getSchemeReference).map { res =>
           val FileType = if (fileType.isDefined) {
             fileType.get.checkFileType.get
           } else {
@@ -93,16 +92,15 @@ trait SchemeOrganiserController extends ERSReturnBaseController with Authenticat
         Future.successful(Ok(views.html.scheme_organiser(requestObject, "", firstErrors)))
       },
       successful => {
-        val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
+
         Logger.warn(s"SchemeOrganiserController: showSchemeOrganiserSubmit:  schemeRef: ${schemeRef}.")
 
-        cacheUtil.cache(CacheUtil.SCHEME_ORGANISER_CACHE, successful, schemeRef).map {
-          res => Redirect(routes.GroupSchemeController.groupSchemePage)
+        cacheUtil.cache(CacheUtil.SCHEME_ORGANISER_CACHE, successful, requestObject.getSchemeReference).map {
+          _ => Redirect(routes.GroupSchemeController.groupSchemePage)
         } recover {
-          case e: Exception => {
+          case e: Exception =>
             Logger.error(s"Save scheme organiser details failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
             getGlobalErrorPage
-          }
         }
       }
     )

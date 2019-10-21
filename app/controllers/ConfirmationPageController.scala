@@ -55,63 +55,68 @@ trait ConfirmationPageController extends ERSReturnBaseController with Authentica
   }
 
   def showConfirmationPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    if (request.session.get(screenSchemeInfo).isEmpty) Logger.error(s"Session doesn't contain scheme info: ${request.session}")
-    val schemeRef: String = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    val sessionBundelRef: String = request.session.get("bundelRef").getOrElse("")
-    val sessionDateTimeSubmitted: String = request.session.get("dateTimeSubmitted").getOrElse("")
-    if (sessionBundelRef == "") {
-      cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, schemeRef).flatMap { all =>
-        if (all.sapNumber.isEmpty) Logger.error(s"Did cache util fail for scheme ${schemeRef} all.sapNumber is empty: ${all}")
-        ersConnector.connectToEtmpSummarySubmit(all.sapNumber.get, jsonParser.getSubmissionJson(all.schemeInfo.schemeRef, all.schemeInfo.schemeType, all.schemeInfo.taxYear, "EOY-RETURN")).flatMap { bundle =>
-          cacheUtil.getAllData(bundle, all).flatMap { alldata =>
-            if (alldata.isNilReturn == PageBuilder.OPTION_NIL_RETURN) {
-              saveAndSubmit(alldata, all, bundle)
-            } else {
-              cacheUtil.fetch[String](CacheUtil.VALIDATED_SHEEETS, schemeRef).flatMap { validatedSheets =>
-                ersConnector.checkForPresubmission(all.schemeInfo, validatedSheets).flatMap { checkResult =>
-                  checkResult.status match {
-                    case 200 =>
-                      Logger.info(s"Check for presubmission success with status ${checkResult.status}.")
-                      saveAndSubmit(alldata, all, bundle)
-                    case _ =>
-                      Logger.error(s"File data not found: ${checkResult.status}")
-                      Future(getGlobalErrorPage)
+    cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
+      if (request.session.get(screenSchemeInfo).isEmpty) Logger.error(s"Session doesn't contain scheme info: ${request.session}")
+      val schemeRef: String = requestObject.getSchemeReference
+      val sessionBundelRef: String = request.session.get("bundelRef").getOrElse("")
+      val sessionDateTimeSubmitted: String = request.session.get("dateTimeSubmitted").getOrElse("")
+      if (sessionBundelRef == "") {
+        cacheUtil.fetch[ErsMetaData](cacheUtil.ersMetaData, schemeRef).flatMap { all =>
+          if (all.sapNumber.isEmpty) Logger.error(s"Did cache util fail for scheme ${schemeRef} all.sapNumber is empty: ${all}")
+          ersConnector.connectToEtmpSummarySubmit(all.sapNumber.get, jsonParser.getSubmissionJson(all.schemeInfo.schemeRef, all.schemeInfo.schemeType, all.schemeInfo.taxYear, "EOY-RETURN")).flatMap { bundle =>
+            cacheUtil.getAllData(bundle, all).flatMap { alldata =>
+              if (alldata.isNilReturn == PageBuilder.OPTION_NIL_RETURN) {
+                saveAndSubmit(alldata, all, bundle)
+              } else {
+                cacheUtil.fetch[String](cacheUtil.VALIDATED_SHEEETS, schemeRef).flatMap { validatedSheets =>
+                  ersConnector.checkForPresubmission(all.schemeInfo, validatedSheets).flatMap { checkResult =>
+                    checkResult.status match {
+                      case 200 =>
+                        Logger.info(s"Check for presubmission success with status ${checkResult.status}.")
+                        saveAndSubmit(alldata, all, bundle)
+                      case _ =>
+                        Logger.error(s"File data not found: ${checkResult.status}")
+                        Future(getGlobalErrorPage)
+                    }
+                  } recover {
+                    case e: Throwable =>
+                      Logger.error(s"ERS connector call failed: ${e.getMessage}")
+                      getGlobalErrorPage
                   }
-                } recover {
-                  case e: Throwable =>
-                    Logger.error(s"ERS connector call failed: ${e.getMessage}")
-                    getGlobalErrorPage
                 }
               }
+            } recover {
+              case e: Throwable =>
+                Logger.error(s"Get all data from cache failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
+                getGlobalErrorPage
             }
           } recover {
             case e: Throwable =>
-              Logger.error(s"Get all data from cache failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
+              Logger.error(s"Get bundle failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
               getGlobalErrorPage
           }
         } recover {
           case e: Throwable =>
-            Logger.error(s"Get bundle failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
+            Logger.error(s"Get ersMetaData with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
             getGlobalErrorPage
         }
-      } recover {
-        case e: Throwable =>
-          Logger.error(s"Get ersMetaData with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
-          getGlobalErrorPage
-      }
-    } else {
-      val url: String = ExternalUrls.portalDomain
-      cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, schemeRef).flatMap { all =>
-        Logger.info(s"Preventing resubmission of confirmation page, timestamp: ${System.currentTimeMillis()}.")
-        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
+      } else {
+        val url: String = ExternalUrls.portalDomain
+        cacheUtil.fetch[ErsMetaData](cacheUtil.ersMetaData, schemeRef).flatMap { all =>
+          Logger.info(s"Preventing resubmission of confirmation page, timestamp: ${System.currentTimeMillis()}.")
+
           Future(Ok(views.html.confirmation(requestObject, sessionDateTimeSubmitted, sessionBundelRef, all.schemeInfo.taxYear, url)(request, context, implicitly)))
-        }
-      } recover {
-        case e: Throwable => {
-          Logger.error(s"Get ersMetaData with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
-          getGlobalErrorPage
+
+        } recover {
+          case e: Throwable =>
+            Logger.error(s"Get ersMetaData with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
+            getGlobalErrorPage
         }
       }
+    } recover {
+      case e: Throwable =>
+        Logger.error(s"Get request object with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
+        getGlobalErrorPage
     }
   }
 

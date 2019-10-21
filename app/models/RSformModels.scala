@@ -139,25 +139,25 @@ case class RequestObject(
   def getPageTitle(implicit messages: Messages) =
     s"${messages(s"ers.scheme.$getSchemeType")} - ${messages(s"ers.scheme.title", getSchemeName)} - $getSchemeReference - ${DateUtils.getFullTaxYear(getTaxYear)}"
 
-  def getAORef() = aoRef.getOrElse("")
+  def getAORef = aoRef.getOrElse("")
 
-  def getTaxYear() = taxYear.getOrElse("")
+  def getTaxYear = taxYear.getOrElse("")
 
-  def getSchemeReference() = ersSchemeRef.getOrElse("")
+  def getSchemeReference = ersSchemeRef.getOrElse("")
 
-  def getSchemeName() = schemeName.getOrElse("")
+  def getSchemeName = schemeName.getOrElse("")
 
-  def getSchemeType() = schemeType.getOrElse("")
+  def getSchemeType = schemeType.getOrElse("")
 
-  def getAgentRef() = agentRef.getOrElse("")
+  def getAgentRef = agentRef.getOrElse("")
 
-  def getEmpRef() = empRef.getOrElse("")
+  def getEmpRef = empRef.getOrElse("")
 
-  def getTS() = ts.getOrElse("")
+  def getTS = ts.getOrElse("")
 
-  def getHMAC() = hmac.getOrElse("")
+  def getHMAC = hmac.getOrElse("")
 
-  def concatenateParameters() = {
+  def concatenateParameters = {
     getNVPair("agentRef", agentRef) +
       getNVPair("aoRef", aoRef) +
       getNVPair("empRef", empRef) +
