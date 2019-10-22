@@ -34,6 +34,7 @@ import play.api.Play.current
 import play.api.i18n.Messages
 import play.api.i18n.Messages.Implicits._
 import uk.gov.hmrc.http.HeaderCarrier
+import utils.SessionUtil.{BUNDLE_REF, DATE_TIME_SUBMITTED}
 
 object ReturnServiceController extends ReturnServiceController {
   override val cacheUtil: CacheUtil = CacheUtil
@@ -121,7 +122,7 @@ trait ReturnServiceController extends ERSReturnBaseController with Authenticator
 
     val sessionData = s"${requestObject.getSchemeId} - ${requestObject.getPageTitle}"
     Ok(views.html.start(requestObject)).
-      withSession(request.session + (screenSchemeInfo -> sessionData) - "bundelRef" - "dateTimeSubmitted")
+      withSession(request.session + (screenSchemeInfo -> sessionData) - BUNDLE_REF - DATE_TIME_SUBMITTED)
   }
 
   def startPage(): Action[AnyContent] = AuthenticatedBy(ERSGovernmentGateway, pageVisibility = AllowAll).async {
@@ -129,7 +130,7 @@ trait ReturnServiceController extends ERSReturnBaseController with Authenticator
       implicit request =>
         cacheUtil.fetch[RequestObject](CacheUtil.ersRequestObject).map{
           result =>
-            Ok(views.html.start(result)).withSession(request.session - "bundelRef" - "dateTimeSubmitted")
+            Ok(views.html.start(result)).withSession(request.session - BUNDLE_REF - DATE_TIME_SUBMITTED)
         }
   }
 

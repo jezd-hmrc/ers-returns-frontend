@@ -259,7 +259,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
       override val ersConnector: ErsConnector = mock[ErsConnector]
       override val cacheUtil: CacheUtil = mockCacheUtil
 
-      override def updateCallbackData(callbackData: Option[CallbackData], csvFilesCallbackList: List[CsvFilesCallback])(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): List[CsvFilesCallback] = List()
+      override def updateCallbackData(requestObject: RequestObject, callbackData: Option[CallbackData], csvFilesCallbackList: List[CsvFilesCallback])(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): List[CsvFilesCallback] = List()
       override def modifyCachedCallbackData(requestObject: RequestObject, newCsvFilesCallbackList: List[CsvFilesCallback])(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Ok)
     }
 
@@ -381,7 +381,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     val callbackData = CallbackData(collection = "collection", id = "someid", length = 1000L, name = Some("CSOP_OptionsExercised_V3.csv"), contentType = Some("content-type"), customMetadata = None, sessionId = Some("testId"), noOfRows = None)
 
     "should add callbackData to relevent element in CsvFilesCallbackList" in {
-      val result = await(csvFileUploadController.updateCallbackData(Some(callbackData), csvFilesCallbackList)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+      val result = await(csvFileUploadController.updateCallbackData(ersRequestObject, Some(callbackData), csvFilesCallbackList)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       result shouldBe List(
         CsvFilesCallback("file0", None),
         CsvFilesCallback("file1", None),

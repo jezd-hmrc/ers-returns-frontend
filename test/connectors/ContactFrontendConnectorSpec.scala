@@ -58,7 +58,7 @@ class ContactFrontendConnectorSpec extends PlaySpec with OneAppPerSuite with ERS
 
     "contact the front end service to download the 'get help' partial" in {
 
-      val response = HttpResponse(200, responseString = Some(dummyResponseHtml))
+      val response = HttpResponse(OK, responseString = Some(dummyResponseHtml))
 
       when(TestConnector.http.GET[HttpResponse](meq(serviceUrl))(any(), any[HeaderCarrier], any())) thenReturn Future.successful(response)
 

@@ -80,7 +80,7 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
     (for {
       requestObject           <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
       csvFilesCallbackList    <- cacheUtil.fetch[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, requestObject.getSchemeReference)
-      newCsvFilesCallbackList <- Future.successful(updateCallbackData(callbackData, csvFilesCallbackList.files))
+      newCsvFilesCallbackList <- Future.successful(updateCallbackData(requestObject, callbackData, csvFilesCallbackList.files))
       result                  <- modifyCachedCallbackData(requestObject, newCsvFilesCallbackList)
     } yield {
 
@@ -108,10 +108,9 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
     }
   }
 
-  def updateCallbackData(callbackData: Option[CallbackData], csvFilesCallbackList: List[CsvFilesCallback])(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): List[CsvFilesCallback] = {
-    val schemeId = request.session.get("screenSchemeInfo").get.split(" - ").head
+  def updateCallbackData(requestObject: RequestObject, callbackData: Option[CallbackData], csvFilesCallbackList: List[CsvFilesCallback])(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): List[CsvFilesCallback] = {
     for (csvFileCallback <- csvFilesCallbackList) yield {
-      val filename = Messages(PageBuilder.getPageElement(schemeId, PageBuilder.PAGE_CHECK_CSV_FILE, csvFileCallback.fileId + ".file_name"))
+      val filename = Messages(PageBuilder.getPageElement(requestObject.getSchemeId, PageBuilder.PAGE_CHECK_CSV_FILE, csvFileCallback.fileId + ".file_name"))
       if (filename == callbackData.get.name.get) {
         CsvFilesCallback(csvFileCallback.fileId, callbackData)
       } else {
@@ -145,7 +144,7 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
   def removePresubmissionData(schemeInfo: SchemeInfo)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     ersConnector.removePresubmissionData(schemeInfo).flatMap { result =>
       result.status match {
-        case 200 => extractCsvCallbackData(schemeInfo)
+        case OK => extractCsvCallbackData(schemeInfo)
         case _ =>
           Logger.error(s"validationResults: removePresubmissionData failed with status ${result.status}, timestamp: ${System.currentTimeMillis()}.")
           Future(getGlobalErrorPage)
@@ -177,7 +176,7 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
     ersConnector.validateCsvFileData(csvCallbackValidatorData, schemeInfo).map { res =>
       Logger.info(s"validateCsv: Response from validator: ${res.status}, timestamp: ${System.currentTimeMillis()}.")
       res.status match {
-        case 200 => {
+        case OK => {
           Logger.warn(s"validateCsv: Validation is successful for schemeRef: ${schemeInfo.schemeRef}, callback: ${csvCallbackValidatorData.toString}, timestamp: ${System.currentTimeMillis()}.")
           cacheUtil.cache(cacheUtil.VALIDATED_SHEEETS, res.body, schemeInfo.schemeRef)
           Redirect(routes.SchemeOrganiserController.schemeOrganiserPage())

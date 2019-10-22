@@ -75,7 +75,7 @@ trait SubmissionDataController extends ERSReturnBaseController with Authenticato
 
         ersConnector.retrieveSubmissionData(data.get).map { res =>
           res.status match {
-            case 200 => Ok(res.body)
+            case OK => Ok(res.body)
             case _ => {
               Logger.error(s"RetrieveSubmissionData status: ${res.status}")
               getGlobalErrorPage

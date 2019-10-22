@@ -387,7 +387,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
       }
       val form = _root_.models.RsFormMappings.groupForm.bind(data)
       val request = scheme match {
-        case "CSOP" => Fixtures.buildFakeRequestWithSessionIdCSOP("POST")
+        case "CSOP" | "" => Fixtures.buildFakeRequestWithSessionIdCSOP("POST")
         case "SAYE" => Fixtures.buildFakeRequestWithSessionIdSAYE("POST")
         case "EMI" => Fixtures.buildFakeRequestWithSessionIdEMI("POST")
         case "SIP" => Fixtures.buildFakeRequestWithSessionIdSIP("POST")
@@ -398,6 +398,13 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
 
     "display errors if invalid data is sent" in {
       val request = buildGroupSchemeSelectedRequest(None, "CSOP")
+      val result = testGroupSchemeController.showGroupSchemeSelected(ersRequestObject, PageBuilder.SCHEME_CSOP)(Fixtures.buildFakeUser, request)
+      status(result) shouldBe OK
+      bodyOf(result).contains(Messages("validation.summary.heading")) shouldBe true
+    }
+
+    "display errors if no data is set" in {
+      val request = buildGroupSchemeSelectedRequest(None, "")
       val result = testGroupSchemeController.showGroupSchemeSelected(ersRequestObject, PageBuilder.SCHEME_CSOP)(Fixtures.buildFakeUser, request)
       status(result) shouldBe OK
       bodyOf(result).contains(Messages("validation.summary.heading")) shouldBe true

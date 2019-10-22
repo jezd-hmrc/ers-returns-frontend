@@ -152,6 +152,7 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
       Ok(views.html.group(requestObject, groupSchemeInfo.groupScheme, RsFormMappings.groupForm.fill(RS_groupScheme(groupSchemeInfo.groupScheme))))
     } recover {
       case e: Exception =>
+        Logger.error(s"Fetching GroupSchemeInfo from the cache failed: ${e.getMessage}")
         val form = RS_groupScheme(Some(""))
         Ok(views.html.group(requestObject, Some(PageBuilder.DEFAULT), RsFormMappings.groupForm.fill(form)))
     }
@@ -176,39 +177,27 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
         Future.successful(Ok(views.html.group(requestObject, Some(""), firstErrors)))
       },
       formData => {
-        val gsc: GroupSchemeInfo = GroupSchemeInfo(Some(formData.groupScheme.get),
-          if (formData.groupScheme.contains(PageBuilder.OPTION_YES)) Some(PageBuilder.OPTION_MANUAL)
-          else None)
+        val gsc: GroupSchemeInfo =
+          GroupSchemeInfo(
+            Some(formData.groupScheme.getOrElse("")),
+          if (formData.groupScheme.contains(OPTION_YES)) Some(OPTION_MANUAL) else None
+          )
+
         cacheUtil.cache(CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, gsc, requestObject.getSchemeReference).map { _ =>
-          requestObject.getSchemeId match {
-            case PageBuilder.SCHEME_CSOP =>
-              formData.groupScheme match {
-                case Some(PageBuilder.OPTION_YES) => Redirect(routes.GroupSchemeController.manualCompanyDetailsPage())
-                case _ => Redirect(routes.AltAmendsController.altActivityPage())
-              }
-            case PageBuilder.SCHEME_SAYE =>
-              formData.groupScheme match {
-                case Some(PageBuilder.OPTION_YES) => Redirect(routes.GroupSchemeController.manualCompanyDetailsPage())
-                case _ => Redirect(routes.AltAmendsController.altActivityPage())
-              }
-            case PageBuilder.SCHEME_EMI =>
-              formData.groupScheme match {
-                case Some(PageBuilder.OPTION_YES) => Redirect(routes.GroupSchemeController.manualCompanyDetailsPage())
-                case _ => Redirect(routes.SummaryDeclarationController.summaryDeclarationPage())
-              }
-            case PageBuilder.SCHEME_SIP =>
-              formData.groupScheme match {
-                case Some(PageBuilder.OPTION_YES) => Redirect(routes.GroupSchemeController.manualCompanyDetailsPage())
-                case _ => Redirect(routes.TrusteeController.trusteeDetailsPage())
-              }
-            case PageBuilder.SCHEME_OTHER =>
-              formData.groupScheme match {
-                case Some(PageBuilder.OPTION_YES) => Redirect(routes.GroupSchemeController.manualCompanyDetailsPage())
-                case _ => Redirect(routes.SummaryDeclarationController.summaryDeclarationPage())
-              }
+
+          (requestObject.getSchemeId, formData.groupScheme) match {
+
+            case (_, Some(OPTION_YES)) => Redirect(routes.GroupSchemeController.manualCompanyDetailsPage())
+
+            case (SCHEME_CSOP | SCHEME_SAYE, _) => Redirect(routes.AltAmendsController.altActivityPage())
+
+            case (SCHEME_EMI | SCHEME_OTHER, _) => Redirect(routes.SummaryDeclarationController.summaryDeclarationPage())
+
+            case (SCHEME_SIP, _) => Redirect(routes.TrusteeController.trusteeDetailsPage())
+
+            case (_,_) => getGlobalErrorPage
           }
         }
-
       }
     )
   }
@@ -242,20 +231,15 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
 
   def continueFromGroupPlanSummaryPage(scheme: String)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     scheme match {
-      case SCHEME_CSOP =>
+      case SCHEME_CSOP | SCHEME_SAYE =>
         Future(Redirect(routes.AltAmendsController.altActivityPage()))
 
-      case SCHEME_SAYE =>
-        Future(Redirect(routes.AltAmendsController.altActivityPage()))
-
-      case SCHEME_EMI =>
+      case SCHEME_EMI | SCHEME_OTHER =>
         Future(Redirect(routes.SummaryDeclarationController.summaryDeclarationPage()))
 
       case SCHEME_SIP =>
         Future(Redirect(routes.TrusteeController.trusteeDetailsPage()))
 
-      case SCHEME_OTHER =>
-        Future(Redirect(routes.SummaryDeclarationController.summaryDeclarationPage()))
     }
   }
 

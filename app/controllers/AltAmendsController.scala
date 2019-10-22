@@ -124,14 +124,7 @@ trait AltAmendsController extends ERSReturnBaseController with Authenticator wit
           Future.successful(Redirect(routes.AltAmendsController.altAmendsPage()).flashing("alt-amends-not-selected-error" -> PageBuilder.getPageElement(requestObject.getSchemeId, PageBuilder.PAGE_ALT_AMENDS, "err.message")))
         },
         formData => {
-          val altAmends = AltAmends(
-            if (formData.altAmendsTerms.isDefined) formData.altAmendsTerms else Option("0"),
-            if (formData.altAmendsEligibility.isDefined) formData.altAmendsEligibility else Option("0"),
-            if (formData.altAmendsExchange.isDefined) formData.altAmendsExchange else Option("0"),
-            if (formData.altAmendsVariations.isDefined) formData.altAmendsVariations else Option("0"),
-            if (formData.altAmendsOther.isDefined) formData.altAmendsOther else Option("0")
-          )
-          cacheUtil.cache(CacheUtil.ALT_AMENDS_CACHE_CONTROLLER, altAmends, requestObject.getSchemeReference).flatMap { all =>
+          cacheUtil.cache(CacheUtil.ALT_AMENDS_CACHE_CONTROLLER, formData, requestObject.getSchemeReference).flatMap { all =>
             if (formData.altAmendsTerms.isEmpty
               && formData.altAmendsEligibility.isEmpty
               && formData.altAmendsExchange.isEmpty

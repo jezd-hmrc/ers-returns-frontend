@@ -71,7 +71,7 @@ class ReturnServiceControllerTest extends UnitSpec with ERSFakeApplicationConfig
     when(
       mockHttp.POST[ValidatorData, HttpResponse](Matchers.any(), Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any())
     ).thenReturn(
-      Future.successful(HttpResponse(200))
+      Future.successful(HttpResponse(OK))
     )
 
     override val cacheUtil: CacheUtil = new CacheUtil {

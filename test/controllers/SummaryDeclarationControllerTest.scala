@@ -79,7 +79,7 @@ class SummaryDeclarationControllerTest extends UnitSpec with ERSFakeApplicationC
         override def connectToEtmpSapRequest(schemeRef: String)(implicit authContext: AuthContext, hc: HeaderCarrier): Future[String] = Future("1234567890")
 
       }
-    when(mockHttp.POST[ValidatorData, HttpResponse](Matchers.any(), Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(Future.successful(HttpResponse(200)))
+    when(mockHttp.POST[ValidatorData, HttpResponse](Matchers.any(), Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(Future.successful(HttpResponse(OK)))
 
     override val cacheUtil: CacheUtil = new CacheUtil {
       override val sessionService: SessionService = mockSessionCache

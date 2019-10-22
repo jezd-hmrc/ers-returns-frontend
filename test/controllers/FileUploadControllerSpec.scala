@@ -67,7 +67,7 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
 
       when(
         mockErsConnector.validateFileData(Matchers.any[CallbackData](), Matchers.any())(Matchers.any[AuthContext](), Matchers.any(), Matchers.any[HeaderCarrier]())
-      ) thenReturn Future.successful(HttpResponse(200))
+      ) thenReturn Future.successful(HttpResponse(OK))
 
       when(
         mockErsConnector.removePresubmissionData(Matchers.any[SchemeInfo]())(Matchers.any[AuthContext](), Matchers.any[HeaderCarrier]())
@@ -156,7 +156,7 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
     "return with a error page if deleting old presubmission data fails" in {
       when(mockSessionService.retrieveCallbackData()(Matchers.any(), Matchers.any())).thenReturn(Future.successful(Some(callbackData)))
       when(mockCacheUtil.fetch[ErsMetaData](Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(Future.successful(validErsMetaData))
-      when(mockErsConnector.validateFileData(Matchers.any[CallbackData](), Matchers.any())(Matchers.any[AuthContext](), Matchers.any(), Matchers.any[HeaderCarrier]())).thenReturn(Future.successful(HttpResponse(200)))
+      when(mockErsConnector.validateFileData(Matchers.any[CallbackData](), Matchers.any())(Matchers.any[AuthContext](), Matchers.any(), Matchers.any[HeaderCarrier]())).thenReturn(Future.successful(HttpResponse(OK)))
       when(mockErsConnector.removePresubmissionData(Matchers.any[SchemeInfo]())(Matchers.any[AuthContext](), Matchers.any[HeaderCarrier]()))
         .thenReturn(Future.successful(HttpResponse(INTERNAL_SERVER_ERROR)))
       withAuthorisedUser { user =>
@@ -169,7 +169,7 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
     "return with a error page if callback data is not found" in {
       when(mockSessionService.retrieveCallbackData()(Matchers.any(), Matchers.any())).thenReturn(Future.successful(None))
       when(mockCacheUtil.fetch[ErsMetaData](Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(Future.successful(validErsMetaData))
-      when(mockErsConnector.validateFileData(Matchers.any[CallbackData](), Matchers.any())(Matchers.any[AuthContext](), Matchers.any(), Matchers.any[HeaderCarrier]())).thenReturn(Future.successful(HttpResponse(200)))
+      when(mockErsConnector.validateFileData(Matchers.any[CallbackData](), Matchers.any())(Matchers.any[AuthContext](), Matchers.any(), Matchers.any[HeaderCarrier]())).thenReturn(Future.successful(HttpResponse(OK)))
       when(mockErsConnector.removePresubmissionData(Matchers.any[SchemeInfo]())(Matchers.any[AuthContext](), Matchers.any[HeaderCarrier]()))
         .thenReturn(Future.successful(HttpResponse(OK)))
       withAuthorisedUser { user =>
