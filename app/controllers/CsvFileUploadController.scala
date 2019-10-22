@@ -111,11 +111,10 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
   def updateCallbackData(requestObject: RequestObject, callbackData: Option[CallbackData], csvFilesCallbackList: List[CsvFilesCallback])(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): List[CsvFilesCallback] = {
     for (csvFileCallback <- csvFilesCallbackList) yield {
       val filename = Messages(PageBuilder.getPageElement(requestObject.getSchemeId, PageBuilder.PAGE_CHECK_CSV_FILE, csvFileCallback.fileId + ".file_name"))
-      if (filename == callbackData.get.name.get) {
-        CsvFilesCallback(csvFileCallback.fileId, callbackData)
-      } else {
-        csvFileCallback
-      }
+      val callbackName = callbackData.map(x => x.name.getOrElse(""))
+
+      if (callbackName.contains(filename)) CsvFilesCallback(csvFileCallback.fileId, callbackData)
+      else csvFileCallback
     }
   }
 

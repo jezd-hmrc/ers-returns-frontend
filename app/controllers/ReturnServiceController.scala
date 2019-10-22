@@ -34,7 +34,7 @@ import play.api.Play.current
 import play.api.i18n.Messages
 import play.api.i18n.Messages.Implicits._
 import uk.gov.hmrc.http.HeaderCarrier
-import utils.SessionUtil.{BUNDLE_REF, DATE_TIME_SUBMITTED}
+import utils.SessionKeys.{BUNDLE_REF, DATE_TIME_SUBMITTED}
 
 object ReturnServiceController extends ReturnServiceController {
   override val cacheUtil: CacheUtil = CacheUtil

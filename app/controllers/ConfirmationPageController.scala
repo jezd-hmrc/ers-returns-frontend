@@ -33,7 +33,7 @@ import utils.{CacheUtil, ExternalUrls, _}
 
 import scala.concurrent.Future
 import uk.gov.hmrc.http.HeaderCarrier
-import utils.SessionUtil.{BUNDLE_REF, DATE_TIME_SUBMITTED}
+import utils.SessionKeys.{BUNDLE_REF, DATE_TIME_SUBMITTED}
 
 object ConfirmationPageController extends ConfirmationPageController {
   override val cacheUtil: CacheUtil = CacheUtil

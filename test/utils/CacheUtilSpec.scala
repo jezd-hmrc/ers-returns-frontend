@@ -38,7 +38,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.logging.SessionId
-import utils.SessionUtil.BUNDLE_REF
+import utils.SessionKeys.BUNDLE_REF
 
 class CacheUtilSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with OneAppPerSuite with ERSFakeApplicationConfig {
 

@@ -57,7 +57,7 @@ trait CheckFileTypeController extends ERSReturnBaseController with Authenticator
       Ok(views.html.check_file_type(requestObject, fileType.checkFileType, RsFormMappings.checkFileTypeForm.fill(fileType)))
     }).recover{
       case e: Throwable =>
-        Logger.error(s"Rendering AltAmends view failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
+        Logger.error(s"Rendering CheckFileType view failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
         getGlobalErrorPage
     }
   }

@@ -47,15 +47,18 @@ trait AltAmendsController extends ERSReturnBaseController with Authenticator wit
   def showAltActivityPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
     (for {
-      requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
-      groupSchemeInfo <- cacheUtil.fetch[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, requestObject.getSchemeReference)
-      altAmendsActivity <- cacheUtil.fetch[AltAmendsActivity](CacheUtil.altAmendsActivity, requestObject.getSchemeReference)
+      requestObject     <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
+      groupSchemeInfo   <- cacheUtil.fetch[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, requestObject.getSchemeReference)
+      altAmendsActivity <- cacheUtil.fetch[AltAmendsActivity](CacheUtil.altAmendsActivity, requestObject.getSchemeReference).recover {
+        case _: NoSuchElementException => AltAmendsActivity("")
+      }
     } yield {
+
       Ok(views.html.alterations_activity(requestObject, altAmendsActivity.altActivity,
         groupSchemeInfo.groupScheme.getOrElse(PageBuilder.DEFAULT),
         RsFormMappings.altActivityForm.fill(altAmendsActivity)))
       }).recover {
-        case e: Throwable =>
+        case e: Exception =>
           Logger.error(s"Rendering AltAmends view failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
           getGlobalErrorPage
       }
