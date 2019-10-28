@@ -18,7 +18,7 @@ package services.pdf
 
 import akka.stream.Materializer
 import org.mockito.Matchers
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import uk.gov.hmrc.play.test.UnitSpec
 import org.mockito.Mockito._
 import org.mockito.internal.verification.VerificationModeFactory

@@ -17,7 +17,7 @@
 package config
 
 import play.api.Play._
-import uk.gov.hmrc.play.config.ServicesConfig
+import uk.gov.hmrc.play.config.{AppName, ServicesConfig}
 import play.Logger
 import play.api.Mode.Mode
 import play.api.{Configuration, Play}
@@ -28,22 +28,15 @@ import scala.util.Try
 import controllers.routes
 import uk.gov.hmrc.play.partials.CachedStaticHtmlPartialRetriever
 
-trait ApplicationConfig {
+trait ApplicationConfig extends AppName {
 
   val assetsPrefix: String
   val analyticsToken: Option[String]
   val analyticsHost: String
-  val uploadCollection: String
   val validatorUrl: String
 
-  val platformHostUrl: String
-  val successPageUrl: String
-  val failurePageUrl: String
-  val callbackPageUrl: String
+  val upscanInitiateHost: String
 
-  val successCsvPageUrl: String
-  val failureCsvPageUrl: String
-  val callbackCsvPageUrl: String
   val enableRetrieveSubmissionData: Boolean
   val sentViaSchedulerNoOfRowsLimit: Int
   val languageTranslationEnabled: Boolean
@@ -55,6 +48,9 @@ trait ApplicationConfig {
   def routeToSwitchLanguage: String => Call
 
   def reportAProblemPartialUrl: String
+
+  val csvCacheInProgressRetryAmount: Int
+  val csvCacheCompletedRetryAmount: Int
 }
 
 class ApplicationConfigImpl extends ApplicationConfig with ServicesConfig {
@@ -66,6 +62,7 @@ class ApplicationConfigImpl extends ApplicationConfig with ServicesConfig {
 
   override protected def mode: Mode = Play.current.mode
   override protected def runModeConfiguration: Configuration = Play.current.configuration
+  override def appNameConfiguration: Configuration = runModeConfiguration
 
   private def loadConfig(key: String) = configuration.getString(key).getOrElse(throw new Exception(s"Missing key: $key"))
 
@@ -74,18 +71,10 @@ class ApplicationConfigImpl extends ApplicationConfig with ServicesConfig {
   override lazy val assetsPrefix: String = loadConfig("assets.url") + loadConfig("assets.version")
   override lazy val analyticsToken: Option[String] = configuration.getString("govuk-tax.google-analytics.token")
   override lazy val analyticsHost: String = configuration.getString("govuk-tax.google-analytics.host").getOrElse("service.gov.uk")
-  override lazy val uploadCollection: String = loadConfig("settings.upload-collection")
 
   override lazy val validatorUrl: String = baseUrl("ers-file-validator") + "/ers/:empRef/" + loadConfig("microservice.services.ers-file-validator.url")
 
-  private val frontendHost = loadConfig("platform.frontend.host")
-  override lazy val platformHostUrl = Try{baseUrl("ers-returns-frontend")}.getOrElse("")
-  override lazy val successPageUrl: String = frontendHost + loadConfig("microservice.services.ers-returns-frontend.success-page")
-  override lazy val failurePageUrl: String = frontendHost + loadConfig("microservice.services.ers-returns-frontend.failure-page")
-  override lazy val callbackPageUrl: String = platformHostUrl + loadConfig("microservice.services.ers-returns-frontend.callback-page")
-  override lazy val successCsvPageUrl: String = frontendHost + loadConfig("microservice.services.ers-returns-frontend.csv-success-page")
-  override lazy val failureCsvPageUrl: String = frontendHost + loadConfig("microservice.services.ers-returns-frontend.csv-failure-page")
-  override lazy val callbackCsvPageUrl: String = platformHostUrl + loadConfig("microservice.services.ers-returns-frontend.csv-callback-page")
+  override val upscanInitiateHost: String = baseUrl("upscan")
 
   override lazy val urBannerToggle:Boolean = loadConfig("urBanner.toggle").toBoolean
   override lazy val urBannerLink: String = loadConfig("urBanner.link")
@@ -104,6 +93,9 @@ class ApplicationConfigImpl extends ApplicationConfig with ServicesConfig {
     "english" -> Lang("en"),
     "cymraeg" -> Lang("cy"))
   def routeToSwitchLanguage = (lang: String) => routes.LanguageSwitchController.switchToLanguage(lang)
+
+  val csvCacheInProgressRetryAmount: Int = runModeConfiguration.getInt("retry.csv-callback-cache.in-progress.amount").getOrElse(1)
+  val csvCacheCompletedRetryAmount: Int = runModeConfiguration.getInt("retry.csv-callback-cache.completed-upload.amount").getOrElse(1)
 }
 
 object ApplicationConfig extends ApplicationConfigImpl

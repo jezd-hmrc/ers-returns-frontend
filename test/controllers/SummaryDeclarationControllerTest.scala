@@ -23,7 +23,7 @@ import models._
 import org.joda.time.DateTime
 import org.mockito.Matchers
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
 import play.api.http.Status
@@ -39,13 +39,13 @@ import uk.gov.hmrc.domain.EmpRef
 import uk.gov.hmrc.http.cache.client.{CacheMap, ShortLivedCache}
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.test.UnitSpec
-import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures, PageBuilder}
+import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures, PageBuilder, UpscanData}
 
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpPost, HttpResponse}
 import utils.Fixtures.ersRequestObject
 
-class SummaryDeclarationControllerTest extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with OneAppPerSuite {
+class SummaryDeclarationControllerTest extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with OneAppPerSuite with UpscanData {
 
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val mat: Materializer = app.materializer
@@ -156,9 +156,7 @@ class SummaryDeclarationControllerTest extends UnitSpec with ERSFakeApplicationC
         val reportableEvents: ReportableEvents = new ReportableEvents(Some(PageBuilder.OPTION_YES))
         val fileTypeCSV: CheckFileType = new CheckFileType(Some(PageBuilder.OPTION_CSV))
         val fileTypeODS: CheckFileType = new CheckFileType(Some(PageBuilder.OPTION_ODS))
-        val callbackData: CallbackData = new CallbackData("", "", 0, None, None, None, None, None)
-        val csvFilesCallBack = new CsvFilesCallback("file0", Some(callbackData))
-        val csvFilesCallbackList: CsvFilesCallbackList = new CsvFilesCallbackList(List(csvFilesCallBack))
+        val csvFilesCallbackList = incompleteCsvList
         val trustees: TrusteeDetails = new TrusteeDetails("T Name", "T Add 1", None, None, None, None, None)
         val trusteesList: TrusteeDetailsList = new TrusteeDetailsList(List(trustees))
         val fileNameODS: String = "test.osd"

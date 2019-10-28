@@ -93,7 +93,7 @@ trait SchemeOrganiserController extends ERSReturnBaseController with Authenticat
       },
       successful => {
 
-        Logger.warn(s"SchemeOrganiserController: showSchemeOrganiserSubmit:  schemeRef: ${schemeRef}.")
+        Logger.warn(s"SchemeOrganiserController: showSchemeOrganiserSubmit:  schemeRef: ${requestObject.getSchemeReference}.")
 
         cacheUtil.cache(CacheUtil.SCHEME_ORGANISER_CACHE, successful, requestObject.getSchemeReference).map {
           _ => Redirect(routes.GroupSchemeController.groupSchemePage)

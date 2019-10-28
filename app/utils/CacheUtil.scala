@@ -20,17 +20,20 @@ import java.util.concurrent.TimeUnit
 
 import config.ApplicationConfig
 import models._
+import models.upscan.{InProgress, UpscanReadyCallback}
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json
 import play.api.libs.json.JsValue
-import play.api.mvc.Request
+import play.api.mvc.{Request, Result}
 import services.SessionService
 import uk.gov.hmrc.http.cache.client.{CacheMap, ShortLivedCache}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.http.HeaderCarrier
+
+import scala.util.control.NonFatal
 
 object CacheUtil extends CacheUtil {
   def shortLivedCache = config.ShortLivedCache
@@ -222,23 +225,26 @@ trait CacheUtil {
           }
         }
       }
-    }.recover { case e: NoSuchElementException =>
-      Logger.error(s"CacheUtil: Get all data from cache failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
-      throw new Exception
+    }.recover {
+      case e: NoSuchElementException =>
+        Logger.error(s"CacheUtil: Get all data from cache failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.", e)
+        throw new Exception
     }
   }
 
-  def getStatus(tRows:Option[Int]): Some[String] = {
-    (tRows.isDefined && (tRows.get > ApplicationConfig.sentViaSchedulerNoOfRowsLimit)) match {
-    case true => Some(largeFileStatus)
-    case _ => Some(savedStatus)
-  }}
+  def getStatus(tRows: Option[Int]): Some[String] = {
+    if (tRows.isDefined && tRows.get > ApplicationConfig.sentViaSchedulerNoOfRowsLimit) {
+      Some(largeFileStatus)
+    } else {
+      Some(savedStatus)
+    }
+  }
 
   def getNoOfRows(nilReturn:String)(implicit hc: HeaderCarrier, ec: ExecutionContext, request: Request[AnyRef]): Future[Option[Int]] = {
     if (isNilReturn(nilReturn: String)) {
-      Future(None)
+      Future.successful(None)
     } else {
-      sessionService.retrieveCallbackData().map(res => res.get.noOfRows)
+      sessionService.getSuccessfulCallbackRecord.map(res => res.flatMap(_.noOfRows))
     }
   }
 

@@ -14,9 +14,12 @@
  * limitations under the License.
  *@
 
-@(requestObject: RequestObject, uploadForm: Html)(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
-
 @import views.html.templates._
+@import views.html.includes.upscan_file_upload_form
+@import models.upscan.UpscanInitiateResponse
+
+@(requestObject: RequestObject, upscanInitiateResponse: UpscanInitiateResponse)(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
+
 
 @scripts = {
 	<script src='@routes.AssetsController.at("javascripts/ers_ods_scripts.js")'> </script>
@@ -42,9 +45,5 @@
 	<label for="fileToUpload" class="visuallyhidden">
 		<span>@Html(Messages("file_upload.title"))</span>
 	</label>
-	<div id="uploadForm">
-		@uploadForm
-	</div>
-	@spinner()
-
+  @upscan_file_upload_form(".ods", upscanInitiateResponse.formFields, upscanInitiateResponse.postTarget)
 }

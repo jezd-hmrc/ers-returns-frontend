@@ -14,9 +14,18 @@
  * limitations under the License.
  */
 
-package utils
+package models.upscan
 
+import play.api.libs.json.{Json, OFormat}
 
-object ErsMetaDataHelper {
+case class UpscanInitiateRequest(
+                                  callbackUrl: String,
+                                  successRedirect: String,
+                                  errorRedirect: String,
+                                  minimumFileSize: Option[Int] = None,
+                                  maximumFileSize: Option[Int] = None
+                                )
 
+object UpscanInitiateRequest {
+  implicit val format: OFormat[UpscanInitiateRequest] = Json.format[UpscanInitiateRequest]
 }

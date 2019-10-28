@@ -17,17 +17,17 @@
 package models
 
 import org.joda.time.DateTime
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.Json
 
 
 case class SchemeInfo (
-                        schemeRef:String,
-                        timestamp:DateTime= DateTime.now,
+                        schemeRef: String,
+                        timestamp: DateTime = DateTime.now,
                         schemeId: String,
                         taxYear: String,
                         schemeName: String,
                         schemeType: String
-                        )
+                      )
 
 object SchemeInfo {
   implicit val format = Json.format[SchemeInfo]
@@ -114,31 +114,4 @@ object ErsModelFormats {
   implicit val formatOfTrusteeDetails = Json.format[TrusteeDetails]
   implicit val formatOfTrusteeDetailsList = Json.format[TrusteeDetailsList]
   implicit val formatCombinedAll = Json.format[ErsSummary]
-}
-
-case class CallbackData(collection: String, id: String, length: Long, name: Option[String], contentType: Option[String],
-                        sessionId: Option[String], customMetadata: Option[JsObject], noOfRows:Option[Int])
-
-object CallbackData {
-  implicit val format = Json.format[CallbackData]
-}
-
-case class ValidatorData(callbackData: CallbackData, schemeInfo: SchemeInfo)
-object ValidatorData {
-  implicit val format = Json.format[ValidatorData]
-}
-
-case class CsvValidatorData(callbackData: List[CallbackData], schemeInfo: SchemeInfo)
-object CsvValidatorData {
-  implicit val format = Json.format[CsvValidatorData]
-}
-
-case class CsvFilesCallback(fileId: String, callbackData: Option[CallbackData])
-object CsvFilesCallback {
-  implicit val format = Json.format[CsvFilesCallback]
-}
-
-case class CsvFilesCallbackList(files: List[CsvFilesCallback])
-object CsvFilesCallbackList {
-  implicit val format = Json.format[CsvFilesCallbackList]
 }

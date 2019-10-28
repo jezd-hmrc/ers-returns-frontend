@@ -14,8 +14,11 @@
  * limitations under the License.
  *@
 
-@(title: String, scripts: Html = Html(""), showSignOutLink: Boolean = true,
-showUserResearchBanner: Boolean = false)(mainContent: Html)(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
+@(title: String,
+    scripts: Html = Html(""),
+    showSignOutLink: Boolean = true,
+    showUserResearchBanner: Boolean = false
+)(mainContent: Html)(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
 
 @import uk.gov.hmrc.play.views.html.layouts
 

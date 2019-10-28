@@ -15,13 +15,15 @@
  */
 
 import com.google.inject.AbstractModule
-import config.{ApplicationConfig, ApplicationConfigImpl}
+import config.{ApplicationConfig, ApplicationConfigImpl, WSHttp}
+import uk.gov.hmrc.http.HttpPost
 
 class Module extends AbstractModule {
 
   override def configure(): Unit = {
     // Bind the actions for DI
     bind(classOf[ApplicationConfig]).to(classOf[ApplicationConfigImpl])
+    bind(classOf[HttpPost]).toInstance(WSHttp)
   }
 
 

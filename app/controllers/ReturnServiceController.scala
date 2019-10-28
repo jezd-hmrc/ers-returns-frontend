@@ -46,8 +46,6 @@ object ReturnServiceController extends ReturnServiceController {
 
 trait ErsConstants {
   val screenSchemeInfo = "screenSchemeInfo"
-  val schemeId = "schemeId"
-  val schemeRef = "schemeRef"
   implicit val context: ErsContext = ErsContextImpl
 }
 
