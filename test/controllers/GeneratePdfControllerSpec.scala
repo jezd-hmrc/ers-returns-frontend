@@ -20,10 +20,11 @@ import java.io.ByteArrayOutputStream
 
 import akka.stream.Materializer
 import models._
+import models.upscan.{UploadId, UploadedSuccessfully, UpscanCsvFilesCallback, UpscanCsvFilesCallbackList}
 import org.joda.time.DateTime
 import org.mockito.Matchers._
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
 import play.api.http.Status
@@ -107,15 +108,16 @@ class GeneratePdfControllerSpec extends UnitSpec with ERSFakeApplicationConfig w
 
     override val cacheUtil: CacheUtil = cache
     override val pdfBuilderService: ErsReceiptPdfBuilderService = pdfBuilderMock
-
-    val callbackData: CallbackData = new CallbackData("", "", 0, None, None, None, None, None)
-    val csvFilesCallBack = new CsvFilesCallback("file0", Some(callbackData))
-    val csvFilesCallbackList: CsvFilesCallbackList = new CsvFilesCallbackList(List(csvFilesCallBack))
     val byteArrayOutputStream = mock[ByteArrayOutputStream]
+
+    val callbackData = UploadedSuccessfully("name", "downloadUrl")
+    val csvFilesCallBack = UpscanCsvFilesCallback(UploadId("uploadId"), "file0", callbackData)
+    val csvFilesCallbackList = UpscanCsvFilesCallbackList(List(csvFilesCallBack))
 
     when(pdfBuilderMock.createPdf(any[ErsContentsStreamer], any[ErsSummary], any(), any())(any())).thenReturn(byteArrayOutputStream)
     when(cache.fetch[ErsMetaData](refEq(CacheUtil.ersMetaData), anyString())(any(), any(), any())).thenReturn(Future.successful(rsc))
-    when(cacheMap.getEntry[CsvFilesCallbackList](refEq(CacheUtil.CHECK_CSV_FILES))(any())).thenReturn(Future.successful(Some(csvFilesCallbackList)))
+    when(cacheMap.getEntry[UpscanCsvFilesCallbackList](refEq(CacheUtil.CHECK_CSV_FILES))(any()))
+      .thenReturn(Future.successful(Some(csvFilesCallbackList)))
     when(cacheMap.getEntry[String](refEq(CacheUtil.FILE_NAME_CACHE))(any())).thenReturn(Future.successful(Some("test.ods")))
     when(byteArrayOutputStream.toByteArray).thenReturn(Array[Byte]())
 

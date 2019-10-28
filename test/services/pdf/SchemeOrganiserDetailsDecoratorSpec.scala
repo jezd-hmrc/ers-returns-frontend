@@ -20,7 +20,7 @@ import models.SchemeOrganiserDetails
 import org.mockito.Matchers
 import org.mockito.Mockito._
 import org.mockito.internal.verification.VerificationModeFactory
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import uk.gov.hmrc.play.test.UnitSpec
 import play.api.i18n.Messages
 

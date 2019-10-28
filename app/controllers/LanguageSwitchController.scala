@@ -21,7 +21,6 @@ import play.api.i18n.{I18nSupport, Lang, MessagesApi}
 import play.api.mvc.{Action, AnyContent, Call, Controller, Session}
 import config.ApplicationConfig
 import uk.gov.hmrc.play.language.LanguageUtils
-import utils.ErsMetaDataHelper
 
 class LanguageSwitchController @Inject() (
                                            appConfig: ApplicationConfig,

@@ -26,7 +26,7 @@ import org.joda.time.DateTime
 import org.jsoup.Jsoup
 import org.mockito.Matchers
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
 import play.api.Play.current
@@ -35,19 +35,18 @@ import play.api.i18n.Messages
 import play.api.i18n.Messages.Implicits._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json
-import play.api.libs.json.{JsString, Json}
+import play.api.libs.json.JsString
 import play.api.mvc.Request
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers}
 import services.SessionService
 import uk.gov.hmrc.http.cache.client.{CacheMap, ShortLivedCache}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpPost, HttpResponse}
 import uk.gov.hmrc.play.test.UnitSpec
-import utils.ContentUtil._
+import utils.Fixtures.ersRequestObject
 import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures}
 
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpPost, HttpResponse}
-import utils.Fixtures.ersRequestObject
 
 
 class ReturnServiceControllerTest extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with OneAppPerSuite {

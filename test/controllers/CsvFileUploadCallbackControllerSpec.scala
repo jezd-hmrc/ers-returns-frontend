@@ -16,83 +16,208 @@
 
 package controllers
 
+import java.net.URL
+import java.time.Instant
+
 import akka.stream.Materializer
-import models.CallbackData
-import org.mockito.Matchers._
+import config.ApplicationConfig
+import models.upscan._
+import org.mockito.ArgumentCaptor
+import org.mockito.Matchers.{eq => meq, _}
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.BeforeAndAfterEach
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{JsObject, Json, _}
 import play.api.mvc.Request
+import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import play.api.test.{FakeHeaders, FakeRequest}
-import services.SessionService
+import uk.gov.hmrc.http.cache.client.CacheMap
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.test.UnitSpec
-import utils.{ERSFakeApplicationConfig, Fixtures}
+import utils.{CacheUtil, ERSFakeApplicationConfig, UpscanData}
 
 import scala.concurrent.Future
+import scala.util.Try
 
-class CsvFileUploadCallbackControllerSpec extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with OneAppPerSuite {
+class CsvFileUploadCallbackControllerSpec extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with OneAppPerSuite with BeforeAndAfterEach with UpscanData {
 
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val materializer: Materializer = app.materializer
   implicit val request: Request[_] = FakeRequest()
 
-  lazy val metaData: JsObject = Json.obj("surname" -> Fixtures.surname, "firstForename" -> Fixtures.firstName)
+  val mockAuthConnector: AuthConnector = mock[AuthConnector]
+  val mockCacheUtil: CacheUtil = mock[CacheUtil]
 
-  lazy val mockAuthConnector: AuthConnector = mock[AuthConnector]
-
-  lazy val mockSessionService: SessionService = mock[SessionService]
-
-  lazy val fakeHeaders: FakeHeaders = FakeHeaders(Seq("Content-type" -> "application/json"))
+  def request(body: JsValue): FakeRequest[JsValue] = FakeRequest().withBody(body)
+  val scRef = "scRef"
+  val url: URL = new URL("http://localhost:9000/myUrl")
 
   lazy val csvFileUploadCallbackController: CsvFileUploadCallbackController = new CsvFileUploadCallbackController {
     lazy val authConnector: AuthConnector = mockAuthConnector
-    override lazy val sessionService: SessionService = mockSessionService
+    override val cacheUtil: CacheUtil = mockCacheUtil
+    override val appConfig: ApplicationConfig = ApplicationConfig
   }
 
-  lazy val callbackData1 = CallbackData(collection = "collection",
-    id = "someid",
-    length = 1000L,
-    name = Some("John"),
-    contentType = Some("content-type"),
-    customMetadata = Some(metaData),
-    sessionId = Some("testId"),
-    noOfRows = None)
+  override def beforeEach(): Unit = {
+    reset(mockCacheUtil)
+    super.beforeEach()
+  }
 
-  "calling callback" should {
-
-    "return OK if attachments return valid callback data and storing callback data is successful" in {
-      reset(mockSessionService)
-      when(mockSessionService.storeCallbackData(any[CallbackData]())(any(), any()))
-        .thenReturn(Future.successful(Some(callbackData1)))
-      val fakeRequest = FakeRequest(method = "POST", uri = "", headers = fakeHeaders, body = Json.toJson(callbackData1))
-      val result = await(csvFileUploadCallbackController.callback()(fakeRequest))
-      status(result) shouldBe OK
+  "callback" should {
+    val uploadId: UploadId = UploadId("ID")
+    "update upload status to Uploaded Successfully" when {
+      "callback is UpscanReadyCallback and upload is InProgress" in {
+        val callbackCaptor = ArgumentCaptor.forClass(classOf[UpscanCsvFilesCallbackList])
+        val body = UpscanReadyCallback(Reference("Reference"), url, UploadDetails(Instant.now(), "checkSum", "fileMimeType", "fileName"))
+        val jsonBody = Json.toJson(body)
+        val upscanCsvFilesCallbackList: UpscanCsvFilesCallbackList = UpscanCsvFilesCallbackList(
+          List(
+            UpscanCsvFilesCallback(uploadId, "file1", InProgress),
+            UpscanCsvFilesCallback(UploadId("ID2"), "file4", NotStarted)
+          )
+        )
+        when(mockCacheUtil.fetch[UpscanCsvFilesCallbackList](meq(CacheUtil.CHECK_CSV_FILES), meq(scRef))(any(),any(), any()))
+          .thenReturn(upscanCsvFilesCallbackList)
+        when(mockCacheUtil.cache(meq(CacheUtil.CHECK_CSV_FILES), callbackCaptor.capture, meq(scRef))(any(), any(), any()))
+          .thenReturn(Future.successful(mock[CacheMap]))
+        val result = csvFileUploadCallbackController.callback(uploadId, scRef)(request(jsonBody))
+        status(result) shouldBe OK
+        callbackCaptor.getValue.files.find(_.uploadId == uploadId).get should matchPattern {
+          case UpscanCsvFilesCallback(`uploadId`, "file1", _: UploadedSuccessfully) =>
+        }
+        verify(mockCacheUtil, times(1))
+          .cache(meq(CacheUtil.CHECK_CSV_FILES), callbackCaptor.capture, meq(scRef))(any(), any(), any())
+        verify(mockCacheUtil, times(1))
+          .fetch[UpscanCsvFilesCallbackList](meq(CacheUtil.CHECK_CSV_FILES), meq(scRef))(any(),any(), any())
+      }
     }
 
-    "return INTERNAL_SERVER_ERROR if attachments return invalid callback data and storing callback data is successful" in {
-      reset(mockSessionService)
-      when(mockSessionService.storeCallbackData(any[CallbackData]())(any(), any()))
-        .thenReturn(Future.successful(None))
-      val fakeRequest = FakeRequest(method = "POST", uri = "", headers = fakeHeaders, body = Json.toJson(callbackData1))
-      val result = await(csvFileUploadCallbackController.callback()(fakeRequest))
-      status(result) shouldBe INTERNAL_SERVER_ERROR
-      bodyOf(result) shouldBe "Exception"
+    "update upload status to Failed" when {
+      "callback is UpscanFailedCallback and upload is InProgress" in {
+        val callbackCaptor = ArgumentCaptor.forClass(classOf[UpscanCsvFilesCallbackList])
+        val body = UpscanFailedCallback(Reference("ref"), ErrorDetails("failed", "message"))
+        val jsonBody = Json.toJson(body)
+        val upscanCsvFilesCallbackList: UpscanCsvFilesCallbackList = UpscanCsvFilesCallbackList(
+          List(
+            UpscanCsvFilesCallback(uploadId, "file1", InProgress),
+            UpscanCsvFilesCallback(UploadId("ID2"), "file4", NotStarted)
+          )
+        )
+        when(mockCacheUtil.fetch[UpscanCsvFilesCallbackList](meq(CacheUtil.CHECK_CSV_FILES), meq(scRef))(any(),any(), any()))
+          .thenReturn(upscanCsvFilesCallbackList)
+        when(mockCacheUtil.cache(meq(CacheUtil.CHECK_CSV_FILES), callbackCaptor.capture, meq(scRef))(any(), any(), any()))
+          .thenReturn(Future.successful(mock[CacheMap]))
+        val result = csvFileUploadCallbackController.callback(uploadId, scRef)(request(jsonBody))
+        status(result) shouldBe OK
+        callbackCaptor.getValue.files.find(_.uploadId == uploadId).get should matchPattern {
+          case UpscanCsvFilesCallback(`uploadId`, "file1", Failed) =>
+        }
+        verify(mockCacheUtil, times(1))
+          .cache(meq(CacheUtil.CHECK_CSV_FILES), callbackCaptor.capture, meq(scRef))(any(), any(), any())
+        verify(mockCacheUtil, times(1))
+          .fetch[UpscanCsvFilesCallbackList](meq(CacheUtil.CHECK_CSV_FILES), meq(scRef))(any(),any(), any())
+
+      }
     }
 
-    "return INTERNAL_SERVER_ERROR if storing callback data fails" in {
-      val callbackData2 = callbackData1.copy(name = Some(Fixtures.firstName))
-      reset(mockSessionService)
-      when(mockSessionService.storeCallbackData(any[CallbackData]())(any(), any()))
-        .thenReturn(Future.failed(new RuntimeException))
-      val fakeRequest = FakeRequest(method = "POST", uri = "", headers = fakeHeaders, body = Json.toJson(callbackData2))
-      val result = await(csvFileUploadCallbackController.callback()(fakeRequest))
-      status(result) shouldBe INTERNAL_SERVER_ERROR
-      bodyOf(result) shouldBe "Exception occurred when attempting to store data"
+    "call cache upto 5 times" when {
+      "the file upload in cache is not InProgress" in {
+        val body = UpscanFailedCallback(Reference("ref"), ErrorDetails("failed", "message"))
+        val jsonBody = Json.toJson(body)
+        val upscanCsvFilesCallbackList: UpscanCsvFilesCallbackList = UpscanCsvFilesCallbackList(
+          List(
+            UpscanCsvFilesCallback(uploadId, "file1", NotStarted),
+            UpscanCsvFilesCallback(UploadId("ID2"), "file4", NotStarted)
+          )
+        )
+        when(mockCacheUtil.fetch[UpscanCsvFilesCallbackList](meq(CacheUtil.CHECK_CSV_FILES), meq(scRef))(any(),any(), any()))
+          .thenReturn(upscanCsvFilesCallbackList)
+        when(mockCacheUtil.cache(meq(CacheUtil.CHECK_CSV_FILES), any(), meq(scRef))(any(), any(), any()))
+          .thenReturn(Future.successful(mock[CacheMap]))
+
+        Try(await(csvFileUploadCallbackController.callback(uploadId, scRef)(request(jsonBody))))
+
+        verify(mockCacheUtil, never())
+          .cache(meq(CacheUtil.CHECK_CSV_FILES), any(), meq(scRef))(any(), any(), any())
+        verify(mockCacheUtil, times(5))
+          .fetch[UpscanCsvFilesCallbackList](meq(CacheUtil.CHECK_CSV_FILES), meq(scRef))(any(),any(), any())
+      }
+    }
+
+    "return InternalServerError" when {
+      "fetching the cache fails" in {
+        val body = UpscanFailedCallback(Reference("ref"), ErrorDetails("failed", "message"))
+        val jsonBody = Json.toJson(body)
+
+        when(mockCacheUtil.fetch[UpscanCsvFilesCallbackList](meq(CacheUtil.CHECK_CSV_FILES), meq(scRef))(any(),any(), any()))
+          .thenReturn(Future.failed(new Exception("Expected Exception")))
+        when(mockCacheUtil.cache(meq(CacheUtil.CHECK_CSV_FILES), any(), meq(scRef))(any(), any(), any()))
+          .thenReturn(Future.successful(mock[CacheMap]))
+
+        val result = await(csvFileUploadCallbackController.callback(uploadId, scRef)(request(jsonBody)))
+        status(result) shouldBe INTERNAL_SERVER_ERROR
+
+        verify(mockCacheUtil, never())
+          .cache(meq(CacheUtil.CHECK_CSV_FILES), any(), meq(scRef))(any(), any(), any())
+        verify(mockCacheUtil, times(1))
+          .fetch[UpscanCsvFilesCallbackList](meq(CacheUtil.CHECK_CSV_FILES), meq(scRef))(any(),any(), any())
+      }
+
+      "updating the cache fails" in {
+        val body = UpscanFailedCallback(Reference("ref"), ErrorDetails("failed", "message"))
+        val jsonBody = Json.toJson(body)
+        val upscanCsvFilesCallbackList: UpscanCsvFilesCallbackList = UpscanCsvFilesCallbackList(
+          List(
+            UpscanCsvFilesCallback(uploadId, "file1", InProgress),
+            UpscanCsvFilesCallback(UploadId("ID2"), "file4", NotStarted)
+          )
+        )
+
+        when(mockCacheUtil.fetch[UpscanCsvFilesCallbackList](meq(CacheUtil.CHECK_CSV_FILES), meq(scRef))(any(),any(), any()))
+          .thenReturn(upscanCsvFilesCallbackList)
+        when(mockCacheUtil.cache(meq(CacheUtil.CHECK_CSV_FILES), any(), meq(scRef))(any(), any(), any()))
+          .thenReturn(Future.failed(new Exception("Test exception")))
+
+        val result = await(csvFileUploadCallbackController.callback(uploadId, scRef)(request(jsonBody)))
+        status(result) shouldBe INTERNAL_SERVER_ERROR
+
+        verify(mockCacheUtil, times(1))
+          .cache(meq(CacheUtil.CHECK_CSV_FILES), any(), meq(scRef))(any(), any(), any())
+        verify(mockCacheUtil, times(1))
+          .fetch[UpscanCsvFilesCallbackList](meq(CacheUtil.CHECK_CSV_FILES), meq(scRef))(any(),any(), any())
+      }
+
+      "callback data is not in the correct format" ignore {
+        val jsonBody = Json.parse("""{"key":"value"}""")
+        val result = await(csvFileUploadCallbackController.callback(uploadId, scRef)(request(jsonBody)))
+        status(result) shouldBe BAD_REQUEST
+        verify(mockCacheUtil, never())
+          .cache(meq(CacheUtil.CHECK_CSV_FILES), any(), meq(scRef))(any(), any(), any())
+        verify(mockCacheUtil, never())
+          .fetch[UpscanCsvFilesCallbackList](meq(CacheUtil.CHECK_CSV_FILES), meq(scRef))(any(),any(), any())
+      }
+
+      "the file upload in cache is not InProgress after 5 calls" in {
+        val callbackCaptor = ArgumentCaptor.forClass(classOf[UpscanCsvFilesCallbackList])
+        val body = UpscanFailedCallback(Reference("ref"), ErrorDetails("failed", "message"))
+        val jsonBody = Json.toJson(body)
+        val upscanCsvFilesCallbackList: UpscanCsvFilesCallbackList = UpscanCsvFilesCallbackList(
+          List(
+            UpscanCsvFilesCallback(uploadId, "file1", NotStarted),
+            UpscanCsvFilesCallback(UploadId("ID2"), "file4", NotStarted)
+          )
+        )
+        when(mockCacheUtil.fetch[UpscanCsvFilesCallbackList](meq(CacheUtil.CHECK_CSV_FILES), meq(scRef))(any(),any(), any()))
+          .thenReturn(upscanCsvFilesCallbackList)
+        when(mockCacheUtil.cache(meq(CacheUtil.CHECK_CSV_FILES), callbackCaptor.capture, meq(scRef))(any(), any(), any()))
+          .thenReturn(Future.successful(mock[CacheMap]))
+
+        val result = await(csvFileUploadCallbackController.callback(uploadId, scRef)(request(jsonBody)))
+        status(result) shouldBe INTERNAL_SERVER_ERROR
+      }
     }
   }
 }

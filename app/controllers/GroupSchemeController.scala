@@ -167,7 +167,6 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
   }
 
   def showGroupSchemeSelected(requestObject: RequestObject, scheme: String)(implicit authContext: AuthContext, request: Request[AnyRef]): Future[Result] = {
-    Logger.info(request.session.get(screenSchemeInfo).get.split(" - ").head)
     RsFormMappings.groupForm.bindFromRequest.fold(
       errors => {
         val correctOrder = errors.errors.map(_.key).distinct

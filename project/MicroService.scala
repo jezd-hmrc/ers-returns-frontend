@@ -1,23 +1,21 @@
 import play.routes.compiler.StaticRoutesGenerator
-import play.sbt.routes.RoutesKeys.routesGenerator
+import play.sbt.routes.RoutesKeys.{routesGenerator, routesImport}
+import play.twirl.sbt.Import.TwirlKeys
 import sbt.Keys._
 import sbt.Tests.{Group, SubProcess}
 import sbt._
 import scoverage.ScoverageKeys
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin._
-import uk.gov.hmrc.versioning.SbtGitVersioning
-import play.sbt.routes.RoutesKeys.routesGenerator
 
 trait MicroService {
 
   import uk.gov.hmrc._
   import DefaultBuildSettings._
   import TestPhases._
-  import uk.gov.hmrc.versioning.SbtGitVersioning.autoImport.majorVersion
-  import uk.gov.hmrc.SbtAutoBuildPlugin
+  import uk.gov.hmrc.{SbtArtifactory, SbtAutoBuildPlugin}
   import uk.gov.hmrc.versioning.SbtGitVersioning
-  import uk.gov.hmrc.SbtArtifactory
+  import uk.gov.hmrc.versioning.SbtGitVersioning.autoImport.majorVersion
 
   val appName: String
 
@@ -49,8 +47,12 @@ trait MicroService {
       libraryDependencies ++= appDependencies,
       parallelExecution in Test := false,
       fork in Test := false,
+      fork in Runtime := true,
       retrieveManaged := true,
-      routesGenerator := StaticRoutesGenerator
+      routesGenerator := StaticRoutesGenerator,
+      TwirlKeys.templateImports +=
+        "models.upscan.{UpscanInitiateResponse, UpscanCsvFilesCallbackList, UpscanCsvFilesCallback}",
+      routesImport += "models.upscan.UploadId"
     )
     .settings(Repositories.playPublishingSettings: _*)
     .settings(inConfig(TemplateTest)(Defaults.testSettings): _*)

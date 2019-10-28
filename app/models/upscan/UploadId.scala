@@ -14,9 +14,21 @@
  * limitations under the License.
  */
 
-package utils
+package models.upscan
 
+import java.util.UUID
 
-object ErsMetaDataHelper {
+import play.api.libs.json.{JsString, Reads, Writes}
+import play.api.mvc.QueryStringBindable
 
+case class UploadId(value: String) extends AnyVal
+
+object UploadId {
+  def generate = UploadId(UUID.randomUUID().toString)
+
+  implicit def queryBinder(implicit stringBinder: QueryStringBindable[String]): QueryStringBindable[UploadId] =
+    stringBinder.transform(UploadId(_), _.value)
+
+  implicit def readsUploadId: Reads[UploadId] = Reads.StringReads.map(UploadId(_))
+  implicit def writesUploadId: Writes[UploadId] = Writes[UploadId](x => JsString(x.value))
 }

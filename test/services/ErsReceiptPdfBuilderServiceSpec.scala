@@ -24,7 +24,7 @@ import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.mockito.internal.verification.VerificationModeFactory
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
 import play.api.i18n.{Lang, Messages, MessagesApi}

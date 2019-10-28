@@ -14,17 +14,19 @@
  * limitations under the License.
  *@
 
-@(requestObject: RequestObject, uploadForm: Html, csvFilesCallback: List[CsvFilesCallback])(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
-@schemeId = @{requestObject.getSchemeId}
 @import utils.PageBuilder._
 @import views.html.templates._
+@import views.html.includes.upscan_file_upload_form
+
+@(requestObject: RequestObject, upscanInitiateResponse: UpscanInitiateResponse, currentCsvFile: UpscanCsvFilesCallback, csvFilesCallback: List[UpscanCsvFilesCallback])(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
+@schemeId = @{requestObject.getSchemeId}
 
 @scripts = {
-<script src='@routes.AssetsController.at("javascripts/ers_csv_scripts.js")'> </script>
+    <script src='@routes.AssetsController.at("javascripts/ers_csv_scripts.js")'> </script>
 }
 
 @pageTitle = {
-    @if(csvFilesCallback.count(_.callbackData.isDefined) == 0) {
+    @if(csvFilesCallback.count(_.isStarted) == 0) {
         @if(csvFilesCallback.map(_.fileId).size == 1) {
             @Messages("ers.upload_csv_file.page_title")
         } else {
@@ -39,7 +41,7 @@
 
     @reference(requestObject.getPageTitle)
     <p class="font-xsmall"><a href="@routes.CheckCsvFilesController.checkCsvFilesPage" class="link-back">@Html(Messages("ers.back"))</a></p>
-    @if(csvFilesCallback.count(_.callbackData.isDefined) == 0) {
+    @if(csvFilesCallback.count(_.isStarted) == 0) {
         @if(csvFilesCallback.map(_.fileId).size == 1) {
             @header(Messages("csv_file_upload.file_title"))
         } else {
@@ -66,20 +68,19 @@
     </h2>
 
     <p>
-    @for(file <- csvFilesCallback if (file.callbackData.isDefined)) {
-        <span class="uploaded files" data-file-name="@Messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,file.fileId+".file_name"))">@Messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,file.fileId+".description"))</span> @Messages("ers.uploaded")<br>
-    }
-    @for(file <- csvFilesCallback if (file.callbackData.isEmpty)) {
-        <span id="@file.fileId" class="notUploaded files" data-file-name="@Messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,file.fileId+".file_name"))">@Messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,file.fileId+".description"))</span><br>
+      <!--TODO fix content. Currenly files reorganise as they upload them. Also, says uploaded when not true-->
+    <span class="uploaded files" data-file-name="@Messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,currentCsvFile.fileId+".file_name"))">@Messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,currentCsvFile.fileId+".description"))</span> @Messages("ers.uploaded")<br>
+
+    @for(file <- csvFilesCallback if !(file == currentCsvFile)) {
+        <span id="@file.fileId" class="notUploaded files">@Messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,file.fileId+".description"))</span><br>
     }
     </p>
 
     <div class="panel-indent">
         <p>@Messages("CSV_file_upload.size_warning.link.before") <a href="mailto:shareschemes@@hmrc.gsi.gov.uk">shareschemes@@hmrc.gsi.gov.uk</a> @Messages("CSV_file_upload.size_warning.link.after")</p>
     </div>
-
     <label for="fileToUpload" class="visuallyhidden">
-        <p>@if(csvFilesCallback.count(_.callbackData.isDefined) == 0) {
+        <p>@if(csvFilesCallback.count(_.isStarted) == 0) {
                 @if(csvFilesCallback.map(_.fileId).size == 1) {
                     @Html(getPageElement(schemeId, PAGE_FILE_UPLOAD, "info", ""))
                 } else {
@@ -90,9 +91,5 @@
             }
         </p>
     </label>
-    <div id="uploadForm">
-        @uploadForm
-    </div>
-    @spinner()
-
+    @upscan_file_upload_form(".csv", upscanInitiateResponse.formFields, upscanInitiateResponse.postTarget)
 }

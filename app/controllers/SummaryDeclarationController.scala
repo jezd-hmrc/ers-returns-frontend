@@ -18,6 +18,7 @@ package controllers
 
 import _root_.models._
 import connectors.ErsConnector
+import models.upscan.{UploadedSuccessfully, UpscanCsvFilesCallback, UpscanCsvFilesCallbackList}
 import play.api.Logger
 import play.api.Play.current
 import play.api.i18n.Messages
@@ -61,8 +62,11 @@ trait SummaryDeclarationController extends ERSReturnBaseController with Authenti
       if (reportableEvents == PageBuilder.OPTION_YES) {
         fileType = all.getEntry[CheckFileType](CacheUtil.FILE_TYPE_CACHE).get.checkFileType.get
         if (fileType == PageBuilder.OPTION_CSV) {
-          val csvFilesCallback: List[CsvFilesCallback] = all.getEntry[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES).get.files
-          for (file <- csvFilesCallback if file.callbackData.isDefined) {
+          val csvFilesCallback: List[UpscanCsvFilesCallback] = all.getEntry[UpscanCsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES).get.files
+            .collect{
+              case successfulFile@UpscanCsvFilesCallback(_, _, _: UploadedSuccessfully) => successfulFile
+            }
+          for (file <- csvFilesCallback) {
             fileNames = fileNames + Messages(PageBuilder.getPageElement(requestObject.getSchemeId, PageBuilder.PAGE_CHECK_CSV_FILE, file.fileId + ".file_name")) + "<br/>"
             fileCount += 1
           }

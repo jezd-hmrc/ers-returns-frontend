@@ -18,11 +18,11 @@ package connectors
 
 import akka.stream.Materializer
 import metrics.Metrics
-import models.{CallbackData, SchemeInfo, ValidatorData}
+import models.SchemeInfo
 import org.joda.time.DateTime
 import org.mockito.Matchers
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -30,12 +30,12 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.domain.EmpRef
+import uk.gov.hmrc.http.{HttpGet, HttpPost, HttpResponse}
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.test.UnitSpec
-import utils.{ERSFakeApplicationConfig, Fixtures}
+import utils.ERSFakeApplicationConfig
 
 import scala.concurrent.Future
-import uk.gov.hmrc.http.{ HttpGet, HttpPost, HttpResponse }
 
 class ErsConnectorSpec extends UnitSpec with MockitoSugar with OneAppPerSuite with ERSFakeApplicationConfig {
 
@@ -48,72 +48,24 @@ class ErsConnectorSpec extends UnitSpec with MockitoSugar with OneAppPerSuite wi
 
   lazy val schemeInfo = SchemeInfo("XA1100000000000", DateTime.now, "1", "2016", "EMI", "EMI")
 
-  "calling sendData" should {
+  "validateFileData" should {
+    "return the response from file-validator" when {
+      "response code is 200" in {
 
-    lazy val mockHttp = mock[HttpPost]
-    lazy val mockMetrics: Metrics = mock[Metrics]
+      }
 
-    lazy val schemeInfo1 = SchemeInfo("XA1100000000000", DateTime.now, "1", "2016", "QQQ", "QQQ")
-    lazy val schemeType = "EMI"
+      "response code is 202" in {
 
-    lazy val callbackData = CallbackData(
-      collection = "collection",
-      id = "someid",
-      length = 1000L,
-      name = Some(Fixtures.firstName),
-      contentType = Some("content-type"),
-      sessionId = Some("testId"),
-      customMetadata = Some(Json.obj("sessionId" -> "testId")), noOfRows = None)
-
-    lazy val ersConnectorUnderTest: ErsConnector = new ErsConnector {
-
-      override lazy val metrics: Metrics = mockMetrics
-
-      override def httpPost: HttpPost = mockHttp
-
-      override def httpGet: HttpGet = mock[HttpGet]
-
-      override def ersUrl = "ers-returns"
-
-      override def ersRegime = "epaye"
-
-      override def validatorUrl = "ers-file-validator"
-
-      override def getAuthID(implicit authContext: AuthContext) = EmpRef("", "")
+      }
     }
 
-    "successful validation" in {
-      reset(mockHttp)
-      when(
-        mockHttp.POST[ValidatorData, HttpResponse](Matchers.any(), Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any())
-      ).thenReturn(
-        Future.successful(HttpResponse(OK))
-      )
+    "return blank Bad Request" when {
+      "file-validator returns 4xx" in {
 
-      val result = await(ersConnectorUnderTest.validateFileData(callbackData, schemeInfo))
-      result.status shouldBe OK
-    }
+      }
 
-    "validation fails" in {
-      reset(mockHttp)
-      when(
-        mockHttp.POST[ValidatorData, HttpResponse](Matchers.any(), Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any())
-      ).thenReturn(
-        Future.successful(HttpResponse(INTERNAL_SERVER_ERROR))
-      )
+      "file-validator returns 5xx" in {
 
-      val result = await(ersConnectorUnderTest.validateFileData(callbackData, schemeInfo))
-      result.status shouldBe INTERNAL_SERVER_ERROR
-    }
-
-    "validator throw Exception" in {
-      reset(mockHttp)
-      doThrow(
-        new RuntimeException
-      ).when(mockHttp).POST[ValidatorData, HttpResponse](Matchers.any(), Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any())
-
-      intercept[Exception] {
-        ersConnectorUnderTest.validateFileData(callbackData, schemeInfo1)
       }
     }
   }

@@ -16,7 +16,7 @@
 
 package controllers
 
-import models.{RsFormMappings, TrusteeDetails, TrusteeDetailsList, _}
+import models._
 import play.api.Logger
 import play.api.Play.current
 import play.api.data.Form

@@ -18,156 +18,137 @@ package controllers
 
 import _root_.models._
 import config.ERSFileValidatorAuthConnector
-import connectors.{AttachmentsConnector, ErsConnector}
+import connectors.ErsConnector
+import models.upscan.{UploadStatus, UploadedSuccessfully}
 import play.api.Logger
 import play.api.Play.current
 import play.api.i18n.Messages
 import play.api.i18n.Messages.Implicits._
 import play.api.mvc._
-import play.twirl.api.Html
-import services.SessionService
-import uk.gov.hmrc.play.frontend.auth.AuthContext
+import services.{SessionService, UpscanService}
 import uk.gov.hmrc.play.frontend.controller.FrontendController
 import utils._
-import views.html.file_upload
+import views.html.upscan_ods_file_upload
 
 import scala.concurrent.Future
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.play.frontend.auth.AuthContext
 
 trait FileUploadController extends FrontendController with Authenticator with LegacyI18nSupport {
 
-  val attachmentsConnector: AttachmentsConnector
   val sessionService: SessionService
   val cacheUtil: CacheUtil
   val ersConnector: ErsConnector
+  val upscanService: UpscanService = current.injector.instanceOf[UpscanService]
+  private val logger = Logger(this.getClass)
 
   def uploadFilePage(): Action[AnyContent] = AuthorisedForAsync() {
-    implicit user =>
-      implicit request =>
-
+    implicit request =>
+      implicit user =>
         (for {
-          responseObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
-          partial        <- attachmentsConnector.getFileUploadPartial
+          requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
+          response <- upscanService.getUpscanFormDataOds()
+          _ <- sessionService.createCallbackRecord
         } yield {
-
-          Logger.info(s"uploadFilePage: Response received from Attachments for partial, timestamp: ${System.currentTimeMillis()}.")
-
-          Ok(file_upload(responseObject, Html(partial.body)))
-        }).recover{
+          Ok(upscan_ods_file_upload(requestObject, response))
+        }) recover{
           case e: Throwable =>
-          Logger.error(s"showUploadFilePage failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
-          getGlobalErrorPage
+            Logger.error(s"showUploadFilePage failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
+            getGlobalErrorPage
         }
   }
 
   def success(): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-          showSuccess()
+        val futureRequestObject: Future[RequestObject] = cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
+        val futureCallbackData: Future[Option[UploadStatus]] = sessionService.getCallbackRecord
+
+       (for {
+          requestObject <- futureRequestObject
+          file          <- futureCallbackData
+        } yield {
+          file match {
+            case Some(file: UploadedSuccessfully) =>
+              cacheUtil.cache[String](CacheUtil.FILE_NAME_CACHE, file.name, requestObject.getSchemeReference).map { _ =>
+                Ok(views.html.upscan_ods_success(requestObject, file))
+              }
+            case Some(status: UploadStatus) =>
+              //TODO can we only show page if cache is successful? For current behaviour yes.
+              // We can only cache on success upload. What do we do with other status? What to do with None?? - Probs retry!
+              // This isnt tested either ATM
+              Future.successful(Ok(views.html.upscan_ods_success(requestObject, status)))
+          }
+        }).flatMap(identity(_)) recover {
+         case e: Exception =>
+           Logger.error(s"success: failed to save ods filename with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.", e)
+           getGlobalErrorPage
+       }
   }
 
-
-  def showSuccess()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-
-    val futureRequestObject = cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
-    val futureCallbackData = sessionService.retrieveCallbackData
-
-    (for {
-      requestObject <- futureRequestObject
-      callbackData  <- futureCallbackData
-      fileName      = callbackData.fold("")(_.name.getOrElse(""))
-      scRef         = requestObject.getSchemeReference
-      _             <- cacheUtil.cache[String](CacheUtil.FILE_NAME_CACHE, fileName, scRef)
-    } yield {
-
-      Logger.info("success: Attachments Success: " + (System.currentTimeMillis() / 1000))
-      Ok(views.html.success(requestObject, None, Some(fileName)))
-
-    }) recover {
-      case e: Exception =>
-
-        Logger.error(s"success: failed to save ods filename with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
-        getGlobalErrorPage
-    }
-  }
-
-
-  def validationResults() = AuthorisedFor(ERSRegime, pageVisibility = GGConfidence).async {
+  def validationResults(): Action[AnyContent] = AuthorisedFor(ERSRegime, pageVisibility = GGConfidence).async {
     implicit user =>
       implicit request =>
-
         val futureRequestObject = cacheUtil.fetch[RequestObject](CacheUtil.ersRequestObject)
-        val futureCallbackData = sessionService.retrieveCallbackData()
-
+        val futureCallbackData = sessionService.getCallbackRecord
         (for {
-          requestObject      <- futureRequestObject
-          all                <- cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, requestObject.getSchemeReference)
-          callbackData       <- futureCallbackData
-          connectorResponse  <- ersConnector.removePresubmissionData(all.schemeInfo)
+          requestObject <- futureRequestObject
+          callbackData <- futureCallbackData
+          if callbackData.exists(_.isInstanceOf[UploadedSuccessfully])
+          connectorResponse <- ersConnector.removePresubmissionData(requestObject.toSchemeInfo)
           validationResponse <-
-
-            if(connectorResponse.status == OK) {
-              handleValidationResponse(connectorResponse, callbackData, all.schemeInfo, requestObject.getSchemeReference)
-            }
-            else {
-              Logger.error(s"validationResults: removePresubmissionData failed with status ${connectorResponse.status}, timestamp: ${System.currentTimeMillis()}.")
+            if (connectorResponse.status == OK) {
+              handleValidationResponse(callbackData.get.asInstanceOf[UploadedSuccessfully], requestObject.toSchemeInfo)
+            } else {
+              logger.error(s"validationResults: removePresubmissionData failed with status ${connectorResponse.status}, timestamp: ${System.currentTimeMillis()}.")
               Future.successful(getGlobalErrorPage)
             }
-
         } yield {
-
           validationResponse
-
         }) recover {
-
-          case e: Throwable =>
-            Logger.error(s"validationResults: validationResults failed with Exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
-
+          case _: NoSuchElementException =>
+            logger.error(s"Failed to validate as file is not yet successfully uploaded.")
             getGlobalErrorPage
-
+          case e: Throwable =>
+            Logger.error(s"validationResults: validationResults failed with Exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.", e)
+            getGlobalErrorPage
         }
   }
 
-  def handleValidationResponse(response: HttpResponse, callbackData: Option[CallbackData], schemeInfo: SchemeInfo, schemeRef: String)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def handleValidationResponse(callbackData: UploadedSuccessfully, schemeInfo: SchemeInfo)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+    val schemeRef = schemeInfo.schemeRef
+    ersConnector.validateFileData(callbackData, schemeInfo).map { res =>
+      Logger.info(s"validationResults: Response from validator: ${res.status}, timestamp: ${System.currentTimeMillis()}.")
 
-      ersConnector.validateFileData(callbackData.get, schemeInfo).map { res =>
-        Logger.info(s"validationResults: Response from validator: ${res.status}, timestamp: ${System.currentTimeMillis()}.")
+      res.status match {
 
-        res.status match {
+        case OK =>
+          Logger.warn(s"validationResults: Validation is successful for schemeRef: $schemeRef, timestamp: ${System.currentTimeMillis()}.")
+          cacheUtil.cache(cacheUtil.VALIDATED_SHEEETS, res.body, schemeRef)
+          Redirect(routes.SchemeOrganiserController.schemeOrganiserPage())
 
-          case OK =>
-            Logger.warn(s"validationResults: Validation is successful for schemeRef: $schemeRef, timestamp: ${System.currentTimeMillis()}.")
-            cacheUtil.cache(cacheUtil.VALIDATED_SHEEETS, res.body, schemeRef)
-            Redirect(routes.SchemeOrganiserController.schemeOrganiserPage())
+        case ACCEPTED =>
+          Logger.warn(s"validationResults: Validation is not successful for schemeRef: $schemeRef, timestamp: ${System.currentTimeMillis()}.")
+          Redirect(routes.FileUploadController.validationFailure())
 
-          case ACCEPTED =>
-            Logger.warn(s"validationResults: Validation is not successful for schemeRef: $schemeRef, timestamp: ${System.currentTimeMillis()}.")
-            Redirect(routes.FileUploadController.validationFailure())
-
-          case _ => Logger.error(s"validationResults: Validate file data failed with Status ${res.status}, timestamp: ${System.currentTimeMillis()}.")
-            getGlobalErrorPage
-        }
+        case _ => logger.error(s"validationResults: Validate file data failed with Status ${res.status}, timestamp: ${System.currentTimeMillis()}.")
+          getGlobalErrorPage
       }
-
+    }
   }
 
   def validationFailure() = AuthorisedFor(ERSRegime, pageVisibility = GGConfidence).async {
     implicit user =>
       implicit request =>
-
-        Logger.info("validationFailure: Validation Failure: " + (System.currentTimeMillis() / 1000))
-
+        logger.info("validationFailure: Validation Failure: " + (System.currentTimeMillis() / 1000))
         (for {
           requestObject <- cacheUtil.fetch[RequestObject](CacheUtil.ersRequestObject)
           fileType      <- cacheUtil.fetch[CheckFileType](CacheUtil.FILE_TYPE_CACHE, requestObject.getSchemeReference)
         } yield {
-
           Ok(views.html.file_upload_errors(requestObject, fileType.checkFileType.getOrElse("")))
         }) recover {
-
           case e: Throwable =>
-            Logger.error(s"validationResults: validationFailure failed with Exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
-
+            logger.error(s"validationResults: validationFailure failed with Exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.", e)
             getGlobalErrorPage
         }
   }
@@ -175,7 +156,7 @@ trait FileUploadController extends FrontendController with Authenticator with Le
   def failure() = AuthorisedFor(ERSRegime, pageVisibility = GGConfidence).async {
     implicit user =>
       implicit request =>
-        Logger.error("failure: Attachments Failure: " + (System.currentTimeMillis() / 1000))
+        logger.error("failure: Upscan Failure: " + (System.currentTimeMillis() / 1000))
         Future(getGlobalErrorPage)
   }
 
@@ -187,7 +168,6 @@ trait FileUploadController extends FrontendController with Authenticator with Le
 }
 
 object FileUploadController extends FileUploadController {
-  val attachmentsConnector = AttachmentsConnector
   val authConnector = ERSFileValidatorAuthConnector
   val sessionService = SessionService
   val ersConnector: ErsConnector = ErsConnector
