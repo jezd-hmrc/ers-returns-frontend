@@ -14,11 +14,12 @@
  * limitations under the License.
  *@
 
-@(pageTitle: String, heading: String, message: String, applicationConfig: config.ApplicationConfig = config.ApplicationConfig)(implicit messages: Messages)
+@(pageTitle: String, heading: String, message: String, applicationConfig: config.ApplicationConfig = config.ApplicationConfig)(implicit request: Request[_], messages: Messages)
 
 @import layouts.{govuk_template => hmrcGovUkTemplate}
 @import play.api.Play.current
 @import uk.gov.hmrc.play.views.html.{layouts => uiLayouts}
+@import controllers.auth.ExternalUrls
 
 @commonLinkElement = {
     @includes.commonLinkElements()
@@ -51,10 +52,15 @@
     <meta name="format-detection" content="telephone=no" />
 }
 
+@getHelpForm = {
+    @get_help_form(true, false)
+}
+
 @content = {
     @uiLayouts.main_content(
         article = uiLayouts.article(mainContent),
-        mainContentHeader = contentHeader)
+        mainContentHeader = contentHeader,
+        getHelpForm = getHelpForm)
 }
 
 @bodyEnd = {
@@ -68,7 +74,15 @@
 
 @footerTop = {}
 
-@insideHeader = @{uiLayouts.header_nav(navTitle = Some(Messages("ers.header")),None,None,None)}
+@signoutLink = {<a href="@ExternalUrls.signOut" id="sign-out">@Messages("ers.signout")</a>}
+
+@insideHeader = @{
+    uiLayouts.header_nav(
+        navTitle = Some(Messages("ers.header")),
+        None,
+        None,
+        navLinks = Some(signoutLink))
+}
 @afterHeader = {}
 
 

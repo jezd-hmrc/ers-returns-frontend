@@ -27,11 +27,12 @@ import org.scalatestplus.play.OneAppPerSuite
 import play.api.http.Status
 import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.inject.Injector
-import play.api.mvc.LegacyI18nSupport
+import play.api.mvc.{LegacyI18nSupport, Request}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.play.test.UnitSpec
 import utils._
+import play.api.test.FakeRequest
 
 import scala.concurrent.Future
 
@@ -40,6 +41,7 @@ class AltAmendsControllerTest extends UnitSpec with ERSFakeApplicationConfig wit
   def injector: Injector = app.injector
   def messagesApi: MessagesApi = injector.instanceOf[MessagesApi]
   implicit val messages: Messages = messagesApi.preferred(Seq(Lang.get("en").get))
+  implicit val requests: Request[_] = FakeRequest()
 
   "calling Alterations Activity Page" should {
 
