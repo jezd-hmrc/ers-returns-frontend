@@ -39,51 +39,56 @@ trait CheckFileTypeController extends ERSReturnBaseController with Authenticator
   val contentUtil = ContentUtil
   val cacheUtil: CacheUtil
 
-  def checkFileTypePage() = AuthenticatedBy(ERSGovernmentGateway, pageVisibilityPredicate).async {
+  def checkFileTypePage(): Action[AnyContent] = AuthenticatedBy(ERSGovernmentGateway, pageVisibilityPredicate).async {
     implicit authContext =>
       implicit request =>
-        showCheckFileTypePage(authContext, request, hc)
+          showCheckFileTypePage()(authContext, request, hc)
+
   }
 
-  def showCheckFileTypePage(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    cacheUtil.fetch[CheckFileType](CacheUtil.FILE_TYPE_CACHE, schemeRef).map { fileType =>
-      Ok(views.html.check_file_type(fileType.checkFileType, RsFormMappings.checkFileTypeForm.fill(fileType)))
-    } recover {
-      case e: NoSuchElementException => {
-        val form = CheckFileType(Some(""))
-        Ok(views.html.check_file_type(Some(""), RsFormMappings.checkFileTypeForm.fill(form)))
+  def showCheckFileTypePage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+
+    (for {
+      requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
+      fileType      <- cacheUtil.fetch[CheckFileType](CacheUtil.FILE_TYPE_CACHE, requestObject.getSchemeReference).recover{
+        case _: NoSuchElementException => CheckFileType(Some(""))
       }
+    } yield {
+      Ok(views.html.check_file_type(requestObject, fileType.checkFileType, RsFormMappings.checkFileTypeForm.fill(fileType)))
+    }).recover{
+      case e: Throwable =>
+        Logger.error(s"Rendering CheckFileType view failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
+        getGlobalErrorPage
     }
   }
 
-  def checkFileTypeSelected() = AuthenticatedBy(ERSGovernmentGateway, pageVisibilityPredicate).async {
+  def checkFileTypeSelected(): Action[AnyContent] = AuthenticatedBy(ERSGovernmentGateway, pageVisibilityPredicate).async {
     implicit authContext =>
       implicit request =>
-        showCheckFileTypeSelected(authContext, request, hc)
+          showCheckFileTypeSelected()(authContext, request, hc)
   }
 
-  def showCheckFileTypeSelected(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    RsFormMappings.checkFileTypeForm.bindFromRequest.fold(
-      errors => {
-        Future.successful(Ok(views.html.check_file_type(Some(""), errors)))
-      },
-      formData => {
-        val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-        cacheUtil.cache(CacheUtil.FILE_TYPE_CACHE, formData, schemeRef).map { res =>
-          if (formData.checkFileType.get == PageBuilder.OPTION_ODS) {
-            Redirect(routes.FileUploadController.uploadFilePage())
-          } else {
-            Redirect(routes.CheckCsvFilesController.checkCsvFilesPage())
-          }
-        }.recover {
-          case e: Exception => {
-            Logger.error("showCheckFileTypeSelected: Unable to save file type. Error: " + e.getMessage)
-            getGlobalErrorPage
+  def showCheckFileTypeSelected()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+    cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
+      RsFormMappings.checkFileTypeForm.bindFromRequest.fold(
+        errors => {
+          Future.successful(Ok(views.html.check_file_type(requestObject, Some(""), errors)))
+        },
+        formData => {
+          cacheUtil.cache(CacheUtil.FILE_TYPE_CACHE, formData, requestObject.getSchemeReference).map { _ =>
+            if (formData.checkFileType.contains(PageBuilder.OPTION_ODS)) {
+              Redirect(routes.FileUploadController.uploadFilePage())
+            } else {
+              Redirect(routes.CheckCsvFilesController.checkCsvFilesPage())
+            }
+          }.recover {
+            case e: Exception =>
+              Logger.error("showCheckFileTypeSelected: Unable to save file type. Error: " + e.getMessage)
+              getGlobalErrorPage
           }
         }
-      }
-    )
+      )
+    }
   }
 
   def getGlobalErrorPage(implicit request: Request[_], messages: Messages) = Ok(views.html.global_error(

@@ -75,7 +75,7 @@ case class CompanyDetailsList(companies: List[CompanyDetails])
 object CompanyDetailsList {
   implicit val format = Json.format[CompanyDetailsList]
 }
-case class GroupSchemeInfo(
+case class  GroupSchemeInfo(
                              groupScheme: Option[String],
                              groupSchemeType: Option[String]
 

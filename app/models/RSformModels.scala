@@ -16,7 +16,11 @@
 
 package models
 
+import org.joda.time.DateTime
+import play.api.i18n.Messages
 import play.api.libs.json.Json
+import play.api.mvc.Request
+import utils.{DateUtils, PageBuilder}
 
 case class RS_scheme(scheme: String)
 
@@ -111,25 +115,49 @@ case class RequestObject(
                           hmac: Option[String]
                           ) {
 
-  def getAORef() = aoRef.get
+  def toSchemeInfo: SchemeInfo =
+    SchemeInfo(
+      getSchemeReference,
+      DateTime.now,
+      getSchemeId,
+      getTaxYear,
+      getSchemeName,
+      getSchemeType
+    )
 
-  def getTaxYear() = taxYear.get
+  def toErsMetaData(implicit request: Request[AnyRef]): ErsMetaData = {
+    ErsMetaData(
+      toSchemeInfo,
+      request.remoteAddress,
+      aoRef,
+      getEmpRef,
+      agentRef,
+      None
+    )
+  }
 
-  def getSchemeReference() = ersSchemeRef.get
+  def getPageTitle(implicit messages: Messages) =
+    s"${messages(s"ers.scheme.$getSchemeType")} - ${messages(s"ers.scheme.title", getSchemeName)} - $getSchemeReference - ${DateUtils.getFullTaxYear(getTaxYear)}"
 
-  def getSchemeName() = schemeName.get
+  def getAORef = aoRef.getOrElse("")
 
-  def getSchemeType() = schemeType.get
+  def getTaxYear = taxYear.getOrElse("")
 
-  def getAgentRef() = agentRef.get
+  def getSchemeReference = ersSchemeRef.getOrElse("")
 
-  def getEmpRef() = empRef.getOrElse("")
+  def getSchemeName = schemeName.getOrElse("")
 
-  def getTS() = ts.getOrElse("")
+  def getSchemeType = schemeType.getOrElse("")
 
-  def getHMAC() = hmac.getOrElse("")
+  def getAgentRef = agentRef.getOrElse("")
 
-  def concatenateParameters() = {
+  def getEmpRef = empRef.getOrElse("")
+
+  def getTS = ts.getOrElse("")
+
+  def getHMAC = hmac.getOrElse("")
+
+  def concatenateParameters = {
     getNVPair("agentRef", agentRef) +
       getNVPair("aoRef", aoRef) +
       getNVPair("empRef", empRef) +
@@ -138,6 +166,17 @@ case class RequestObject(
       getNVPair("schemeType", schemeType) +
       getNVPair("taxYear", taxYear) +
       getNVPair("ts", ts)
+  }
+
+  def getSchemeId: String = {
+    getSchemeType.toUpperCase match {
+      case PageBuilder.CSOP => PageBuilder.SCHEME_CSOP
+      case PageBuilder.EMI => PageBuilder.SCHEME_EMI
+      case PageBuilder.SAYE => PageBuilder.SCHEME_SAYE
+      case PageBuilder.SIP => PageBuilder.SCHEME_SIP
+      case PageBuilder.OTHER => PageBuilder.SCHEME_OTHER
+      case _ => PageBuilder.DEFAULT
+    }
   }
 
   private def getNVPair(paramName: String, value: Option[String]): String = {
@@ -151,4 +190,8 @@ case class RequestObject(
       }
     }
   }
+}
+
+object RequestObject {
+  implicit val format = Json.format[RequestObject]
 }

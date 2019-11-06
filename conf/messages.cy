@@ -19,6 +19,14 @@ ers.nil = dim
 ers.invalidCharacters = Dileu cymeriadau annilys
 ers.uploaded =- WEDI’I UWCHLWYTHO
 ers.error.title = Heb awdurdod
+
+ers.scheme.CSOP = Cynllun Opsiwn Prynu Cyfranddaliadau Cwmni (CSOP)
+ers.scheme.EMI = Cymhellion Rheoli Mentrau (EMI)
+ers.scheme.SIP = Cynllun Cymell Cyfranddaliadau (SIP)
+ers.scheme.SAYE = Cynilo Wrth Ennill (SAYE)
+ers.scheme.OTHER = ARALL
+ers.scheme.title = Cynllun {0}
+
 ers.start.page_title = Cyflwyno eich Datganiad Blynyddol – Gwarantau ar Sail Cyflogaeth – GOV.UK
 ers.reportable_events.page_title = Digwyddiadau i’w nodi – Gwarantau ar Sail Cyflogaeth – GOV.UK
 ers.choose_file_type.page_title =Dewis math o ffeil – Gwarantau ar Sail Cyflogaeth – GOV.UK
@@ -570,7 +578,7 @@ ers.global.errors.try.later = Rhowch gynnig arall arni yn nes ymlaen.
 urbanner.message.text =Helpwch i wella gwasanaethau digidol drwy ymuno â phanel defnyddwyr CThEM (yn agor ffenestr newydd)
 urbanner.message.reject = Dim diolch
 
-ers.taxYear.text =' i '
+ers.taxYear.text =i
 ers.pdf.confirmation.submitted=Mae eich datganiad blynyddol ar gyfer {0} wedi’i gyflwyno ar gyfer blwyddyn dreth {1}.
 ers.pdf.scheme=Enw’r cynllun:
 ers.pdf.refcode=Cyfeirnod:

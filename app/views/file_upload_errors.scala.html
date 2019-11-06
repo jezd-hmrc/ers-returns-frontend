@@ -14,14 +14,13 @@
  * limitations under the License.
  *@
 
-@(scheme: String, schemeRef: String, sr: String, fileType: String)(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
-@schemeId = @{request.session.get("screenSchemeInfo").get.split(" - ").head}
+@(requestObject: RequestObject, fileType: String)(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
 @import utils.PageBuilder._
 @import views.html.templates._
 
 @ers_main(title = Messages("file_upload_errors.title") + " " + Messages("ers.title.postfix")) {
 
-	@reference()
+	@reference(requestObject.getPageTitle)
 
 	@if(fileType == OPTION_ODS){
 		<p class="font-xsmall"><a href="@routes.FileUploadController.uploadFilePage" class="link-back">@Html(Messages("ers.back"))</a></p>

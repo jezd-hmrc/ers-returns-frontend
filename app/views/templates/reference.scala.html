@@ -16,14 +16,10 @@
 
 @import utils.ErsMetaDataHelper
 
-@(screenSchemeInfo: Option[String] = None)(implicit request: Request[AnyRef], messages: Messages)
+@(screenSchemeInfo: String = "")(implicit request: Request[AnyRef], messages: Messages)
 <div class="reference">
     <p class="font-xsmall">
         <span class="visuallyhidden">@Html(Messages("ers.reference.info"))</span>
-        @if(screenSchemeInfo.isDefined) {
-            @Html(ErsMetaDataHelper.rewriteSchemeInfo(screenSchemeInfo.get).drop(3).take(100))
-        } else {
-            @Html(ErsMetaDataHelper.rewriteSchemeInfo(request.session.get("screenSchemeInfo").get).drop(3).take(100))
-        }
+            @screenSchemeInfo
     </p>
 </div>

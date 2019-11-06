@@ -47,4 +47,7 @@ object DateUtils {
     Logger.debug("The output is " + dateOut.format(originalDate))
     dateOut.format(originalDate)
   }
+
+  def getFullTaxYear(taxYear: String)(implicit messages: Messages): String =
+    s"${taxYear.take(4)} ${messages("ers.taxYear.text")} ${taxYear.take(2)}${taxYear.takeRight(2)}"
 }

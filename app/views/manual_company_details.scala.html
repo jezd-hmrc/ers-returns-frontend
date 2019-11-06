@@ -14,9 +14,9 @@
  * limitations under the License.
  *@
 
-@(index: Int, companyDetails: Form[models.CompanyDetails])(implicit request: Request[AnyRef], flash: Flash, context: config.ErsContext, messages: Messages)
+@(requestObject: RequestObject, index: Int, companyDetails: Form[models.CompanyDetails])(implicit request: Request[AnyRef], flash: Flash, context: config.ErsContext, messages: Messages)
 @* manual company details Template *@
-@schemeId = @{request.session.get("screenSchemeInfo").get.split(" - ").head}
+@schemeId = @{requestObject.getSchemeId}
 @import uk.gov.hmrc.play.views.html.helpers
 @import utils.PageBuilder._
 @import views.html.helpers.error_overview
@@ -27,7 +27,7 @@
 
 @ers_main(title = getPageElement(schemeId, "ers", "group_add.page_title") + " " + Messages("ers.title.postfix"), scripts) {
 
-	@reference()
+	@reference(requestObject.getPageTitle)
 	<p class="font-xsmall"><a href="@routes.GroupSchemeController.groupSchemePage" class="link-back">@Html(Messages("ers.back"))</a></p>
 	@header(getPageElement(schemeId, PAGE_MANUAL_COMPANY_DETAILS, "title"))
 	@helpers.form(action = routes.GroupSchemeController.manualCompanyDetailsSubmit(index)) {

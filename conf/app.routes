@@ -19,17 +19,9 @@ POST        /csv-file-upload/callback                       controllers.CsvFileU
 
 GET 		/                                               controllers.ReturnServiceController.hmacCheck()
 GET 		/start                                          controllers.ReturnServiceController.startPage()
-#GET		/startnew						                controllers.StartController.startPage()
-
-#GET 		/check-file					                    controllers.ReturnServiceController.checkFilePage()
-#GET 		/check-csv-file				                    controllers.ReturnServiceController.checkCSVFilePage()
-
-#POST 		/check-csv-file				                    controllers.UploadController.uploadCSVFiles(fileId: String)
-
 
 GET 		/reportable-events			                    controllers.ReportableEventsController.reportableEventsPage()
 POST 		/reportable-events			                    controllers.ReportableEventsController.reportableEventsSelected()
-
 
 GET         /unauthorised                                   controllers.ApplicationController.unauthorised
 GET         /file-validation-results                        controllers.FileUploadController.validationResults()
@@ -44,13 +36,8 @@ POST        /choose-csv-files                               controllers.CheckCsv
 GET 		/group-scheme   			                    controllers.GroupSchemeController.groupSchemePage()
 POST 		/group-scheme   				                controllers.GroupSchemeController.groupSchemeSelected(scheme: String)
 
-#GET 		/group-type					                    controllers.GroupSchemeController.groupSchemeTypePage()
-#POST 		/group-type						                controllers.GroupSchemeController.groupSchemeTypeSelected(scheme: String)
-
 GET 		/subsidiary-company-summary	                    controllers.GroupSchemeController.groupPlanSummaryPage()
 POST 		/subsidiary-company-summary		                controllers.GroupSchemeController.groupPlanSummaryContinue(scheme: String)
-
-#GET 		/group-check-csv-file		                    controllers.GroupSchemeController.groupCheckCSVFilePage()
 
 GET         /choose-file-type				                controllers.CheckFileTypeController.checkFileTypePage()
 POST        /choose-file-type				                controllers.CheckFileTypeController.checkFileTypeSelected()
@@ -85,6 +72,4 @@ GET 		/confirmation/:bundle 		                    controllers.PdfGenerationContr
 
 GET         /retrieve-submission-data                       controllers.SubmissionDataController.retrieveSubmissionData()
 
-
 GET        /language/:lang                                  @controllers.LanguageSwitchController.switchToLanguage(lang: String)
-

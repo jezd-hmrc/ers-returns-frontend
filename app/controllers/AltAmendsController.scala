@@ -45,70 +45,71 @@ trait AltAmendsController extends ERSReturnBaseController with Authenticator wit
   }
 
   def showAltActivityPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val schemeRef: String = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    cacheUtil.fetch[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, schemeRef).flatMap { groupSchemeActivity =>
-      cacheUtil.fetch[AltAmendsActivity](CacheUtil.altAmendsActivity, schemeRef).map { altAmendsActivity =>
-        Ok(views.html.alterations_activity(altAmendsActivity.altActivity,
-          groupSchemeActivity.groupScheme.getOrElse(PageBuilder.DEFAULT),
-          RsFormMappings.altActivityForm.fill(altAmendsActivity)))
-      } recover {
-        case e: NoSuchElementException => {
-          val form = AltAmendsActivity("")
-          Ok(views.html.alterations_activity("", groupSchemeActivity.groupScheme.getOrElse(PageBuilder.DEFAULT), RsFormMappings.altActivityForm.fill(form)))
-        }
+
+    (for {
+      requestObject     <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
+      groupSchemeInfo   <- cacheUtil.fetch[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, requestObject.getSchemeReference)
+      altAmendsActivity <- cacheUtil.fetch[AltAmendsActivity](CacheUtil.altAmendsActivity, requestObject.getSchemeReference).recover {
+        case _: NoSuchElementException => AltAmendsActivity("")
       }
-    } recover {
-      case e: Throwable => {
-        Logger.error(s"showAltActivityPage: Get data from cache failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
-        getGlobalErrorPage
+    } yield {
+
+      Ok(views.html.alterations_activity(requestObject, altAmendsActivity.altActivity,
+        groupSchemeInfo.groupScheme.getOrElse(PageBuilder.DEFAULT),
+        RsFormMappings.altActivityForm.fill(altAmendsActivity)))
+      }).recover {
+        case e: Exception =>
+          Logger.error(s"Rendering AltAmends view failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
+          getGlobalErrorPage
       }
-    }
   }
+
 
   def altActivitySelected(): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        showAltActivitySelected()(user, request, hc)
+          showAltActivitySelected()(user, request, hc)
+
   }
 
   def showAltActivitySelected()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val schemeRef = try {
-      cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    } catch {
-      case _: Throwable => return Future(getGlobalErrorPage)
-    }
 
-    RsFormMappings.altActivityForm.bindFromRequest.fold(
-      errors => {
-        Future.successful(Ok(views.html.alterations_activity("", "", errors)))
-      },
-      formData => {
-        cacheUtil.cache(CacheUtil.altAmendsActivity, formData, schemeRef).map { _ =>
-          formData.altActivity match {
-            case PageBuilder.OPTION_NO => Redirect(routes.SummaryDeclarationController.summaryDeclarationPage())
-            case PageBuilder.OPTION_YES => Redirect(routes.AltAmendsController.altAmendsPage())
+    cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
+      RsFormMappings.altActivityForm.bindFromRequest.fold(
+        errors => {
+          Future.successful(Ok(views.html.alterations_activity(requestObject, "", "", errors)))
+        },
+        formData => {
+          cacheUtil.cache(CacheUtil.altAmendsActivity, formData, requestObject.getSchemeReference).map { _ =>
+            formData.altActivity match {
+              case PageBuilder.OPTION_NO => Redirect(routes.SummaryDeclarationController.summaryDeclarationPage())
+              case PageBuilder.OPTION_YES => Redirect(routes.AltAmendsController.altAmendsPage())
+            }
+          }.recover {
+            case e: Throwable =>
+              Logger.error(s"showAltActivitySelected: Save data to cache failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
+              getGlobalErrorPage
           }
-        } recover {
-          case e: Throwable =>
-            Logger.error(s"showAltActivitySelected: Save data to cache failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
-            getGlobalErrorPage
         }
-      }
-    )
+      )
+    }
   }
 
   def altAmendsPage(): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        showAltAmendsPage()(user, request, hc)
+          showAltAmendsPage()(user, request, hc)
   }
 
   def showAltAmendsPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val schemeRef: String = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    cacheUtil.fetch[AltAmends](CacheUtil.ALT_AMENDS_CACHE_CONTROLLER, schemeRef).map { altAmends =>
-      Ok(views.html.alterations_amends(altAmends))
-    } recover {
-      case e: NoSuchElementException => Ok(views.html.alterations_amends(AltAmends(None, None, None, None, None)))
+
+    for {
+      requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
+      altAmends     <- cacheUtil.fetchOption[AltAmends](CacheUtil.ALT_AMENDS_CACHE_CONTROLLER, requestObject.getSchemeReference).recover {
+        case _: Throwable => None
+      }
+    } yield {
+      Ok(views.html.alterations_amends(requestObject, altAmends.getOrElse(AltAmends(None, None, None, None, None))))
     }
   }
 
@@ -119,39 +120,32 @@ trait AltAmendsController extends ERSReturnBaseController with Authenticator wit
   }
 
   def showAltAmendsSelected()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val schemeId = request.session.get(screenSchemeInfo).get.split(" - ").head
-    RsFormMappings.altAmendsForm.bindFromRequest.fold(
-      formWithErrors => {
-        Future.successful(Redirect(routes.AltAmendsController.altAmendsPage()).flashing("alt-amends-not-selected-error" -> PageBuilder.getPageElement(schemeId, PageBuilder.PAGE_ALT_AMENDS, "err.message")))
-      },
-      formData => {
-        val altAmends = AltAmends(
-          if (formData.altAmendsTerms != None) formData.altAmendsTerms else Option("0"),
-          if (formData.altAmendsEligibility != None) formData.altAmendsEligibility else Option("0"),
-          if (formData.altAmendsExchange != None) formData.altAmendsExchange else Option("0"),
-          if (formData.altAmendsVariations != None) formData.altAmendsVariations else Option("0"),
-          if (formData.altAmendsOther != None) formData.altAmendsOther else Option("0")
-        )
-        val schemeId = request.session.get(screenSchemeInfo).get.split(" - ").head
-        val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-        cacheUtil.cache(CacheUtil.ALT_AMENDS_CACHE_CONTROLLER, altAmends, schemeRef).flatMap { all =>
-          if (formData.altAmendsTerms == None
-            && formData.altAmendsEligibility == None
-            && formData.altAmendsExchange == None
-            && formData.altAmendsVariations == None
-            && formData.altAmendsOther == None) {
-            Future.successful(Redirect(routes.AltAmendsController.altAmendsPage()).flashing("alt-amends-not-selected-error" -> PageBuilder.getPageElement(schemeId, PageBuilder.PAGE_ALT_AMENDS, "err.message")))
-          } else {
-            Future.successful(Redirect(routes.SummaryDeclarationController.summaryDeclarationPage()))
-          }
-        } recover {
-          case e: Throwable => {
-            Logger.error(s"showAltAmendsSelected: Save data to cache failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
-            getGlobalErrorPage
+
+    cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
+      RsFormMappings.altAmendsForm.bindFromRequest.fold(
+        formWithErrors => {
+          Future.successful(Redirect(routes.AltAmendsController.altAmendsPage()).flashing("alt-amends-not-selected-error" -> PageBuilder.getPageElement(requestObject.getSchemeId, PageBuilder.PAGE_ALT_AMENDS, "err.message")))
+        },
+        formData => {
+          cacheUtil.cache(CacheUtil.ALT_AMENDS_CACHE_CONTROLLER, formData, requestObject.getSchemeReference).flatMap { all =>
+            if (formData.altAmendsTerms.isEmpty
+              && formData.altAmendsEligibility.isEmpty
+              && formData.altAmendsExchange.isEmpty
+              && formData.altAmendsVariations.isEmpty
+              && formData.altAmendsOther.isEmpty) {
+              Future.successful(Redirect(routes.AltAmendsController.altAmendsPage()).flashing("alt-amends-not-selected-error" -> PageBuilder.getPageElement(requestObject.getSchemeId, PageBuilder.PAGE_ALT_AMENDS, "err.message")))
+            } else {
+              Future.successful(Redirect(routes.SummaryDeclarationController.summaryDeclarationPage()))
+            }
+          } recover {
+            case e: Throwable => {
+              Logger.error(s"showAltAmendsSelected: Save data to cache failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
+              getGlobalErrorPage
+            }
           }
         }
-      }
-    )
+      )
+    }
   }
 
   def getGlobalErrorPage(implicit request: Request[_], messages: Messages) = Ok(views.html.global_error(

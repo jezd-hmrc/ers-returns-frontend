@@ -16,7 +16,8 @@
 
 package utils
 
+object SessionKeys {
 
-object ErsMetaDataHelper {
-
+  val BUNDLE_REF = "bundleRef"
+  val DATE_TIME_SUBMITTED = "dateTimeSubmitted"
 }

@@ -14,8 +14,8 @@
  * limitations under the License.
  *@
 
-@(checkFileType: String, schemeOrganiser: Form[models.SchemeOrganiserDetails], reportableEvents: String = "2")(implicit request: Request[AnyRef], flash: Flash, context: config.ErsContext, messages: Messages)
-@schemeId = @{request.session.get("screenSchemeInfo").get.split(" - ").head}
+@(requestObject: RequestObject, checkFileType: String, schemeOrganiser: Form[models.SchemeOrganiserDetails], reportableEvents: String = "2")(implicit request: Request[AnyRef], flash: Flash, context: config.ErsContext, messages: Messages)
+@schemeId = @{requestObject.getSchemeId}
 @import uk.gov.hmrc.play.views.html.helpers
 @import utils.PageBuilder._
 @import views.html.helpers.error_overview
@@ -28,7 +28,7 @@
 
 @ers_main(title = getPageElement(schemeId, PAGE_SCHEME_ORGANISER, "title") + " " + Messages("ers.title.postfix"), scripts) {
 
-	@reference()
+	@reference(requestObject.getPageTitle)
 	<p class="font-xsmall"><a href="@getPageBackLink(schemeId, PAGE_SCHEME_ORGANISER, checkFileType, reportableEvents)" class="link-back">@Html(Messages("ers.back"))</a></p>
 	@header(getPageElement(schemeId, PAGE_SCHEME_ORGANISER, "title"))
 	@helpers.form(action = routes.SchemeOrganiserController.schemeOrganiserSubmit) {
@@ -37,11 +37,11 @@
 	<div class="form-field-group">
 		<fieldset class="inline">
 			<legend class="form-label">@Messages("ers_scheme_organiser.question")</legend>
-			<label class="block-label @if(schemeOrganiser(schemeOrganiserFields.country).value == Some(DEFAULT_COUNTRY) || schemeOrganiser(schemeOrganiserFields.country).value == None) {selected}" for="uk-radio-button">
-				<input id="uk-radio-button" name="radio-inline-group" value="1" type="radio" @if(schemeOrganiser(schemeOrganiserFields.country).value == Some(DEFAULT_COUNTRY) || schemeOrganiser(schemeOrganiserFields.country).value == None) {checked="checked"}>@Messages("ers_scheme_organiser.uk")
+			<label class="block-label @if(schemeOrganiser(schemeOrganiserFields.country).value.contains(DEFAULT_COUNTRY) || schemeOrganiser(schemeOrganiserFields.country).value.isEmpty) {selected}" for="uk-radio-button">
+				<input id="uk-radio-button" name="radio-inline-group" value="1" type="radio" @if(schemeOrganiser(schemeOrganiserFields.country).value.contains(DEFAULT_COUNTRY) || schemeOrganiser(schemeOrganiserFields.country).value.isEmpty) {checked="checked"}>@Messages("ers_scheme_organiser.uk")
 			</label>
-			<label class="block-label @if(schemeOrganiser(schemeOrganiserFields.country).value != Some(DEFAULT_COUNTRY) && schemeOrganiser(schemeOrganiserFields.country).value != None) {selected}" for="overseas-radio-button">
-				<input id="overseas-radio-button" name="radio-inline-group" value="2" type="radio" @if(schemeOrganiser(schemeOrganiserFields.country).value != Some(DEFAULT_COUNTRY) && schemeOrganiser(schemeOrganiserFields.country).value != None) {checked="checked"}>@Messages("ers_scheme_organiser.overseas")
+			<label class="block-label @if(!schemeOrganiser(schemeOrganiserFields.country).value.contains(DEFAULT_COUNTRY) && schemeOrganiser(schemeOrganiserFields.country).value.isDefined) {selected}" for="overseas-radio-button">
+				<input id="overseas-radio-button" name="radio-inline-group" value="2" type="radio" @if(!schemeOrganiser(schemeOrganiserFields.country).value.contains(DEFAULT_COUNTRY) && schemeOrganiser(schemeOrganiserFields.country).value.isDefined) {checked="checked"}>@Messages("ers_scheme_organiser.overseas")
 			</label>
 		</fieldset>
 	</div>

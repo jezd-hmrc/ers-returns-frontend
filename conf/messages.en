@@ -24,6 +24,12 @@ ers.invalidCharacters = Remove invalid characters
 ers.uploaded = - UPLOADED
 ers.error.title = Unauthorised
 
+ers.scheme.CSOP = CSOP
+ers.scheme.EMI = EMI
+ers.scheme.SIP = SIP
+ers.scheme.SAYE = SAYE
+ers.scheme.OTHER = OTHER
+ers.scheme.title = {0} scheme
 
 #********************************************************************
 # File upload messages
@@ -745,5 +751,5 @@ ers.pdf.scheme=Scheme name:
 ers.pdf.refcode=Reference code:
 ers.pdf.date_and_time=Date and time submitted:
 ers.pdf.summary_information=Summary information
-ers.taxYear.text=' to '
+ers.taxYear.text=to
 ers.pdf.header=HM Revenue & Customs

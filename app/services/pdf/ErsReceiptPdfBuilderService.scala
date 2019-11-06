@@ -19,10 +19,9 @@ package services.pdf
 import java.io.ByteArrayOutputStream
 
 import models.ErsSummary
-import org.joda.time.format.DateTimeFormat
 import play.api.Logger
 import play.api.i18n.Messages
-import utils.{ContentUtil, DateUtils, ErsMetaDataHelper}
+import utils.{ContentUtil, DateUtils}
 
 import scala.collection.mutable.ListBuffer
 
@@ -56,7 +55,7 @@ trait ErsReceiptPdfBuilderService {
     streamer.drawText("", blockSpacer)
 
     val confirmationMessage = Messages("ers.pdf.confirmation.submitted",
-      ContentUtil.getSchemeAbbreviation(ersMetaData.schemeInfo.schemeType),ErsMetaDataHelper.getFullTaxYear(ersSummary.metaData.schemeInfo.taxYear))
+      ContentUtil.getSchemeAbbreviation(ersMetaData.schemeInfo.schemeType), DateUtils.getFullTaxYear(ersSummary.metaData.schemeInfo.taxYear))
 
     streamer.drawText(confirmationMessage, headingFontSize)
     streamer.drawText("", lineSpacer)

@@ -39,31 +39,32 @@ trait SchemeOrganiserController extends ERSReturnBaseController with Authenticat
   def schemeOrganiserPage() = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        showSchemeOrganiserPage()(user, request, hc)
+        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
+          showSchemeOrganiserPage(requestObject)(user, request, hc)
+        }
   }
 
-  def showSchemeOrganiserPage()(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Result] = {
-    val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    Logger.warn(s"SchemeOrganiserController: showSchemeOrganiserPage:  schemeRef: ${schemeRef}.")
+  def showSchemeOrganiserPage(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Result] = {
+    Logger.warn(s"SchemeOrganiserController: showSchemeOrganiserPage:  schemeRef: ${requestObject.getSchemeReference}.")
 
-    cacheUtil.fetch[ReportableEvents](CacheUtil.reportableEvents, schemeRef).flatMap { reportableEvent =>
-      cacheUtil.fetchOption[CheckFileType](CacheUtil.FILE_TYPE_CACHE, schemeRef).flatMap { fileType =>
-        cacheUtil.fetch[SchemeOrganiserDetails](CacheUtil.SCHEME_ORGANISER_CACHE, schemeRef).map { res =>
+    cacheUtil.fetch[ReportableEvents](CacheUtil.reportableEvents, requestObject.getSchemeReference).flatMap { reportableEvent =>
+      cacheUtil.fetchOption[CheckFileType](CacheUtil.FILE_TYPE_CACHE, requestObject.getSchemeReference).flatMap { fileType =>
+        cacheUtil.fetch[SchemeOrganiserDetails](CacheUtil.SCHEME_ORGANISER_CACHE, requestObject.getSchemeReference).map { res =>
           val FileType = if (fileType.isDefined) {
             fileType.get.checkFileType.get
           } else {
             ""
           }
-          Ok(views.html.scheme_organiser(FileType, RsFormMappings.schemeOrganiserForm.fill(res), reportableEvent.isNilReturn.get))
+          Ok(views.html.scheme_organiser(requestObject, FileType, RsFormMappings.schemeOrganiserForm.fill(res), reportableEvent.isNilReturn.get))
         } recover {
           case e: NoSuchElementException =>
             val form = SchemeOrganiserDetails("", "", Some(""), Some(""), Some(""), Some(PageBuilder.DEFAULT_COUNTRY), Some(""), Some(""), Some(""))
-            Ok(views.html.scheme_organiser(fileType.get.checkFileType.get, RsFormMappings.schemeOrganiserForm.fill(form), reportableEvent.isNilReturn.get))
+            Ok(views.html.scheme_organiser(requestObject, fileType.get.checkFileType.get, RsFormMappings.schemeOrganiserForm.fill(form), reportableEvent.isNilReturn.get))
         }
       } recover {
         case e: NoSuchElementException =>
           val form = SchemeOrganiserDetails("", "", Some(""), Some(""), Some(""), Some(PageBuilder.DEFAULT_COUNTRY), Some(""), Some(""), Some(""))
-          Ok(views.html.scheme_organiser("", RsFormMappings.schemeOrganiserForm.fill(form), reportableEvent.isNilReturn.get))
+          Ok(views.html.scheme_organiser(requestObject, "", RsFormMappings.schemeOrganiserForm.fill(form), reportableEvent.isNilReturn.get))
       }
     } recover {
       case e: Exception => {
@@ -76,29 +77,30 @@ trait SchemeOrganiserController extends ERSReturnBaseController with Authenticat
   def schemeOrganiserSubmit() = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        showSchemeOrganiserSubmit()(user, request, hc)
+        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
+          showSchemeOrganiserSubmit(requestObject)(user, request, hc)
+        }
   }
 
-  def showSchemeOrganiserSubmit()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showSchemeOrganiserSubmit(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     RsFormMappings.schemeOrganiserForm.bindFromRequest.fold(
       errors => {
         val correctOrder = errors.errors.map(_.key).distinct
         val incorrectOrderGrouped = errors.errors.groupBy(_.key).map(_._2.head).toSeq
         val correctOrderGrouped = correctOrder.flatMap(x => incorrectOrderGrouped.find(_.key == x))
         val firstErrors: Form[models.SchemeOrganiserDetails] = new Form[SchemeOrganiserDetails](errors.mapping, errors.data, correctOrderGrouped, errors.value)
-        Future.successful(Ok(views.html.scheme_organiser("", firstErrors)))
+        Future.successful(Ok(views.html.scheme_organiser(requestObject, "", firstErrors)))
       },
       successful => {
-        val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
+
         Logger.warn(s"SchemeOrganiserController: showSchemeOrganiserSubmit:  schemeRef: ${schemeRef}.")
 
-        cacheUtil.cache(CacheUtil.SCHEME_ORGANISER_CACHE, successful, schemeRef).map {
-          res => Redirect(routes.GroupSchemeController.groupSchemePage)
+        cacheUtil.cache(CacheUtil.SCHEME_ORGANISER_CACHE, successful, requestObject.getSchemeReference).map {
+          _ => Redirect(routes.GroupSchemeController.groupSchemePage)
         } recover {
-          case e: Exception => {
+          case e: Exception =>
             Logger.error(s"Save scheme organiser details failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
             getGlobalErrorPage
-          }
         }
       }
     )

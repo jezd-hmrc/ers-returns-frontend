@@ -70,33 +70,33 @@ class GeneratePdfControllerSpec extends UnitSpec with ERSFakeApplicationConfig w
 
     "direct to errors page if fetch all res pdf throws exception" in {
       val controller = createController(fetchAllRes = false)
-      val result = await(controller.generatePdf("", "")(buildFakeUser, buildFakeRequestWithSessionIdCSOP("GET"), hc))
+      val result = await(controller.generatePdf(ersRequestObject, "", "")(buildFakeUser, buildFakeRequestWithSessionIdCSOP("GET"), hc))
       contentAsString(result) should include(messages("ers.global_errors.message"))
       contentAsString(result) shouldBe contentAsString(createController().getGlobalErrorPage)
     }
 
     "direct to errors page if get all data res pdf throws exception" in {
       val controller = createController(getAllDataRes = false)
-      val result = await(controller.generatePdf("", "")(buildFakeUser, buildFakeRequestWithSessionIdCSOP("GET"), hc))
+      val result = await(controller.generatePdf(ersRequestObject, "", "")(buildFakeUser, buildFakeRequestWithSessionIdCSOP("GET"), hc))
       contentAsString(result) should include(messages("ers.global_errors.message"))
       contentAsString(result) shouldBe contentAsString(createController().getGlobalErrorPage)
     }
 
     "use bundle ref to generate the confirmation pdf filename (NilReturn)" in {
       val controller = createController()
-      val res = await(controller.generatePdf("123456", "8 August 2016, 4:28pm")(buildFakeUser, buildFakeRequestWithSessionId("GET"), hc))
+      val res = await(controller.generatePdf(ersRequestObject, "123456", "8 August 2016, 4:28pm")(buildFakeUser, buildFakeRequestWithSessionId("GET"), hc))
       res.header.headers("Content-Disposition") should include("123456-confirmation.pdf")
     }
 
     "use bundle ref to generate the confirmation pdf filename (CSV File submission)" in {
       val controller = createController(isNilReturn = false)
-      val res = await(controller.generatePdf("123456", "8 August 2016, 4:28pm")(buildFakeUser, buildFakeRequestWithSessionId("GET"), hc))
+      val res = await(controller.generatePdf(ersRequestObject, "123456", "8 August 2016, 4:28pm")(buildFakeUser, buildFakeRequestWithSessionId("GET"), hc))
       res.header.headers("Content-Disposition") should include("123456-confirmation.pdf")
     }
 
     "use bundle ref to generate the confirmation pdf filename (ODS File submission)" in {
       val controller = createController(isNilReturn = false, fileTypeCSV = false)
-      val res = await(controller.generatePdf("123456", "8 August 2016, 4:28pm")(buildFakeUser, buildFakeRequestWithSessionId("GET"), hc))
+      val res = await(controller.generatePdf(ersRequestObject, "123456", "8 August 2016, 4:28pm")(buildFakeUser, buildFakeRequestWithSessionId("GET"), hc))
       res.header.headers("Content-Disposition") should include("123456-confirmation.pdf")
     }
 

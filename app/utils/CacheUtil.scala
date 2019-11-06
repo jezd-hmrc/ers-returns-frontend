@@ -43,6 +43,7 @@ trait CacheUtil {
   val largeFileStatus = "largefiles"
   val savedStatus = "saved"
   val ersMetaData: String = "ErsMetaData"
+  val ersRequestObject: String = "ErsRequestObject"
   val reportableEvents = "ReportableEvents"
   val GROUP_SCHEME_CACHE_CONTROLLER: String = "group-scheme-controller"
   val ALT_AMENDS_CACHE_CONTROLLER: String = "alt-amends-cache-controller"
@@ -88,8 +89,6 @@ trait CacheUtil {
   val IP_REF: String = "ip-ref"
 
   val VALIDATED_SHEEETS: String = "validated-sheets"
-
-  private val sourceId: String = "ers-eoy"
 
   def shortLivedCache: ShortLivedCache
 
@@ -236,9 +235,10 @@ trait CacheUtil {
   }}
 
   def getNoOfRows(nilReturn:String)(implicit hc: HeaderCarrier, ec: ExecutionContext, request: Request[AnyRef]): Future[Option[Int]] = {
-    isNilReturn(nilReturn:String) match {
-      case true => Future(None)
-      case _ => sessionService.retrieveCallbackData().map(res=> res.get.noOfRows)
+    if (isNilReturn(nilReturn: String)) {
+      Future(None)
+    } else {
+      sessionService.retrieveCallbackData().map(res => res.get.noOfRows)
     }
   }
 
@@ -246,14 +246,5 @@ trait CacheUtil {
     hc.sessionId.getOrElse(throw new RuntimeException("")).value
   }
 
-  def getSchemeRefFromScreenSchemeInfo(screenSchemeInfo:Option[String]):String = {
-    Logger.warn(s"CacheUtil: form getSchemeRefFromScreenSchemeInfo : ${screenSchemeInfo}.")
-    val schemeInfo = screenSchemeInfo.getOrElse("").split(" - ").init
-    if (schemeInfo.length == 0)
-      Logger.error(s"CacheUtil: screenSchemeInfo not in valid format : ${screenSchemeInfo}.")
-    schemeInfo.last
-  }
-
   def isNilReturn(nilReturn:String) :Boolean = (nilReturn == PageBuilder.OPTION_NIL_RETURN)
-
 }

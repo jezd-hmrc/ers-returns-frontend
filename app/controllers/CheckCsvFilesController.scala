@@ -44,15 +44,28 @@ trait CheckCsvFilesController extends ERSReturnBaseController with Authenticator
   }
 
   def showCheckCsvFilesPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    val schemeType = request.session.get(screenSchemeInfo).get.split(" - ")(1).toUpperCase()
-    val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
 
-    val csvFilesList: List[CsvFiles] = PageBuilder.getCsvFilesList(schemeType)
-    cacheUtil.fetch[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, schemeRef).map { cacheData =>
-      val mergeWithSelected: List[CsvFiles] = mergeCsvFilesListWithCsvFilesCallback(csvFilesList, cacheData)
-      Ok(views.html.check_csv_file(CsvFilesList(mergeWithSelected)))
-    }.recover {
-      case ex: NoSuchElementException => Ok(views.html.check_csv_file(CsvFilesList(csvFilesList)))
+    (for {
+      requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
+      cacheData     <- cacheUtil.fetchOption[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, requestObject.getSchemeReference).recover{
+        case _: NoSuchElementException => None
+      }
+    } yield {
+
+      val csvFilesList: List[CsvFiles] = PageBuilder.getCsvFilesList(requestObject.getSchemeType)
+
+      cacheData match {
+
+        case Some(data) =>
+          val mergeWithSelected: List[CsvFiles] = mergeCsvFilesListWithCsvFilesCallback(csvFilesList, data)
+
+          Ok(views.html.check_csv_file(requestObject, CsvFilesList(mergeWithSelected)))
+
+        case None =>
+          Ok(views.html.check_csv_file(requestObject, CsvFilesList(csvFilesList)))
+      }
+    })
+    .recover {
       case _: Throwable => getGlobalErrorPage
     }
   }
@@ -92,10 +105,14 @@ trait CheckCsvFilesController extends ERSReturnBaseController with Authenticator
       reloadWithError()
     }
     else {
-      val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-      cacheUtil.cache(CacheUtil.CHECK_CSV_FILES, CsvFilesCallbackList(csvFilesCallbackList), schemeRef).map { data =>
+
+      (for{
+        requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
+        _             <- cacheUtil.cache(CacheUtil.CHECK_CSV_FILES, CsvFilesCallbackList(csvFilesCallbackList), requestObject.getSchemeReference)
+      } yield {
+
         Redirect(routes.CsvFileUploadController.uploadFilePage())
-      }.recover {
+      }).recover {
         case e: Throwable => {
           Logger.error(s"checkCsvFilesPageSelected: Save data to cache failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
           getGlobalErrorPage

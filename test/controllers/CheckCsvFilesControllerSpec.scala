@@ -25,6 +25,7 @@ import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
 import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.JsString
 import play.api.mvc.{Request, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -35,6 +36,7 @@ import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures, PageBuilder}
 
 import scala.concurrent.Future
 import uk.gov.hmrc.http.HeaderCarrier
+import utils.Fixtures.ersRequestObject
 
 class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with OneAppPerSuite {
 
@@ -73,10 +75,14 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
     "show CheckCsvFilesPage if data is successfully extracted from cache" in {
       reset(mockCacheUtil)
       when(
-        mockCacheUtil.fetch[CsvFilesCallbackList](anyString(), anyString())(any(), any(), any())
+        mockCacheUtil.fetchOption[CsvFilesCallbackList](anyString(), anyString())(any(), any(), any())
       ).thenReturn(
-        Future.successful(mock[CsvFilesCallbackList])
+        Future.successful(Some(mock[CsvFilesCallbackList]))
       )
+      when(
+        mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
+      ).thenReturn(ersRequestObject)
+
       val result = await(checkCsvFilesController.showCheckCsvFilesPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       status(result) shouldBe OK
     }
@@ -84,10 +90,13 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
     "show CheckCsvFilesPage if there is no data in cache" in {
       reset(mockCacheUtil)
       when(
-        mockCacheUtil.fetch[CsvFilesCallbackList](anyString(), anyString())(any(), any(), any())
+        mockCacheUtil.fetchOption[CsvFilesCallbackList](anyString(), anyString())(any(), any(), any())
       ).thenReturn(
         Future.failed(new NoSuchElementException)
       )
+      when(
+        mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
+      ).thenReturn(ersRequestObject)
       val result = await(checkCsvFilesController.showCheckCsvFilesPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       status(result) shouldBe OK
     }
@@ -95,10 +104,13 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
     "direct to ers errors page if fetching data throws exception" in {
       reset(mockCacheUtil)
       when(
-        mockCacheUtil.fetch[CsvFilesCallbackList](anyString(), anyString())(any(), any(), any())
+        mockCacheUtil.fetchOption[CsvFilesCallbackList](anyString(), anyString())(any(), any(), any())
       ).thenReturn(
         Future.failed(new Exception)
       )
+      when(
+        mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
+      ).thenReturn(ersRequestObject)
       val result = await(checkCsvFilesController.showCheckCsvFilesPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       contentAsString(result) shouldBe contentAsString(checkCsvFilesController.getGlobalErrorPage)
       contentAsString(result) should include(messages("ers.global_errors.message"))
@@ -165,6 +177,7 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
       override val pageBuilder: PageBuilder = mock[PageBuilder]
 
       override def performCsvFilesPageSelected(formData: CsvFilesList)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future.successful(Ok)
+
     }
 
     "return the result of performCsvFilesPageSelected if data is valid" in {
@@ -228,10 +241,13 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
       reset(mockCacheUtil)
 
       when(
+        mockCacheUtil.fetch[RequestObject](refEq(mockCacheUtil.ersRequestObject))(any(), any(), any(), any())
+      ) thenReturn Future.successful(ersRequestObject)
+
+      when(
         mockListCsvFilesCallback.length
-      ).thenReturn(
-        0
-      )
+      ) thenReturn 0
+
 
       val result = await(checkCsvFilesController.performCsvFilesPageSelected(formData)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("POST"), hc))
       status(result) shouldBe SEE_OTHER
@@ -244,19 +260,21 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
 
       when(
         mockListCsvFilesCallback.length
-      ).thenReturn(
-        1
-      )
+      ) thenReturn 1
+
+
+      when(
+        mockCacheUtil.fetch[RequestObject](refEq(mockCacheUtil.ersRequestObject))(any(), any(), any(), any())
+      ) thenReturn Future.successful(ersRequestObject)
 
       when(
         mockCacheUtil.cache(anyString(), any[CsvFilesCallbackList](), anyString())(any(), any(), any())
-      ).thenReturn(
-        Future.successful(mock[CacheMap])
-      )
+      ) thenReturn Future.successful(mock[CacheMap])
+
 
       val result = await(checkCsvFilesController.performCsvFilesPageSelected(formData)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("POST"), hc))
       status(result) shouldBe SEE_OTHER
-      result.header.headers("Location") should not be ""
+      result.header.headers("Location") should include ("/upload-")
     }
 
     "direct to ers errors page if createCacheData returns list with data and caching fails" in {
@@ -265,15 +283,39 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
 
       when(
         mockListCsvFilesCallback.length
-      ).thenReturn(
-        1
-      )
+      ) thenReturn 1
+
+      when(
+        mockCacheUtil.fetch[RequestObject](refEq(mockCacheUtil.ersRequestObject))(any(), any(), any(), any())
+      ) thenReturn Future.successful(ersRequestObject)
 
       when(
         mockCacheUtil.cache(anyString(), any[CsvFilesCallbackList](), anyString())(any(), any(), any())
-      ).thenReturn(
-        Future.failed(new RuntimeException)
-      )
+      ) thenReturn Future.failed(new RuntimeException)
+
+
+      val result = await(checkCsvFilesController.performCsvFilesPageSelected(formData)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("POST"), hc))
+      contentAsString(result) shouldBe contentAsString(checkCsvFilesController.getGlobalErrorPage)
+      contentAsString(result) should include(messages("ers.global_errors.message"))
+    }
+
+    "direct to ers errors page if fetching request object fails fails" in {
+      reset(mockListCsvFilesCallback)
+      reset(mockCacheUtil)
+
+      when(
+        mockListCsvFilesCallback.length
+      ) thenReturn 1
+
+
+      when(
+        mockCacheUtil.fetch[RequestObject](refEq(mockCacheUtil.ersRequestObject))(any(), any(), any(), any())
+      ) thenReturn Future.failed(new Exception)
+
+      when(
+        mockCacheUtil.cache(anyString(), any[CsvFilesCallbackList](), anyString())(any(), any(), any())
+      ) thenReturn Future.successful(mock[CacheMap])
+
 
       val result = await(checkCsvFilesController.performCsvFilesPageSelected(formData)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("POST"), hc))
       contentAsString(result) shouldBe contentAsString(checkCsvFilesController.getGlobalErrorPage)

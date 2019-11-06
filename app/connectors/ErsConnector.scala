@@ -28,7 +28,6 @@ import play.api.mvc.Request
 import uk.gov.hmrc.domain.EmpRef
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.frontend.auth.AuthContext
-import uk.gov.hmrc.play.http._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

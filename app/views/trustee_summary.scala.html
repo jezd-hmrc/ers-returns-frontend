@@ -14,17 +14,17 @@
  * limitations under the License.
  *@
 
-@(trustees: TrusteeDetailsList)(implicit request: Request[AnyRef], flash: Flash, context: config.ErsContext, messages: Messages)
+@(requestObject: RequestObject, trustees: TrusteeDetailsList)(implicit request: Request[AnyRef], flash: Flash, context: config.ErsContext, messages: Messages)
 
 @import views.html.templates._
 @import utils.PageBuilder._
-@schemeId = @{request.session.get("screenSchemeInfo").get.split(" - ").head}
+@schemeId = @{requestObject.getSchemeId}
 @import utils.CountryCodes._
 
 
 @ers_main(title = Messages("ers.trustees.page_title")) {
 
-    @reference()
+    @reference(requestObject.getPageTitle)
     <p class="font-xsmall"><a href="@routes.TrusteeController.trusteeDetailsPage()" class="link-back">@Html(Messages("ers.back"))</a></p>
     @header(Messages("ers_trustee_summary.title"))
     @uk.gov.hmrc.play.views.html.helpers.form(action = routes.TrusteeController.trusteeSummaryContinue()) {

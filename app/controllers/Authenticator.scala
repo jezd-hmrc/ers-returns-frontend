@@ -16,7 +16,7 @@
 
 package controllers
 
-import models.ErsMetaData
+import models.{ErsMetaData, RequestObject}
 import play.api.libs.json.Json
 import play.api.mvc._
 import uk.gov.hmrc.domain.EmpRef
@@ -56,12 +56,15 @@ trait Authenticator extends Actions with ErsConstants {
 
   def FilterAgentsWrapper(authContext: AuthContext, body: UserRequest)(implicit hc: HeaderCarrier, request: Request[AnyContent]): Future[Result] = {
     implicit val formatRSParams = Json.format[ErsMetaData]
-    val defined = authContext.principal.accounts.agent.isDefined
-    if (defined) {
-      val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-      cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, schemeRef).map { all =>
+    if (authContext.principal.accounts.agent.isDefined) {
+
+      for {
+        requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
+        all           <- cacheUtil.fetch[ErsMetaData](cacheUtil.ersMetaData, requestObject.getSchemeReference)
+      } yield {
         body(delegationModelUser(all, authContext: AuthContext))(request)
       }
+
     } else {
       Future {body(authContext)(request)}
     }
@@ -70,11 +73,14 @@ trait Authenticator extends Actions with ErsConstants {
   def FilterAgentsWrapperAsync(authContext: AuthContext, body: AsyncUserRequest)
                               (implicit hc: HeaderCarrier, request: Request[AnyContent]): Future[Result] = {
     implicit val formatRSParams = Json.format[ErsMetaData]
-    val defined = authContext.principal.accounts.agent.isDefined
-    if (defined) {
-      val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-      cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, schemeRef).flatMap { all =>
-        body(delegationModelUser(all, authContext: AuthContext))(request)
+    if (authContext.principal.accounts.agent.isDefined) {
+
+      for {
+        requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
+        all           <- cacheUtil.fetch[ErsMetaData](cacheUtil.ersMetaData, requestObject.getSchemeReference)
+        result        <- body(delegationModelUser(all, authContext: AuthContext))(request)
+      } yield {
+        result
       }
     } else {
       body(authContext)(request)

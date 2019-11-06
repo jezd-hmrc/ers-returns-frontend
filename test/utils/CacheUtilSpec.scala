@@ -38,6 +38,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.logging.SessionId
+import utils.SessionKeys.BUNDLE_REF
 
 class CacheUtilSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with OneAppPerSuite with ERSFakeApplicationConfig {
 
@@ -229,7 +230,7 @@ class CacheUtilSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach w
           }
         }
       }
-      val result = await(cacheUtil.getAllData("bundleRef", rsc))
+      val result = await(cacheUtil.getAllData(BUNDLE_REF, rsc))
       result.isNilReturn shouldBe PageBuilder.OPTION_NIL_RETURN
     }
 
@@ -251,7 +252,7 @@ class CacheUtilSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach w
           }
         }
       }
-      val result = await(cacheUtil.getAllData("bundleRef", rsc))
+      val result = await(cacheUtil.getAllData(BUNDLE_REF, rsc))
       result.isNilReturn shouldBe PageBuilder.OPTION_NIL_RETURN
       result.fileType shouldBe Option("ods")
     }
@@ -275,7 +276,7 @@ class CacheUtilSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach w
         }
       }
       intercept[Exception] {
-        await(cacheUtil.getAllData("bundleRef", rsc))
+        await(cacheUtil.getAllData(BUNDLE_REF, rsc))
       }
     }
   }
@@ -481,29 +482,6 @@ class CacheUtilSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach w
       result._2 shouldBe None
 
     }
-
-  }
-
-  "getSchemeRef" should {
-
-    val cacheUtil: CacheUtil = new CacheUtil {
-      override def shortLivedCache: ShortLivedCache = mockShortLivedCache
-
-      override val sessionService: SessionService = mockSessionCache
-    }
-
-    "return schemeRef from given string" in {
-      val screenSchemeInfo = "metaData.schemeInfo.schemeId - metaData.schemeInfo.schemeType - metaData.schemeInfo.schemeName - metaData.schemeInfo.schemeRef - taxYear"
-      cacheUtil.getSchemeRefFromScreenSchemeInfo(Some(screenSchemeInfo)) shouldBe "metaData.schemeInfo.schemeRef"
-    }
-
-    "throw NoSuchElementException if hyphens are replaced" in {
-      val screenSchemeInfo = "metaData.schemeInfo.schemeId | metaData.schemeInfo.schemeType | metaData.schemeInfo.schemeName | metaData.schemeInfo.schemeRef | taxYear"
-      intercept[NoSuchElementException] {
-        cacheUtil.getSchemeRefFromScreenSchemeInfo(Some(screenSchemeInfo)) shouldBe "metaData.schemeInfo.schemeRef"
-      }
-    }
-
   }
 
   "cacheUtil" should {

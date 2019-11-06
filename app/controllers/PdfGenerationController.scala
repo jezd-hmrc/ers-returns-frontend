@@ -40,29 +40,28 @@ trait PdfGenerationController extends ERSReturnBaseController with Authenticator
   def buildPdfForBundle(bundle: String, dateSubmitted: String): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
-        generatePdf(bundle, dateSubmitted)
+        cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
+          generatePdf(requestObject, bundle, dateSubmitted)
+        }
   }
 
-  def generatePdf(bundle: String, dateSubmitted: String)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def generatePdf(requestObject: RequestObject, bundle: String, dateSubmitted: String)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
     Logger.debug("ers returns frontend getting into the controller to generate the pdf")
-    val ref: String = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
-    val cache: Future[ErsMetaData] = cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, ref)
+    val cache: Future[ErsMetaData] = cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, requestObject.getSchemeReference)
     cache.flatMap { all =>
       Logger.debug("ers returns frontend pdf generation: got the metadata")
       cacheUtil.getAllData(bundle, all).flatMap { alldata =>
         Logger.debug("ers returns frontend generation: got the cache map")
-        val schemeRef = cacheUtil.getSchemeRefFromScreenSchemeInfo(request.session.get(screenSchemeInfo))
 
-        cacheUtil.fetchAll(schemeRef).map { all =>
+        cacheUtil.fetchAll(requestObject.getSchemeReference).map { all =>
           val filesUploaded: ListBuffer[String] = ListBuffer()
-          val schemeId = request.session.get("screenSchemeInfo").get.split(" - ").head
           if (all.getEntry[ReportableEvents](CacheUtil.reportableEvents).get.isNilReturn.get == PageBuilder.OPTION_UPLOAD_SPREEDSHEET) {
             val fileType = all.getEntry[CheckFileType](CacheUtil.FILE_TYPE_CACHE).get.checkFileType.get
             if (fileType == PageBuilder.OPTION_CSV) {
               val csvFilesCallback: List[CsvFilesCallback] = all.getEntry[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES).get.files
               for (file <- csvFilesCallback if file.callbackData.isDefined) {
-                filesUploaded += PageBuilder.getPageElement(schemeId, PageBuilder.PAGE_CHECK_CSV_FILE, file.fileId + ".file_name")
+                filesUploaded += PageBuilder.getPageElement(requestObject.getSchemeId, PageBuilder.PAGE_CHECK_CSV_FILE, file.fileId + ".file_name")
               }
             } else {
               filesUploaded += all.getEntry[String](CacheUtil.FILE_NAME_CACHE).get
