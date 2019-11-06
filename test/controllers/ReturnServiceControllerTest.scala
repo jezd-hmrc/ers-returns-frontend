@@ -54,6 +54,7 @@ class ReturnServiceControllerTest extends UnitSpec with ERSFakeApplicationConfig
 
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val mat: Materializer = app.materializer
+  implicit val request: Request[_] = FakeRequest()
 
   lazy val mockHttp = mock[HttpPost]
   lazy val mockHttpGet = mock[HttpGet]

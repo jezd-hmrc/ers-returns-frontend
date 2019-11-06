@@ -25,6 +25,7 @@ import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, Json}
+import play.api.mvc.Request
 import play.api.test.Helpers._
 import play.api.test.{FakeHeaders, FakeRequest}
 import services.SessionService
@@ -38,6 +39,7 @@ class CsvFileUploadCallbackControllerSpec extends UnitSpec with ERSFakeApplicati
 
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val materializer: Materializer = app.materializer
+  implicit val request: Request[_] = FakeRequest()
 
   lazy val metaData: JsObject = Json.obj("surname" -> Fixtures.surname, "firstForename" -> Fixtures.firstName)
 

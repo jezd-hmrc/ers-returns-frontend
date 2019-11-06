@@ -30,7 +30,7 @@ import play.api.i18n.Messages
 import play.api.i18n.Messages.Implicits._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
-import play.api.mvc.{AnyContentAsEmpty, Result}
+import play.api.mvc.{AnyContentAsEmpty, Request, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.http.cache.client.CacheMap
@@ -45,6 +45,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
 
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val materializer: Materializer = app.materializer
+  implicit val request: Request[_] = FakeRequest()
 
   lazy val mockAuthConnector = mock[AuthConnector]
 

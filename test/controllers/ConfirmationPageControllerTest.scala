@@ -49,6 +49,7 @@ class ConfirmationPageControllerTest extends UnitSpec with ERSFakeApplicationCon
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val mat: Materializer = app.materializer
   implicit lazy val messages: Messages = Messages(Lang("en"), app.injector.instanceOf[MessagesApi])
+  implicit val request: Request[_] = FakeRequest()
 
   lazy val mockMetrics: Metrics = mock[Metrics]
 
