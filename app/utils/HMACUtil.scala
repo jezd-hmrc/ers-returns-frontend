@@ -67,7 +67,9 @@ trait HMACUtil {
       val now: DateTime = DateTime.now()
       val diff: Int = Seconds.secondsBetween(urlTime, now).getSeconds
 
-      if (diff <= TIME_RANGE) true
+      if (diff <= TIME_RANGE) {
+        return true
+      }
     }
     catch {
       case ne: NumberFormatException =>
