@@ -16,11 +16,12 @@
 
 package controllers
 
+import akka.actor.ActorSystem
 import config.{ApplicationConfig, ERSFileValidatorAuthConnector}
 import connectors.ErsConnector
 import models._
 import models.upscan._
-import play.api.Logger
+import play.api.{Logger, Play}
 import play.api.Play.current
 import play.api.i18n.Messages
 import play.api.i18n.Messages.Implicits._
@@ -43,6 +44,7 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
   val ersConnector: ErsConnector
   val appConfig: ApplicationConfig = ApplicationConfig
   val upscanService: UpscanService = current.injector.instanceOf[UpscanService]
+  implicit val actorSystem: ActorSystem = current.actorSystem
 
   def uploadFilePage(): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>
@@ -68,6 +70,7 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
   def success(uploadId: UploadId): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
+        logger.info(s"Upload form submitted for ID: $uploadId")
         (for {
           requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
           csvFileList   <- cacheUtil.fetch[UpscanCsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, requestObject.getSchemeReference)
@@ -131,9 +134,7 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
       _.areAllFilesComplete()
     ).flatMap { csvFilesCallbackList =>
       if(csvFilesCallbackList.areAllFilesSuccessful()) {
-        val callbackDataList: List[UploadedSuccessfully] = csvFilesCallbackList.files.collect {
-          case UpscanCsvFilesCallback(_, _, status: UploadedSuccessfully) => status
-        }
+        val callbackDataList: List[UploadedSuccessfully] = csvFilesCallbackList.files.map(_.uploadStatus.asInstanceOf[UploadedSuccessfully])
         validateCsv(callbackDataList, schemeInfo)
       } else {
         val failedFiles: String = csvFilesCallbackList.files.filter(_.uploadStatus == Failed).map(_.uploadId.value).mkString(", ")
@@ -142,7 +143,7 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
       }
     } recover {
       case e: LoopException[UpscanCsvFilesCallbackList] =>
-        val incompleteFiles = e.finalCacheList.fold("Unknown")(_.files.filterNot(_.isComplete).map(_.uploadId.value).mkString(", "))
+        val incompleteFiles = e.finalFutureData.fold("Unknown")(_.files.filterNot(_.isComplete).map(_.uploadId.value).mkString(", "))
         logger.error(s"Failed to validate as not all csv files have completed upload to upscan. Incomplete IDs: $incompleteFiles")
         getGlobalErrorPage
       case e: Exception =>
@@ -193,12 +194,14 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
     }
   }
 
-  def failure(): Action[AnyContent] = AuthorisedFor(ERSRegime, pageVisibility = GGConfidence).async {
+  def failure(): Action[AnyContent] = AuthorisedFor(ERSRegime, pageVisibility = GGConfidence){
     implicit user =>
       implicit request =>
-        //TODO failure URLs should log out request params
-        logger.error("failure: Upscan Failure: " + (System.currentTimeMillis() / 1000))
-        Future(getGlobalErrorPage)
+        val errorCode = request.getQueryString("errorCode").getOrElse("Unknown")
+        val errorMessage = request.getQueryString("errorMessage").getOrElse("Unknown")
+        val errorRequestId = request.getQueryString("errorRequestId").getOrElse("Unknown")
+        logger.error(s"Upscan Failure. errorCode: $errorCode, errorMessage: $errorMessage, errorRequestId: $errorRequestId")
+        getGlobalErrorPage
   }
 
   def getGlobalErrorPage(implicit request: Request[_], messages: Messages) = Ok(views.html.global_error(
