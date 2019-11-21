@@ -26,13 +26,13 @@ import play.api.i18n.Messages
 import play.api.i18n.Messages.Implicits._
 import play.api.mvc._
 import services.{SessionService, UpscanService}
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.frontend.controller.FrontendController
 import utils._
 import views.html.upscan_ods_file_upload
 
 import scala.concurrent.Future
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import uk.gov.hmrc.play.frontend.auth.AuthContext
 
 trait FileUploadController extends FrontendController with Authenticator with LegacyI18nSupport {
 
@@ -75,11 +75,13 @@ trait FileUploadController extends FrontendController with Authenticator with Le
               }
             case Some(status: UploadStatus) =>
               //TODO can we only show page if cache is successful? For current behaviour yes.
-              // We can only cache on success upload. What do we do with other status? What to do with None?? - Probs retry!
+              // We can only cache on success upload. What do we do with other status? What to do with None?? - Probs retry! None fail
               // This isnt tested either ATM
+              //TODO depends on content. If design want file name here, then we put file name here and fail/retru if its not uploaded by this page
+              //TODO if they dont then we can cache on validation results post maybe??
               Future.successful(Ok(views.html.upscan_ods_success(requestObject, status)))
           }
-        }).flatMap(identity(_)) recover {
+        }).flatMap(identity) recover {
          case e: Exception =>
            Logger.error(s"success: failed to save ods filename with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.", e)
            getGlobalErrorPage
@@ -93,12 +95,13 @@ trait FileUploadController extends FrontendController with Authenticator with Le
         val futureCallbackData = sessionService.getCallbackRecord
         (for {
           requestObject <- futureRequestObject
+          all <- cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, requestObject.getSchemeReference)
           callbackData <- futureCallbackData
           if callbackData.exists(_.isInstanceOf[UploadedSuccessfully])
-          connectorResponse <- ersConnector.removePresubmissionData(requestObject.toSchemeInfo)
+          connectorResponse <- ersConnector.removePresubmissionData(all.schemeInfo)
           validationResponse <-
             if (connectorResponse.status == OK) {
-              handleValidationResponse(callbackData.get.asInstanceOf[UploadedSuccessfully], requestObject.toSchemeInfo)
+              handleValidationResponse(callbackData.get.asInstanceOf[UploadedSuccessfully], all.schemeInfo)
             } else {
               logger.error(s"validationResults: removePresubmissionData failed with status ${connectorResponse.status}, timestamp: ${System.currentTimeMillis()}.")
               Future.successful(getGlobalErrorPage)
@@ -153,11 +156,14 @@ trait FileUploadController extends FrontendController with Authenticator with Le
         }
   }
 
-  def failure() = AuthorisedFor(ERSRegime, pageVisibility = GGConfidence).async {
+  def failure() = AuthorisedFor(ERSRegime, pageVisibility = GGConfidence){
     implicit user =>
       implicit request =>
-        logger.error("failure: Upscan Failure: " + (System.currentTimeMillis() / 1000))
-        Future(getGlobalErrorPage)
+        val errorCode = request.getQueryString("errorCode").getOrElse("Unknown")
+        val errorMessage = request.getQueryString("errorMessage").getOrElse("Unknown")
+        val errorRequestId = request.getQueryString("errorRequestId").getOrElse("Unknown")
+        logger.error(s"Upscan Failure. errorCode: $errorCode, errorMessage: $errorMessage, errorRequestId: $errorRequestId")
+        getGlobalErrorPage
   }
 
   def getGlobalErrorPage(implicit request: Request[_], messages: Messages) = Ok(views.html.global_error(

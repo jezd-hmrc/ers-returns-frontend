@@ -143,10 +143,10 @@ trait CacheUtil {
       res
     } recover {
       case e: NoSuchElementException => {
-        throw new NoSuchElementException
+        throw e
       }
-      case _: Throwable => {
-        Logger.error(s"fetchOption with 2 params failed to get key $key for $cacheId with exception, timestamp: ${System.currentTimeMillis()}.")
+      case e: Throwable => {
+        Logger.error(s"fetchOption with 2 params failed to get key $key for $cacheId, timestamp: ${System.currentTimeMillis()}.", e)
         throw new Exception
       }
     }

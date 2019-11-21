@@ -52,11 +52,8 @@ case class UpscanCsvFilesCallbackList(files: List[UpscanCsvFilesCallback]){
 
   def areAllFilesComplete(): Boolean = files.forall(_.isComplete)
 
-  def areAllFilesSuccessful(): Boolean = files.forall{
-    _.uploadStatus match {
-      case _: UploadedSuccessfully => true
-      case _ => false
-    }
+  def areAllFilesSuccessful(): Boolean = files.forall {
+    _.uploadStatus.isInstanceOf[UploadedSuccessfully]
   }
 }
 object UpscanCsvFilesCallbackList {

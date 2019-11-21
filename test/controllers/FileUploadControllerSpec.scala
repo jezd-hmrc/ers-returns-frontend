@@ -30,7 +30,6 @@ import play.api.Application
 import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.inject.Injector
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsObject, Json}
 import play.api.mvc._
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -39,7 +38,7 @@ import uk.gov.hmrc.http.cache.client.CacheMap
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
-import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures, UpscanData}
+import utils.{CacheUtil, ERSFakeApplicationConfig, UpscanData}
 
 import scala.concurrent.Future
 
@@ -128,13 +127,16 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
 
   "validationResults" must {
     when(mockCacheUtil.fetch[RequestObject](anyString())(any(), any(), any(), any()))
-    .thenReturn(Future.successful(ersRequestObject))
+      .thenReturn(Future.successful(ersRequestObject))
     when(mockSessionService.getCallbackRecord(any[Request[_]], any[HeaderCarrier]))
       .thenReturn(Future.successful(Some(uploadedSuccessfully)))
     when(mockErsConnector.removePresubmissionData(any())(any[AuthContext], any[HeaderCarrier]))
       .thenReturn(Future.successful(HttpResponse(OK)))
+
     "redirect the user" when {
       "Ers Meta Data is returned, callback record is uploaded successfully, remove presubmission data returns OK and validate file data returns OK" in {
+        when(mockCacheUtil.fetch[ErsMetaData](any(), any())(any(), any(), any()))
+          .thenReturn(Future.successful(validErsMetaData))
         when(mockErsConnector.validateFileData(meq(uploadedSuccessfully), any[SchemeInfo])(any[AuthContext], any[Request[AnyRef]], any[HeaderCarrier]))
           .thenReturn(Future.successful(HttpResponse(OK)))
 
@@ -146,6 +148,8 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
       }
 
       "Ers Meta Data is returned, callback record is uploaded successfully, remove presubmission data returns OK and validate file data returns Accepted" in {
+        when(mockCacheUtil.fetch[ErsMetaData](any(), any())(any(), any(), any()))
+          .thenReturn(Future.successful(validErsMetaData))
         when(mockErsConnector.validateFileData(meq(uploadedSuccessfully), any[SchemeInfo])(any[AuthContext], any[Request[AnyRef]], any[HeaderCarrier]))
           .thenReturn(Future.successful(HttpResponse(ACCEPTED)))
 
@@ -188,6 +192,15 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
       "session service returns a file which has not been successfully uploaded" in {
         when(mockSessionService.getCallbackRecord(any[Request[_]], any[HeaderCarrier]))
           .thenReturn(Future.successful(Some(Failed)))
+        withAuthorisedUser { request =>
+          val result = TestFileUploadController.validationResults()(request)
+          checkGlobalErrorPage(result)
+        }
+      }
+
+      "cacheUtil fails to fetch metadata and returns an exception" in {
+        when(mockCacheUtil.fetch[ErsMetaData](meq(CacheUtil.ersMetaData), meq(ersRequestObject.getSchemeReference))(any(), any(), any()))
+          .thenReturn(Future.failed(new Exception("Expected exception")))
         withAuthorisedUser { request =>
           val result = TestFileUploadController.validationResults()(request)
           checkGlobalErrorPage(result)
@@ -251,21 +264,10 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
   def validationFailure(request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest())(handler: Future[Result] => Any): Unit = {
     handler(TestFileUploadController.validationFailure().apply(request))
   }
-
-  lazy val metaData: JsObject = Json.obj(
-    "surname" -> Fixtures.surname,
-    "firstForename" -> Fixtures.firstName
-  )
-
-  lazy val validErsMetaData: ErsMetaData = new ErsMetaData(schemeInfo, "ipRef", Some("aoRef"), "empRef", Some("agentRef"), Some("sapNumber"))
   val testOptString = Some("test")
   val ersRequestObject = RequestObject(testOptString, testOptString, testOptString, Some("CSOP"), Some("CSOP"), testOptString, testOptString, testOptString, testOptString)
-  val schemeInfo: SchemeInfo = ersRequestObject.toSchemeInfo
-
-
-  lazy val schemeInfoInvalidTimeStamp = SchemeInfo("XA1100000000000", DateTime.now, "1", "2016", "EMI", "EMI")
-  lazy val invalidErsMetaData: ErsMetaData = new ErsMetaData(schemeInfoInvalidTimeStamp, "ipRef", Some("aoRef"),
-    "empRef", Some("agentRef"), Some("sapNumber"))
+  val schemeInfo: SchemeInfo = SchemeInfo(testOptString.get, DateTime.now, testOptString.get, testOptString.get, testOptString.get, testOptString.get)
+  val validErsMetaData: ErsMetaData = ErsMetaData(schemeInfo, "ipRef", Some("aoRef"), "empRef", Some("agentRef"), Some("sapNumber"))
 
   lazy val mockAuthConnector = mock[AuthConnector]
   lazy val mockSessionService = mock[SessionService]

@@ -30,7 +30,7 @@ import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsObject, Json, _}
+import play.api.libs.json.{Json, _}
 import play.api.mvc.Request
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -40,6 +40,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 import utils.{CacheUtil, ERSFakeApplicationConfig, UpscanData}
 
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 import scala.util.Try
 
 class CsvFileUploadCallbackControllerSpec extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with OneAppPerSuite with BeforeAndAfterEach with UpscanData {
@@ -137,8 +138,8 @@ class CsvFileUploadCallbackControllerSpec extends UnitSpec with ERSFakeApplicati
           .thenReturn(upscanCsvFilesCallbackList)
         when(mockCacheUtil.cache(meq(CacheUtil.CHECK_CSV_FILES), any(), meq(scRef))(any(), any(), any()))
           .thenReturn(Future.successful(mock[CacheMap]))
-
-        Try(await(csvFileUploadCallbackController.callback(uploadId, scRef)(request(jsonBody))))
+        val timeout = Duration.Inf
+        Try(await(csvFileUploadCallbackController.callback(uploadId, scRef)(request(jsonBody)))(timeout))
 
         verify(mockCacheUtil, never())
           .cache(meq(CacheUtil.CHECK_CSV_FILES), any(), meq(scRef))(any(), any(), any())

@@ -27,6 +27,8 @@ import play.api.mvc.Call
 import scala.util.Try
 import controllers.routes
 import uk.gov.hmrc.play.partials.CachedStaticHtmlPartialRetriever
+import scala.concurrent.duration._
+import scala.concurrent.duration.Duration
 
 trait ApplicationConfig extends AppName {
 
@@ -51,6 +53,7 @@ trait ApplicationConfig extends AppName {
 
   val csvCacheInProgressRetryAmount: Int
   val csvCacheCompletedRetryAmount: Int
+  val retryDelay: FiniteDuration
 }
 
 class ApplicationConfigImpl extends ApplicationConfig with ServicesConfig {
@@ -96,6 +99,7 @@ class ApplicationConfigImpl extends ApplicationConfig with ServicesConfig {
 
   val csvCacheInProgressRetryAmount: Int = runModeConfiguration.getInt("retry.csv-callback-cache.in-progress.amount").getOrElse(1)
   val csvCacheCompletedRetryAmount: Int = runModeConfiguration.getInt("retry.csv-callback-cache.completed-upload.amount").getOrElse(1)
+  override val retryDelay: FiniteDuration = (runModeConfiguration.getMilliseconds("retry.delay").get) milliseconds
 }
 
 object ApplicationConfig extends ApplicationConfigImpl

@@ -14,25 +14,33 @@
  * limitations under the License.
  */
 
+import akka.actor.{ActorSystem, Scheduler}
+import akka.pattern.after
+import config.ApplicationConfig
 import play.api.Logger
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 package object controllers {
-  case class LoopException[A](retryNumber: Int, finalCacheList: Option[A])
-    extends Exception(s"Failed to meet predicate after retrying ${retryNumber} times")
+  case class LoopException[A](retryNumber: Int, finalFutureData: Option[A])
+    extends Exception(s"Failed to meet predicate after retrying ${retryNumber} times.")
 
   implicit class RetryCache[A](f: => Future[A]) {
-    def withRetry(maxTimes: Int)(pToBreakLoop: A => Boolean): Future[A] = {
+    def withRetry(maxTimes: Int)(pToBreakLoop: A => Boolean)(implicit actorSystem: ActorSystem): Future[A] = {
+      val delay: FiniteDuration = ApplicationConfig.retryDelay
+      val scheduler: Scheduler = actorSystem.getScheduler
       def loop(count: Int = 0, previous: Option[A] = None): Future[A] = {
         Logger.info(s"Retrying call x$count")
         if(count < maxTimes){
           f.flatMap {
-            csvFileList =>
-              if(pToBreakLoop(csvFileList)) {
-                Future.successful(csvFileList)
-              } else loop(count + 1, previous)
+            data =>
+              if(pToBreakLoop(data)) {
+                Future.successful(data)
+              } else {
+                after(delay, scheduler)(loop(count + 1, Some(data)))
+              }
           }
         } else throw LoopException(count, previous)
       }

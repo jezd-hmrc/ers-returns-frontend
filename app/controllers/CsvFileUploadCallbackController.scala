@@ -16,9 +16,10 @@
 
 package controllers
 
+import akka.actor.ActorSystem
 import config.{ApplicationConfig, ERSFileValidatorAuthConnector}
 import models.upscan._
-import play.api.Logger
+import play.api.{Logger, Play}
 import play.api.libs.json.JsValue
 import play.api.mvc.Action
 import services.SessionService
@@ -32,6 +33,7 @@ import scala.util.control.NonFatal
 trait CsvFileUploadCallbackController extends FrontendController with Actions with ErsConstants {
   val cacheUtil: CacheUtil
   val appConfig: ApplicationConfig
+  implicit val actorSystem: ActorSystem = Play.current.actorSystem
   private val logger = Logger(this.getClass)
 
   def callback(uploadId: UploadId, scRef: String): Action[JsValue] = Action.async(parse.json) {
@@ -56,13 +58,13 @@ trait CsvFileUploadCallbackController extends FrontendController with Actions wi
             csvFileList =>
               val updatedCacheFileList: UpscanCsvFilesCallbackList =
                 csvFileList.updateUploadStatus(uploadId, uploadStatus)
-
+              logger.info(s"Updated cache data to: $updatedCacheFileList")
               cacheUtil.cache(CacheUtil.CHECK_CSV_FILES, updatedCacheFileList, scRef).map {
                 _ => Ok("")
               }
           } recover {
-            case LoopException(_,_) =>
-              logger.warn(s"Call to cache could not find InProgress file with uploadId of $uploadId")
+            case e: LoopException[UpscanCsvFilesCallbackList] =>
+              logger.warn(s"Call to cache could not find InProgress file with uploadId of $uploadId. Data in cache: ${e.finalFutureData}", e)
               InternalServerError(s"Could not match file of uploadId: $uploadId")
             case NonFatal(e) =>
               logger.error(s"Failed to update cache after Upscan callback for UploadID: ${uploadId.value}, ScRef: $scRef", e)

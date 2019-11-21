@@ -17,14 +17,14 @@
 package models
 
 import org.joda.time.DateTime
-import org.scalatest.{MustMatchers, WordSpec}
+import org.scalatest.{MustMatchers, PrivateMethodTester, WordSpec}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.test.FakeRequest
 import utils.Fixtures.ersRequestObject
 import utils.DateUtils
 
-class RequestObjectSpec extends WordSpec with MustMatchers with GuiceOneAppPerSuite {
+class RequestObjectSpec extends WordSpec with MustMatchers with GuiceOneAppPerSuite with PrivateMethodTester {
 
   def messagesApi: MessagesApi = app.injector.instanceOf[MessagesApi]
   implicit val messages: Messages = messagesApi.preferred(Seq(Lang.get("en").get))
@@ -59,9 +59,8 @@ class RequestObjectSpec extends WordSpec with MustMatchers with GuiceOneAppPerSu
           None,
           None
         )
-
-
-      val result = requestObject.toSchemeInfo
+      val privateToSchemeInfo = PrivateMethod[SchemeInfo]('toSchemeInfo)
+      val result = requestObject invokePrivate[SchemeInfo] privateToSchemeInfo()
 
       result.schemeName mustBe "MyScheme"
       result.schemeId mustBe "1"

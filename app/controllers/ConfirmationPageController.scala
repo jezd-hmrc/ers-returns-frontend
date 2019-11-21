@@ -90,7 +90,6 @@ trait ConfirmationPageController extends ERSReturnBaseController with Authentica
           Logger.info(s"Preventing resubmission of confirmation page, timestamp: ${System.currentTimeMillis()}.")
 
           Future(Ok(views.html.confirmation(requestObject, sessionDateTimeSubmitted, sessionBundleRef, all.schemeInfo.taxYear, url)(request, context, implicitly)))
-
         }
       }
     } recoverWith {
