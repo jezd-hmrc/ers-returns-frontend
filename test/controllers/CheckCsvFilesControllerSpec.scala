@@ -69,89 +69,16 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
     val checkCsvFilesController: CheckCsvFilesController = new CheckCsvFilesController {
       override val cacheUtil: CacheUtil = mockCacheUtil
       override val pageBuilder: PageBuilder = mock[PageBuilder]
-
-      override def mergeCsvFilesListWithCsvFilesCallback(csvFilesList: List[CsvFiles], cacheData: UpscanCsvFilesCallbackList): List[CsvFiles] = List()
     }
 
-    "show CheckCsvFilesPage if data is successfully extracted from cache" in {
+    "show CheckCsvFilesPage" in {
       reset(mockCacheUtil)
-      when(
-        mockCacheUtil.fetchOption[UpscanCsvFilesCallbackList](anyString(), anyString())(any(), any(), any())
-      ).thenReturn(
-        Future.successful(Some(mock[UpscanCsvFilesCallbackList]))
-      )
       when(
         mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
       ).thenReturn(ersRequestObject)
 
       val result = await(checkCsvFilesController.showCheckCsvFilesPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       status(result) shouldBe OK
-    }
-
-    "show CheckCsvFilesPage if there is no data in cache" in {
-      reset(mockCacheUtil)
-      when(
-        mockCacheUtil.fetchOption[UpscanCsvFilesCallbackList](anyString(), anyString())(any(), any(), any())
-      ).thenReturn(
-        Future.failed(new NoSuchElementException)
-      )
-      when(
-        mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
-      ).thenReturn(ersRequestObject)
-      val result = await(checkCsvFilesController.showCheckCsvFilesPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
-      status(result) shouldBe OK
-    }
-
-    "direct to ers errors page if fetching data throws exception" in {
-      reset(mockCacheUtil)
-      when(
-        mockCacheUtil.fetchOption[UpscanCsvFilesCallbackList](anyString(), anyString())(any(), any(), any())
-      ).thenReturn(
-        Future.failed(new Exception)
-      )
-      when(
-        mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
-      ).thenReturn(ersRequestObject)
-      val result = await(checkCsvFilesController.showCheckCsvFilesPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
-      contentAsString(result) shouldBe contentAsString(checkCsvFilesController.getGlobalErrorPage)
-      contentAsString(result) should include(messages("ers.global_errors.message"))
-    }
-
-  }
-
-  "caling mergeCsvFilesListWithCsvFilesCallback" should {
-
-    val checkCsvFilesController: CheckCsvFilesController = new CheckCsvFilesController {
-      override val cacheUtil: CacheUtil = mock[CacheUtil]
-      override val pageBuilder: PageBuilder = mock[PageBuilder]
-    }
-
-    val csvFilesList: List[CsvFiles] = List(
-      CsvFiles("file0", None),
-      CsvFiles("file1", None),
-      CsvFiles("file2", None),
-      CsvFiles("file3", None),
-      CsvFiles("file4", None)
-    )
-
-    "merge successfully given data with cached one" in {
-
-      val cacheData: UpscanCsvFilesCallbackList = UpscanCsvFilesCallbackList(
-        List(
-          UpscanCsvFilesCallback(UploadId("ID1"), "file1", NotStarted),
-          UpscanCsvFilesCallback(UploadId("ID2"), "file4", NotStarted)
-        )
-      )
-
-      val result = checkCsvFilesController.mergeCsvFilesListWithCsvFilesCallback(csvFilesList, cacheData)
-      result shouldBe List(
-        CsvFiles("file0", None),
-        CsvFiles("file1", Some("1")),
-        CsvFiles("file2", None),
-        CsvFiles("file3", None),
-        CsvFiles("file4", Some("1"))
-      )
-
     }
   }
 
