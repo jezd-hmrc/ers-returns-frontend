@@ -50,24 +50,18 @@ trait CheckCsvFilesController extends ERSReturnBaseController with Authenticator
     val requestObjectFuture = cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
     (for {
       requestObject <- requestObjectFuture
-      cacheData <- cacheUtil.fetchOption[UpscanCsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, requestObject.getSchemeReference).recover{
+      /*cacheData <- cacheUtil.fetchOption[UpscanCsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, requestObject.getSchemeReference).recover{
         case _: NoSuchElementException => None
-      }
+      }*/
     } yield {
       val csvFilesList: List[CsvFiles] = PageBuilder.getCsvFilesList(requestObject.getSchemeType)
-      val csvFiles = cacheData match {
-        case Some(data) =>
-          mergeCsvFilesListWithCsvFilesCallback(csvFilesList, data)
-        case None =>
-          csvFilesList
-      }
-      Ok(views.html.check_csv_file(requestObject, CsvFilesList(csvFiles)))
+      Ok(views.html.check_csv_file(requestObject, CsvFilesList(csvFilesList)))
     }) recover {
       case _: Throwable => getGlobalErrorPage
     }
   }
 
-  def mergeCsvFilesListWithCsvFilesCallback(csvFilesList: List[CsvFiles], cacheData: UpscanCsvFilesCallbackList): List[CsvFiles] = {
+ /* def mergeCsvFilesListWithCsvFilesCallback(csvFilesList: List[CsvFiles], cacheData: UpscanCsvFilesCallbackList): List[CsvFiles] = {
     for (file <- csvFilesList) yield {
       if (cacheData.files.exists(_.fileId == file.fileId)) {
         CsvFiles(file.fileId, Some(PageBuilder.OPTION_YES))
@@ -75,7 +69,7 @@ trait CheckCsvFilesController extends ERSReturnBaseController with Authenticator
         file
       }
     }
-  }
+  }*/
 
   def checkCsvFilesPageSelected(): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>
