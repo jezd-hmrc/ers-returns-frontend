@@ -66,7 +66,7 @@ class UpscanServiceSpec extends UnitSpec with OneAppPerSuite with MockitoSugar {
 
   "getUpscanFormDataCsv" must {
     "get form data from Upscan Connector with an initiate and uploadId" in {
-      implicit val request: Request[AnyRef] = FakeRequest()
+      implicit val request: Request[AnyRef] = FakeRequest("GET", "http://localhost:9290/")
       val uploadId = UploadId("TestUploadId")
       val scRef = "ScRef"
       val hc = HeaderCarrier(sessionId = Some(SessionId("sessionid")))

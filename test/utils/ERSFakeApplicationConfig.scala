@@ -34,6 +34,7 @@ trait ERSFakeApplicationConfig {
     "govuk-tax.Test.services.contact-frontend.port" -> "9250",
     "metrics.enabled" -> "false",
     "auditing.enabled" -> false,
-    "microservice.metrics.graphite.enabled" -> false
+    "microservice.metrics.graphite.enabled" -> false,
+    "microservice.services.upscan.redirect-base" -> "http://localhost:9000"
   )
 }

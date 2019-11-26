@@ -38,6 +38,7 @@ trait ApplicationConfig extends AppName {
   val validatorUrl: String
 
   val upscanInitiateHost: String
+  val upscanRedirectBase: String
 
   val enableRetrieveSubmissionData: Boolean
   val sentViaSchedulerNoOfRowsLimit: Int
@@ -78,6 +79,7 @@ class ApplicationConfigImpl extends ApplicationConfig with ServicesConfig {
   override lazy val validatorUrl: String = baseUrl("ers-file-validator") + "/ers/:empRef/" + loadConfig("microservice.services.ers-file-validator.url")
 
   override val upscanInitiateHost: String = baseUrl("upscan")
+  override val upscanRedirectBase: String = configuration.getString("microservice.services.upscan.redirect-base").get
 
   override lazy val urBannerToggle:Boolean = loadConfig("urBanner.toggle").toBoolean
   override lazy val urBannerLink: String = loadConfig("urBanner.link")
