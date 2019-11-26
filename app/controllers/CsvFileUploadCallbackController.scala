@@ -47,7 +47,8 @@ trait CsvFileUploadCallbackController extends FrontendController with Actions wi
           val uploadStatus: UploadStatus = callback match {
             case callback: UpscanReadyCallback =>
               UploadedSuccessfully(callback.uploadDetails.fileName, callback.downloadUrl.toExternalForm)
-            case _: UpscanFailedCallback =>
+            case UpscanFailedCallback(_, details) => //TODO logging
+              logger.warn(s"CSV Callback for upload id: ${uploadId.value} failed. Reason: ${details.failureReason}. Message: ${details.message}")
               Failed
           }
           logger.info(s"Updating CSV callback for upload id: ${uploadId.value} to ${uploadStatus.getClass.getSimpleName}")

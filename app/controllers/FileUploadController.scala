@@ -57,7 +57,7 @@ trait FileUploadController extends FrontendController with Authenticator with Le
             getGlobalErrorPage
         }
   }
-
+//TODO fix error logging everywhere for exceptions and timestamps
   def success(): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
