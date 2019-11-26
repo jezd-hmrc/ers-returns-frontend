@@ -19,20 +19,24 @@ package services
 import com.google.inject.Inject
 import connectors.UpscanConnector
 import models.upscan.{UploadId, UpscanInitiateRequest, UpscanInitiateResponse}
+import play.api.{Environment, Mode}
+import play.api.Mode.Mode
 import play.api.mvc.Request
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future
 
 class UpscanService @Inject()(
-                             upscanConnector: UpscanConnector
+                             upscanConnector: UpscanConnector,
+                             environment: Environment
                              ) {
 
   def getUpscanFormDataCsv(uploadId: UploadId, scRef: String)(implicit hc: HeaderCarrier, request: Request[AnyRef]): Future[UpscanInitiateResponse] = {
-    val callback = controllers.routes.CsvFileUploadCallbackController.callback(uploadId, scRef).absoluteURL()
+    val secureUrl: Boolean = environment.mode == Mode.Prod
+    val callback = controllers.routes.CsvFileUploadCallbackController.callback(uploadId, scRef).absoluteURL(secureUrl)
 
-    val success = controllers.routes.CsvFileUploadController.success(uploadId).absoluteURL()
-    val failure = controllers.routes.CsvFileUploadController.failure().absoluteURL()
+    val success = controllers.routes.CsvFileUploadController.success(uploadId).absoluteURL(secureUrl)
+    val failure = controllers.routes.CsvFileUploadController.failure().absoluteURL(secureUrl)
     val upscanInitiateRequest = UpscanInitiateRequest(callback, success, failure)
     upscanConnector.getUpscanFormData(upscanInitiateRequest)
   }
