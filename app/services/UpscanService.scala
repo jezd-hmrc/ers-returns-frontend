@@ -36,8 +36,9 @@ class UpscanService @Inject()(
   def getUpscanFormDataCsv(uploadId: UploadId, scRef: String)(implicit hc: HeaderCarrier, request: Request[AnyRef]): Future[UpscanInitiateResponse] = {
     val redirectUrlBase: String = applicationConfig.upscanRedirectBase
     implicit def urlToString(c: Call): String = redirectUrlBase + c.url
+    val callback = controllers.routes.CsvFileUploadCallbackController.callback(uploadId, scRef)
+      .absoluteURL(environment.mode == Mode.Prod)
 
-    val callback = controllers.routes.CsvFileUploadCallbackController.callback(uploadId, scRef).absoluteURL()
     val success = controllers.routes.CsvFileUploadController.success(uploadId)
     val failure = controllers.routes.CsvFileUploadController.failure()
     val upscanInitiateRequest = UpscanInitiateRequest(callback, success, failure)
