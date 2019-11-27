@@ -45,7 +45,7 @@ class UpscanServiceSpec extends UnitSpec with OneAppPerSuite with MockitoSugar {
 
   "getUpscanFormDataOds" must {
     "get form data from Upscan Connector with an initiate request" in {
-      implicit val request: Request[_] = FakeRequest()
+      implicit val request: Request[AnyRef] = FakeRequest("GET", "http://localhost:9290/")
       val hc = HeaderCarrier(sessionId = Some(SessionId("sessionid")))
       val callback = controllers.routes.FileUploadCallbackController.callback(hc.sessionId.get.value).absoluteURL()
       val success = controllers.routes.FileUploadController.success().absoluteURL()

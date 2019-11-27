@@ -33,9 +33,9 @@ class UpscanService @Inject()(
                              environment: Environment
                              ) {
 
+  lazy val redirectUrlBase: String = applicationConfig.upscanRedirectBase
+  private implicit def urlToString(c: Call): String = redirectUrlBase + c.url
   def getUpscanFormDataCsv(uploadId: UploadId, scRef: String)(implicit hc: HeaderCarrier, request: Request[AnyRef]): Future[UpscanInitiateResponse] = {
-    val redirectUrlBase: String = applicationConfig.upscanRedirectBase
-    implicit def urlToString(c: Call): String = redirectUrlBase + c.url
     val callback = controllers.routes.CsvFileUploadCallbackController.callback(uploadId, scRef)
       .absoluteURL(environment.mode == Mode.Prod)
 
@@ -46,10 +46,11 @@ class UpscanService @Inject()(
   }
 
   def getUpscanFormDataOds()(implicit hc: HeaderCarrier, request: Request[_]): Future[UpscanInitiateResponse] = {
-    val callback = controllers.routes.FileUploadCallbackController.callback(hc.sessionId.get.value).absoluteURL()
+    val callback = controllers.routes.FileUploadCallbackController.callback(hc.sessionId.get.value)
+      .absoluteURL(environment.mode == Mode.Prod)
 
-    val success = controllers.routes.FileUploadController.success().absoluteURL()
-    val failure = controllers.routes.FileUploadController.failure().absoluteURL()
+    val success = controllers.routes.FileUploadController.success()
+    val failure = controllers.routes.FileUploadController.failure()
     val upscanInitiateRequest = UpscanInitiateRequest(callback, success, failure)
     upscanConnector.getUpscanFormData(upscanInitiateRequest)
   }
