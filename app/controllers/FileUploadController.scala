@@ -97,12 +97,12 @@ trait FileUploadController extends FrontendController with Authenticator with Le
     implicit user =>
       implicit request =>
         val futureRequestObject = cacheUtil.fetch[RequestObject](CacheUtil.ersRequestObject)
-        val futureCallbackData = sessionService.getCallbackRecord
+        val futureCallbackData = sessionService.getCallbackRecord.withRetry(appConfig.csvCacheCompletedRetryAmount)(_.exists(_.isInstanceOf[UploadedSuccessfully]))
         (for {
           requestObject <- futureRequestObject
           all <- cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, requestObject.getSchemeReference) //TODO different config below
-          callbackData <- futureCallbackData.withRetry(appConfig.csvCacheCompletedRetryAmount)(_.exists(_.isInstanceOf[UploadedSuccessfully]))
           connectorResponse <- ersConnector.removePresubmissionData(all.schemeInfo)
+          callbackData <- futureCallbackData
           validationResponse <-
             if (connectorResponse.status == OK) {
               handleValidationResponse(callbackData.get.asInstanceOf[UploadedSuccessfully], all.schemeInfo)
