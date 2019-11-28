@@ -17,7 +17,8 @@
 package controllers
 
 import _root_.models._
-import config.ERSFileValidatorAuthConnector
+import akka.actor.ActorSystem
+import config.{ApplicationConfig, ERSFileValidatorAuthConnector}
 import connectors.ErsConnector
 import models.upscan.{UploadStatus, UploadedSuccessfully}
 import play.api.Logger
@@ -36,11 +37,15 @@ import scala.concurrent.Future
 
 trait FileUploadController extends FrontendController with Authenticator with LegacyI18nSupport {
 
+  private val logger = Logger(this.getClass)
+
   val sessionService: SessionService
   val cacheUtil: CacheUtil
   val ersConnector: ErsConnector
   val upscanService: UpscanService = current.injector.instanceOf[UpscanService]
-  private val logger = Logger(this.getClass)
+  val appConfig: ApplicationConfig = ApplicationConfig
+  implicit val actorSystem: ActorSystem = current.actorSystem
+
 
   def uploadFilePage(): Action[AnyContent] = AuthorisedForAsync() {
     implicit request =>
@@ -95,9 +100,8 @@ trait FileUploadController extends FrontendController with Authenticator with Le
         val futureCallbackData = sessionService.getCallbackRecord
         (for {
           requestObject <- futureRequestObject
-          all <- cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, requestObject.getSchemeReference)
-          callbackData <- futureCallbackData
-          if callbackData.exists(_.isInstanceOf[UploadedSuccessfully])
+          all <- cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, requestObject.getSchemeReference) //TODO different config below
+          callbackData <- futureCallbackData.withRetry(appConfig.csvCacheCompletedRetryAmount)(_.exists(_.isInstanceOf[UploadedSuccessfully]))
           connectorResponse <- ersConnector.removePresubmissionData(all.schemeInfo)
           validationResponse <-
             if (connectorResponse.status == OK) {
@@ -109,11 +113,11 @@ trait FileUploadController extends FrontendController with Authenticator with Le
         } yield {
           validationResponse
         }) recover {
-          case _: NoSuchElementException =>
-            logger.error(s"Failed to validate as file is not yet successfully uploaded.")
+          case e: LoopException[Option[UploadStatus]] =>
+            logger.error(s"Failed to validate as file is not yet successfully uploaded. Current cache data: ${e.finalFutureData.flatten}", e)
             getGlobalErrorPage
           case e: Throwable =>
-            Logger.error(s"validationResults: validationResults failed with Exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.", e)
+            Logger.error(s"validationResults: validationResults failed with Exception ${e.getMessage}", e)
             getGlobalErrorPage
         }
   }
