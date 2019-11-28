@@ -9,7 +9,7 @@
 
     <logger name="application" level="WARN"/>
 
-    <root level="WARN">
+    <root level="${logger.root:-WARN}">
         <appender-ref ref="STDOUT"/>
     </root>
     
