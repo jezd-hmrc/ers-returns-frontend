@@ -99,7 +99,7 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
       all           <- cacheUtil.fetchAll(requestObject.getSchemeReference)
 
       companies =  all.getEntry[CompanyDetailsList](CacheUtil.GROUP_SCHEME_COMPANIES).getOrElse(CompanyDetailsList(Nil))
-      companyDetailsList = CompanyDetailsList(companies.companies.drop(id))
+      companyDetailsList = CompanyDetailsList(filterDeletedCompany(companies, id))
 
       _ <- cacheUtil.cache(CacheUtil.GROUP_SCHEME_COMPANIES, companyDetailsList, requestObject.getSchemeReference)
     } yield {
@@ -112,6 +112,9 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
         getGlobalErrorPage
     }
   }
+
+  def filterDeletedCompany(companyList: CompanyDetailsList, id: Int): List[CompanyDetails] =
+    companyList.companies.zipWithIndex.filterNot(_._2 == id).map(_._1)
 
   def editCompany(id: Int) = AuthorisedForAsync() {
     implicit user =>

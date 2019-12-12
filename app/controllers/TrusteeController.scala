@@ -113,16 +113,18 @@ trait TrusteeController extends ERSReturnBaseController with Authenticator {
     (for {
       requestObject      <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
       cachedTrusteeList  <- cacheUtil.fetch[TrusteeDetailsList](CacheUtil.TRUSTEES_CACHE, requestObject.getSchemeReference)
-      trusteeDetailsList = TrusteeDetailsList(cachedTrusteeList.trustees.drop(id))
+      trusteeDetailsList = TrusteeDetailsList(filterDeletedTrustee(cachedTrusteeList, id))
       _                  <- cacheUtil.cache(CacheUtil.TRUSTEES_CACHE, trusteeDetailsList, requestObject.getSchemeReference)
     } yield {
-
       Redirect(routes.TrusteeController.trusteeSummaryPage())
 
     }) recover {
       case _: Exception => getGlobalErrorPage
     }
   }
+
+  def filterDeletedTrustee(trusteeDetailsList: TrusteeDetailsList, id: Int): List[TrusteeDetails] =
+    trusteeDetailsList.trustees.zipWithIndex.filterNot(_._2 == id).map(_._1)
 
   def editTrustee(id: Int): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>
@@ -131,7 +133,6 @@ trait TrusteeController extends ERSReturnBaseController with Authenticator {
   }
 
   def showEditTrustee(id: Int)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-
     (for {
       requestObject       <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
       groupSchemeActivity <- cacheUtil.fetch[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, requestObject.getSchemeReference)

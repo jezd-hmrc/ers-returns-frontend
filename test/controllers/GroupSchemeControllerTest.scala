@@ -263,6 +263,31 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
     }
   }
 
+  "filter deleted company" should {
+
+    "remove the deleted company and retain other companies" in {
+
+      val deletedCompany = CompanyDetails("Third Company", "Address Line 1", None, None, None, None, None, None, None)
+
+      val companyDetailsList = CompanyDetailsList(
+        List(
+          CompanyDetails(Fixtures.companyName, "Address Line 1", None, None, None, None, None, None, None),
+          CompanyDetails("Second Company", "Address Line 1", None, None, None, None, None, None, None),
+            deletedCompany
+        )
+      )
+
+      val fakeController = new GroupSchemeController {
+        override val cacheUtil: CacheUtil = mock[CacheUtil]
+      }
+
+      val result = fakeController.filterDeletedCompany(companyDetailsList, 2)
+
+      result shouldNot contain (deletedCompany)
+      result.length shouldBe 2
+    }
+  }
+
   "editCompany" should {
     def editCompanyHandler(index: Int, request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest())(handler: Future[Result] => Any): Unit = {
       handler(testGroupSchemeController.editCompany(index).apply(request))
