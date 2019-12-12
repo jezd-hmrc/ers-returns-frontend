@@ -190,6 +190,61 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
     }
   }
 
+  "calling replace company" should {
+
+    val controllerUnderTest = new GroupSchemeController {
+      override val cacheUtil: CacheUtil = mock[CacheUtil]
+    }
+
+    "replace a companies and keep the other companies" when {
+
+      "given an index that matches a companies in the list" in {
+
+        val index = 2
+
+        val formData = CompanyDetails("Replacement Company", "1 Some Place", None, None, None, None, None, None, None)
+        val target = CompanyDetails("Target Company", "3 Window Close", None, None, None, None, None, None, None)
+
+        val companiesDetailsList = List(
+          CompanyDetails("First Company", "20 Garden View", None, None, None, None, None, None, None),
+          CompanyDetails("Third Company", "72 Big Avenue", None, None, None, None, None, None, None),
+          target,
+          CompanyDetails("Fourth Company", "21 Brick Lane", None, None, None, None, None, None, None)
+        )
+
+        val result = controllerUnderTest.replaceCompany(companiesDetailsList, index, formData).companies
+
+        result should contain(formData)
+        result shouldNot contain(target)
+        result.length shouldBe 4
+      }
+    }
+
+    "keep the existing list of companies" when {
+
+      "given an index that does not match any existing companies" in {
+
+        val index = 100
+
+        val formData = CompanyDetails("Replacement Company", "1 Some Place", None, None, None, None, None, None, None)
+        val target = CompanyDetails("Target Company", "3 Window Close", None, None, None, None, None, None, None)
+
+        val companyDetailsList = List(
+          CompanyDetails("First Company", "20 Garden View", None, None, None, None, None, None, None),
+          CompanyDetails("Third Company", "72 Big Avenue", None, None, None, None, None, None, None),
+          target,
+          CompanyDetails("Fourth Company", "21 Brick Lane", None, None, None, None, None, None, None)
+        )
+
+        val result = controllerUnderTest.replaceCompany(companyDetailsList, index, formData).companies
+
+        result shouldNot contain(formData)
+        result should contain(target)
+        result.length shouldBe 4
+      }
+    }
+  }
+
   "deleteCompany" should {
     def deleteCompanyHandler(index: Int, request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest())(handler: Future[Result] => Any): Unit = {
       handler(testGroupSchemeController.deleteCompany(index).apply(request))

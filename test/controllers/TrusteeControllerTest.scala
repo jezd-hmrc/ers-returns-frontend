@@ -325,6 +325,61 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
 
   }
 
+  "calling replace trustee" should {
+
+    val controllerUnderTest = new TrusteeController {
+      override val cacheUtil: CacheUtil = mock[CacheUtil]
+    }
+
+    "replace a trustee and keep the other trustees" when {
+
+      "given an index that matches a trustee in the list" in {
+
+        val index = 2
+
+        val formData = TrusteeDetails("Replacement Trustee", "1 Some Place", None, None, None, None, None)
+        val target = TrusteeDetails("Target Trustee", "3 Window Close", None, None, None, None, None)
+
+        val trusteeDetailsList = List(
+          TrusteeDetails("First Trustee", "20 Garden View", None, None, None, None, None),
+          TrusteeDetails("Third Trustee", "72 Big Avenue", None, None, None, None, None),
+          target,
+          TrusteeDetails("Fourth Trustee", "21 Brick Lane", None, None, None, None, None)
+        )
+
+        val result = controllerUnderTest.replaceTrustee(trusteeDetailsList, index, formData).trustees
+
+        result should contain(formData)
+        result shouldNot contain(target)
+        result.length shouldBe 4
+      }
+    }
+
+    "keep the existing list of trustees" when {
+
+      "given an index that does not match any existing trustees" in {
+
+        val index = 100
+
+        val formData = TrusteeDetails("Replacement Trustee", "1 Some Place", None, None, None, None, None)
+        val target = TrusteeDetails("Target Trustee", "3 Window Close", None, None, None, None, None)
+
+        val trusteeDetailsList = List(
+          TrusteeDetails("First Trustee", "20 Garden View", None, None, None, None, None),
+          TrusteeDetails("Third Trustee", "72 Big Avenue", None, None, None, None, None),
+          target,
+          TrusteeDetails("Fourth Trustee", "21 Brick Lane", None, None, None, None, None)
+        )
+
+        val result = controllerUnderTest.replaceTrustee(trusteeDetailsList, index, formData).trustees
+
+        result shouldNot contain(formData)
+        result should contain(target)
+        result.length shouldBe 4
+      }
+    }
+  }
+
   "calling trustee summary page" should {
 
     val trusteeList = List(TrusteeDetails("Name", "1 The Street", None, None, None, Some("UK"), None))

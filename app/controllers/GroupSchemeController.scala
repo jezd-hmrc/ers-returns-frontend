@@ -66,11 +66,12 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
       successful => {
         cacheUtil.fetch[CompanyDetailsList](CacheUtil.GROUP_SCHEME_COMPANIES, requestObject.getSchemeReference).flatMap { cachedCompaniesList =>
 
-          val companyList = if (index == 10000 || cachedCompaniesList.companies.size >= index) {
-            CompanyDetailsList(cachedCompaniesList.companies :+ successful)
+          val companyList = if (index == 10000) {
+            CompanyDetailsList((cachedCompaniesList.companies :+ successful).distinct)
           } else {
-            CompanyDetailsList(cachedCompaniesList.companies)
+            replaceCompany(cachedCompaniesList.companies, index, successful)
           }
+
           cacheUtil.cache(CacheUtil.GROUP_SCHEME_COMPANIES, companyList, requestObject.getSchemeReference).map { _ =>
             Redirect(routes.GroupSchemeController.groupPlanSummaryPage)
           }
@@ -85,6 +86,11 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
       }
     )
   }
+
+  def replaceCompany(companies: List[CompanyDetails], index: Int, formData: CompanyDetails): CompanyDetailsList =
+    CompanyDetailsList(companies.zipWithIndex.map{
+      case (a, b) => if (b == index) formData else a
+    })
 
   def deleteCompany(id: Int) = AuthorisedForAsync() {
     implicit user =>
