@@ -347,7 +347,7 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
           TrusteeDetails("Fourth Trustee", "21 Brick Lane", None, None, None, None, None)
         )
 
-        val result = controllerUnderTest.replaceTrustee(trusteeDetailsList, index, formData).trustees
+        val result = controllerUnderTest.replaceTrustee(trusteeDetailsList, index, formData)
 
         result should contain(formData)
         result shouldNot contain(target)
@@ -371,11 +371,33 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
           TrusteeDetails("Fourth Trustee", "21 Brick Lane", None, None, None, None, None)
         )
 
-        val result = controllerUnderTest.replaceTrustee(trusteeDetailsList, index, formData).trustees
+        val result = controllerUnderTest.replaceTrustee(trusteeDetailsList, index, formData)
 
         result shouldNot contain(formData)
         result should contain(target)
         result.length shouldBe 4
+      }
+    }
+
+    "remove duplicate records" when {
+
+      "duplicates are present" in {
+
+        val index = 1
+
+        val target = TrusteeDetails("Target Company", "3 Window Close", None, None, None, None, None)
+
+        val trusteeDetailsList = List(
+          target,
+          target,
+          target,
+          target
+        )
+
+        val result = controllerUnderTest.replaceTrustee(trusteeDetailsList, index, target)
+
+        result should contain(target)
+        result.length shouldBe 1
       }
     }
   }

@@ -212,7 +212,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
           CompanyDetails("Fourth Company", "21 Brick Lane", None, None, None, None, None, None, None)
         )
 
-        val result = controllerUnderTest.replaceCompany(companiesDetailsList, index, formData).companies
+        val result = controllerUnderTest.replaceCompany(companiesDetailsList, index, formData)
 
         result should contain(formData)
         result shouldNot contain(target)
@@ -236,11 +236,33 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
           CompanyDetails("Fourth Company", "21 Brick Lane", None, None, None, None, None, None, None)
         )
 
-        val result = controllerUnderTest.replaceCompany(companyDetailsList, index, formData).companies
+        val result = controllerUnderTest.replaceCompany(companyDetailsList, index, formData)
 
         result shouldNot contain(formData)
         result should contain(target)
         result.length shouldBe 4
+      }
+    }
+
+    "remove duplicate records" when {
+
+      "duplicates are present" in {
+
+        val index = 1
+
+        val target = CompanyDetails("Target Company", "3 Window Close", None, None, None, None, None, None, None)
+
+        val companyDetailsList = List(
+          target,
+          target,
+          target,
+          target
+        )
+
+        val result = controllerUnderTest.replaceCompany(companyDetailsList, index, target)
+
+        result should contain(target)
+        result.length shouldBe 1
       }
     }
   }
