@@ -49,10 +49,12 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
 
   lazy val mockAuthConnector = mock[AuthConnector]
 
+  val company = CompanyDetails(Fixtures.companyName, "Address Line 1", None, None, None, None, None, None, None)
+
   lazy val companyDetailsList: CompanyDetailsList = CompanyDetailsList(
     List(
-      CompanyDetails(Fixtures.companyName, "Adress Line 1", None, None, None, None, None, None, None),
-      CompanyDetails(Fixtures.companyName, "Adress Line 1", None, None, None, None, None, None, None)
+      company,
+      company
     )
   )
 
@@ -337,6 +339,38 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
       val result = await(testGroupSchemeController.showDeleteCompany(0)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
       status(result) shouldBe SEE_OTHER
       headers(result).get("Location").get.contains("/group-summary")
+    }
+
+    "filter deleted company before caching and redirecting" in {
+
+      when(
+        mockCacheUtil.fetchAll(anyString())(any(), any())
+      ).thenReturn(
+        Future.successful(
+          CacheMap(
+            "id1",
+            Map(
+              CacheUtil.GROUP_SCHEME_COMPANIES -> Json.toJson(companyDetailsList)
+            )
+          )
+        )
+      )
+
+      when(
+        mockCacheUtil.fetch[RequestObject](refEq(mockCacheUtil.ersRequestObject))(any(), any(), any(), any())
+      ) thenReturn Future.successful(ersRequestObject)
+
+      when(
+        mockCacheUtil.cache(refEq(CacheUtil.GROUP_SCHEME_COMPANIES), any[CompanyDetailsList](), anyString())(any(), any(), any())
+      ) thenReturn mock[CacheMap]
+
+      val expected = CompanyDetailsList(List(company))
+
+      val result = await(testGroupSchemeController.showDeleteCompany(0)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
+      status(result) shouldBe SEE_OTHER
+
+      verify(mockCacheUtil, times(1))
+        .cache(refEq(CacheUtil.GROUP_SCHEME_COMPANIES), refEq(expected), refEq(ersRequestObject.getSchemeReference))(any(), any(), any())
     }
   }
 
