@@ -585,3 +585,14 @@ ers.pdf.refcode=Cyfeirnod:
 ers.pdf.date_and_time=Dyddiad ac amser cyflwyno:
 ers.pdf.summary_information=Gwybodaeth gryno
 ers.pdf.header=Cyllid a Thollau EM
+
+#********************************************************************
+# Page not found
+#********************************************************************
+ers.global.page.not.found.error.title=Heb ddod o hyd i’r dudalen – Gwarantau ar Sail Cyflogaeth – GOV.UK
+ers.global.page.not.found.error.heading=Heb ddod o hyd i’r dudalen
+ers.global.page.not.found.error.check.web.address.correct=Os gwnaethoch deipio’r cyfeiriad gwe, gwiriwch ei fod yn gywir.
+ers.global.page.not.found.error.check.web.address.full=Os gwnaethoch ludo’r cyfeiriad gwe, gwiriwch eich bod wedi copïo’r cyfeiriad yn llawn.
+ers.global.page.not.found.error.contact=Os yw’r cyfeiriad gwe yn gywir neu os ydych wedi dewis cysylltiad neu fotwm, {0} os oes angen i chi siarad â rhywun am eich datganiad blynyddol.
+ers.global.page.not.found.error.contact.link.text=cysylltwch â Gwasanaeth Cwsmeriaid Cymraeg CThEM
+ers.global.page.not.found.error.contact.link=https://www.gov.uk/government/organisations/hm-revenue-customs/contact/welsh-language-helplines
