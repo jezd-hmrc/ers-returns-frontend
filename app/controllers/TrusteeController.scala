@@ -82,12 +82,9 @@ trait TrusteeController extends ERSReturnBaseController with Authenticator {
       formData => {
         cacheUtil.fetch[TrusteeDetailsList](CacheUtil.TRUSTEES_CACHE, requestObject.getSchemeReference).flatMap { cachedTrusteeList =>
 
-          val trusteesList = if (index == 10000 || cachedTrusteeList.trustees.size >= index) {
-            TrusteeDetailsList(cachedTrusteeList.trustees :+ formData)
-          } else {
-            TrusteeDetailsList(cachedTrusteeList.trustees)
-          }
-          cacheUtil.cache(CacheUtil.TRUSTEES_CACHE, trusteesList, requestObject.getSchemeReference).map { all =>
+          val processedFormData = TrusteeDetailsList(replaceTrustee(cachedTrusteeList.trustees, index, formData))
+
+          cacheUtil.cache(CacheUtil.TRUSTEES_CACHE, processedFormData, requestObject.getSchemeReference).map { all =>
             Redirect(routes.TrusteeController.trusteeSummaryPage())
           }
 
@@ -101,6 +98,16 @@ trait TrusteeController extends ERSReturnBaseController with Authenticator {
       }
     )
   }
+
+  def replaceTrustee(trustees: List[TrusteeDetails], index: Int, formData: TrusteeDetails): List[TrusteeDetails] =
+
+    (if (index == 10000) {
+      trustees :+ formData
+    } else {
+      trustees.zipWithIndex.map{
+        case (a, b) => if (b == index) formData else a
+      }
+    }).distinct
 
   def deleteTrustee(id: Int): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>
