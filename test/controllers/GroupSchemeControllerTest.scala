@@ -49,10 +49,12 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
 
   lazy val mockAuthConnector = mock[AuthConnector]
 
+  val company = CompanyDetails(Fixtures.companyName, "Address Line 1", None, None, None, None, None, None, None)
+
   lazy val companyDetailsList: CompanyDetailsList = CompanyDetailsList(
     List(
-      CompanyDetails(Fixtures.companyName, "Adress Line 1", None, None, None, None, None, None, None),
-      CompanyDetails(Fixtures.companyName, "Adress Line 1", None, None, None, None, None, None, None)
+      company,
+      company
     )
   )
 
@@ -261,30 +263,37 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSUsers
       status(result) shouldBe SEE_OTHER
       headers(result).get("Location").get.contains("/group-summary")
     }
-  }
 
-  "filter deleted company" should {
+    "filter deleted company before caching and redirecting" in {
 
-    "remove the deleted company and retain other companies" in {
-
-      val deletedCompany = CompanyDetails("Third Company", "Address Line 1", None, None, None, None, None, None, None)
-
-      val companyDetailsList = CompanyDetailsList(
-        List(
-          CompanyDetails(Fixtures.companyName, "Address Line 1", None, None, None, None, None, None, None),
-          CompanyDetails("Second Company", "Address Line 1", None, None, None, None, None, None, None),
-            deletedCompany
+      when(
+        mockCacheUtil.fetchAll(anyString())(any(), any())
+      ).thenReturn(
+        Future.successful(
+          CacheMap(
+            "id1",
+            Map(
+              CacheUtil.GROUP_SCHEME_COMPANIES -> Json.toJson(companyDetailsList)
+            )
+          )
         )
       )
 
-      val fakeController = new GroupSchemeController {
-        override val cacheUtil: CacheUtil = mock[CacheUtil]
-      }
+      when(
+        mockCacheUtil.fetch[RequestObject](refEq(mockCacheUtil.ersRequestObject))(any(), any(), any(), any())
+      ) thenReturn Future.successful(ersRequestObject)
 
-      val result = fakeController.filterDeletedCompany(companyDetailsList, 2)
+      when(
+        mockCacheUtil.cache(refEq(CacheUtil.GROUP_SCHEME_COMPANIES), any[CompanyDetailsList](), anyString())(any(), any(), any())
+      ) thenReturn mock[CacheMap]
 
-      result shouldNot contain (deletedCompany)
-      result.length shouldBe 2
+      val expected = CompanyDetailsList(List(company))
+
+      val result = await(testGroupSchemeController.showDeleteCompany(0)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
+      status(result) shouldBe SEE_OTHER
+
+      verify(mockCacheUtil, times(1))
+        .cache(refEq(CacheUtil.GROUP_SCHEME_COMPANIES), refEq(expected), refEq(ersRequestObject.getSchemeReference))(any(), any(), any())
     }
   }
 

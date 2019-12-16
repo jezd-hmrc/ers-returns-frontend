@@ -113,7 +113,7 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
     }
   }
 
-  def filterDeletedCompany(companyList: CompanyDetailsList, id: Int): List[CompanyDetails] =
+  private def filterDeletedCompany(companyList: CompanyDetailsList, id: Int): List[CompanyDetails] =
     companyList.companies.zipWithIndex.filterNot(_._2 == id).map(_._1)
 
   def editCompany(id: Int) = AuthorisedForAsync() {

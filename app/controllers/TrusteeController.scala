@@ -123,7 +123,7 @@ trait TrusteeController extends ERSReturnBaseController with Authenticator {
     }
   }
 
-  def filterDeletedTrustee(trusteeDetailsList: TrusteeDetailsList, id: Int): List[TrusteeDetails] =
+  private def filterDeletedTrustee(trusteeDetailsList: TrusteeDetailsList, id: Int): List[TrusteeDetails] =
     trusteeDetailsList.trustees.zipWithIndex.filterNot(_._2 == id).map(_._1)
 
   def editTrustee(id: Int): Action[AnyContent] = AuthorisedForAsync() {

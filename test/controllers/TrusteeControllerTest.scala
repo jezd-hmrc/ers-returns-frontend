@@ -20,8 +20,7 @@ import akka.stream.Materializer
 import connectors.ErsConnector
 import models._
 import org.joda.time.DateTime
-import org.jsoup.Jsoup
-import org.mockito.Matchers._
+import org.mockito.Matchers.{eq => meq, _}
 import org.mockito.Mockito._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.OneServerPerSuite
@@ -30,6 +29,7 @@ import play.api.http.Status
 import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.inject.Injector
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.Json
 import play.api.mvc.Request
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -177,10 +177,14 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
 
   "calling Delete Trustee" should {
 
+    val firstTrustee = TrusteeDetails("First Trustee", "1 The Street", None, None, None, Some("UK"), None)
+    val secondTrustee = TrusteeDetails("Second Trustee", "34 Some Road", None, None, None, Some("UK"), None)
+    val thirdTrustee = TrusteeDetails("Third Trustee", "60 Window Close", None, None, None, Some("UK"), None)
+
     val trusteeList = List(
-      TrusteeDetails("First Trustee", "1 The Street", None, None, None, Some("UK"), None),
-      TrusteeDetails("Second Trustee", "34 Some Road", None, None, None, Some("UK"), None),
-      TrusteeDetails("Third Trustee", "60 Window Close", None, None, None, Some("UK"), None)
+      firstTrustee,
+      secondTrustee,
+      thirdTrustee
     )
 
     val failure: Future[Nothing] = Future.failed(new Exception)
@@ -195,19 +199,18 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
       val ersSummary = ErsSummary("testbundle", "1", None, DateTime.now, rsc, None, None, None, None, None, None, None, None)
 
       val mockErsConnector: ErsConnector = mock[ErsConnector]
-      val mockCacheUtil: CacheUtil = mock[CacheUtil]
-      override val cacheUtil: CacheUtil = mockCacheUtil
+      override val cacheUtil: CacheUtil = mock[CacheUtil]
 
       when(
-        mockCacheUtil.fetch[TrusteeDetailsList](refEq(CacheUtil.TRUSTEES_CACHE), anyString())(any(), any(), any())
+        cacheUtil.fetch[TrusteeDetailsList](refEq(CacheUtil.TRUSTEES_CACHE), anyString())(any(), any(), any())
       ) thenReturn trusteeDetailsRes
 
       when(
-        mockCacheUtil.cache(refEq(CacheUtil.TRUSTEES_CACHE), anyString(), anyString())(any(), any(), any())
+        cacheUtil.cache(refEq(CacheUtil.TRUSTEES_CACHE), anyString(), anyString())(any(), any(), any())
       ) thenReturn cacheRes
 
       when(
-        mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
+        cacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
       ) thenReturn requestObjectRes
     }
 
@@ -239,43 +242,18 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
     }
 
     "delete trustee for given index and redirect to trustee summary page" in {
-      val controllerUnderTest = buildFakeTrusteeController()
+
+      val expected = List(firstTrustee, thirdTrustee)
+      val cacheMap = CacheMap("_id", Map(CacheUtil.TRUSTEES_CACHE -> Json.toJson(trusteeList)))
+
+      val controllerUnderTest = buildFakeTrusteeController(cacheRes = Future.successful(cacheMap))
       val result = controllerUnderTest.showDeleteTrustee(1)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
       status(result) shouldBe Status.SEE_OTHER
-      result.header.headers("Location") shouldBe routes.TrusteeController.trusteeSummaryPage.toString
 
+      verify(controllerUnderTest.cacheUtil, times(1))
+        .cache(meq(CacheUtil.TRUSTEES_CACHE), meq(TrusteeDetailsList(expected)), meq(ersRequestObject.getSchemeReference))(any(), any(), any())
     }
 
-    "reconstruct trustee list and redirect to trustee summary page" in {
-      val controllerUnderTest = buildFakeTrusteeController()
-      val result = controllerUnderTest.showDeleteTrustee(10)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc)
-      status(result) shouldBe Status.SEE_OTHER
-      result.header.headers("Location") shouldBe routes.TrusteeController.trusteeSummaryPage.toString
-    }
-
-  }
-
-  "Calling filter deleted trustee" should {
-
-    "drop the trustee by the index and retain all other trustees" in {
-
-      val deletedRecord = TrusteeDetails("Second Trustee", "34 Some Road", None, None, None, Some("UK"), None)
-
-      val trusteeList = models.TrusteeDetailsList(List(
-        TrusteeDetails("First Trustee", "1 The Street", None, None, None, Some("UK"), None),
-        deletedRecord,
-        TrusteeDetails("Third Trustee", "60 Window Close", None, None, None, Some("UK"), None)
-      ))
-
-      val controllerUnderTest = new TrusteeController {
-        override val cacheUtil: CacheUtil = mock[CacheUtil]
-      }
-
-      val result = controllerUnderTest.filterDeletedTrustee(trusteeList, 1)
-
-      result shouldNot contain (deletedRecord)
-      result.length shouldBe 2
-    }
   }
 
   "calling Edit Trustee" should {
