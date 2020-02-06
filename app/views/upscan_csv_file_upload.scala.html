@@ -41,55 +41,26 @@
 
     @reference(requestObject.getPageTitle)
     <p class="font-xsmall"><a href="@routes.CheckCsvFilesController.checkCsvFilesPage" class="link-back">@Html(Messages("ers.back"))</a></p>
-    @if(csvFilesCallback.count(_.isStarted) == 0) {
-        @if(csvFilesCallback.map(_.fileId).size == 1) {
-            @header(Messages("csv_file_upload.file_title"))
-        } else {
-            @header(Messages("csv_file_upload.first_file_title"))
-        }
-    } else {
-        @header(Messages("csv_file_upload.next_file_title"))
-    }
+<!--TODO the descriptions are wrongly cased-->
+    @header(messages("csv_file_upload.upload_your_file", messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,currentCsvFile.fileId+".description")).toLowerCase))
 
     <div id="errors" class="validation-summary visibility" role="group" aria-labelledby="error-summary-heading" tabindex="-1">
-        <h1 class="heading-medium error-summary-heading" id="error-summary-heading">
-            @Html(Messages("validation.summary.heading"))
-        </h1>
-        <ul class="error-summary-list">
-            <li class="validation-summary-message"><a href="#file-uploader" data-focuses="file-uploader">@Html(Messages("csv_file_upload.summary_error"))</a></li>
-        </ul>
+      <h1 class="heading-medium error-summary-heading" id="error-summary-heading">
+        @Html(Messages("validation.summary.heading"))
+      </h1>
+      <ul class="error-summary-list">
+        <li class="validation-summary-message"><a href="#file-uploader" data-focuses="file-uploader">@Html(Messages("csv_file_upload.summary_error"))</a></li>
+      </ul>
     </div>
-    <h2 id="files-list" class="heading-small">
-        @if(csvFilesCallback.map(_.fileId).size == 1) {
-            @Html(Messages("csv_file_upload.file_to_upload_title"))
-        } else {
-            @Html(Messages("csv_file_upload.files_to_upload_title"))
-        }
-    </h2>
 
-    <p>
-      <!--TODO fix content. Currenly files reorganise as they upload them. Also, says uploaded when not true-->
-    <span class="uploaded files" data-file-name="@Messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,currentCsvFile.fileId+".file_name"))">@Messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,currentCsvFile.fileId+".description"))</span> @Messages("ers.uploaded")<br>
 
-    @for(file <- csvFilesCallback if !(file == currentCsvFile)) {
-        <span id="@file.fileId" class="notUploaded files">@Messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,file.fileId+".description"))</span><br>
-    }
-    </p>
 
     <div class="panel-indent">
-        <p>@Messages("CSV_file_upload.size_warning.link.before") <a href="mailto:shareschemes@@hmrc.gsi.gov.uk">shareschemes@@hmrc.gsi.gov.uk</a> @Messages("CSV_file_upload.size_warning.link.after")</p>
+      <p>@messages("csv_file_upload.delay")</p>
     </div>
-    <label for="fileToUpload" class="visuallyhidden">
-        <p>@if(csvFilesCallback.count(_.isStarted) == 0) {
-                @if(csvFilesCallback.map(_.fileId).size == 1) {
-                    @Html(getPageElement(schemeId, PAGE_FILE_UPLOAD, "info", ""))
-                } else {
-                    @Html(getPageElement(schemeId, PAGE_FILE_UPLOAD, "info", "first"))
-                }
-            } else {
-                @Html(getPageElement(schemeId, PAGE_FILE_UPLOAD, "info", "next"))
-            }
-        </p>
+
+    <label class="form-label" for="fileToUpload" data-file-name="@messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,currentCsvFile.fileId+".file_name"))">
+      @messages("csv_file_upload.upload_your_file", messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,currentCsvFile.fileId+".file_name")))
     </label>
     @upscan_file_upload_form(".csv", upscanInitiateResponse.formFields, upscanInitiateResponse.postTarget)
 }

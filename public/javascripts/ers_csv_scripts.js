@@ -75,6 +75,7 @@
 
 	function validateFile(fileName, fileSize, e) {
 		// Check file name
+//		TODO remove validFileName
 		if (validFileName(fileName)) {
 			// check file name length
 				// Check file extn
