@@ -81,7 +81,7 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
           _ <- cacheUtil.cache(CacheUtil.CHECK_CSV_FILES, updatedCacheFileList, requestObject.getSchemeReference)
         } yield {
           if(updatedCacheFileList.files.count(_.uploadStatus == NotStarted) == 0)
-            Ok(views.html.upscan_csv_success(requestObject, csvFileList))
+            Redirect(routes.CsvFileUploadController.validationResults())
           else
             Redirect(routes.CsvFileUploadController.uploadFilePage())
         }) recover {

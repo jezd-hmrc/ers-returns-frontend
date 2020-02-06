@@ -356,7 +356,6 @@ csv_file_upload.next_file_title = Uwchlwythwch eich ffeil CSV nesaf
 csv_file_upload.contact_us = Cysylltwch â ni ar ein tudalen adborth
 csv_file_upload.file_size = os yw unrhyw un o’ch ffeiliau’n fwy na 100MB.
 csv_file_upload.file_to_upload_title = Dyma’r ffeil y rhoesoch wybod fod angen i chi ei huwchlwytho:
-csv_file_upload.files_to_upload_title = Dyma’r ffeiliau y rhoesoch wybod fod angen i chi eu huwchlwytho:
 csv_file_upload.file_to_upload_title_still = Ffeiliau sydd yn dal i fod angen i chi eu huwchlwytho
 csv_file_upload.you_have_uploaded = Rydych wedi uwchlwytho:
 csv_file_upload.summary_error = Dewiswch ffeil wahanol i’w huwchlwytho

@@ -59,7 +59,7 @@
       <p>@messages("csv_file_upload.delay")</p>
     </div>
 
-    <label class="form-label" for="fileToUpload" data-file-name="@messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,currentCsvFile.fileId+".file_name"))">
+    <label class="form-label" id="fileName" for="fileToUpload" data-file-name="@messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,currentCsvFile.fileId+".file_name"))">
       @messages("csv_file_upload.upload_your_file", messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,currentCsvFile.fileId+".file_name")))
     </label>
     @upscan_file_upload_form(".csv", upscanInitiateResponse.formFields, upscanInitiateResponse.postTarget)

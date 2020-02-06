@@ -18,7 +18,7 @@
 
 	function isValidCSVFile (filename) {
 		var matchCount = 0
-		$(".files").each(function(index){
+		$("#fileName").each(function(index){
 			if ($(this)[0].getAttribute("data-file-name") == filename) {matchCount++;}
 		});
 		if (matchCount > 0) {

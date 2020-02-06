@@ -160,7 +160,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
       }
     }
 
-    "display success page" when {
+    "redirect the user to validation results" when {
       "no file in the cache has UploadStatus of NotStarted after update" in {
         withAuthorisedUser { req =>
           when(mockCacheUtil.fetch[UpscanCsvFilesCallbackList](meq(CacheUtil.CHECK_CSV_FILES), any[String])(any[HeaderCarrier], any(), any()))
@@ -169,8 +169,8 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
             .thenReturn(Future.successful(mock[CacheMap]))
 
           val result = csvFileUploadController.success(testUploadId)(req)
-          status(result) shouldBe OK
-          contentAsString(result) should include(messages("ers.if_there_are_no_errors.page_title"))
+          status(result) shouldBe SEE_OTHER
+          redirectLocation(result) shouldBe Some(routes.CsvFileUploadController.validationResults().url)
         }
       }
     }
