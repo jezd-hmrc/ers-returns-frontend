@@ -90,7 +90,7 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
       }
     }
   }
-//TODO rest of testing of success after impl
+
   "success" must {
     "return OK" when {
       "Callback record is returned with a successful upload and file name is cached" in {

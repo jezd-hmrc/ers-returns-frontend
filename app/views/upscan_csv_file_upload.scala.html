@@ -41,7 +41,6 @@
 
     @reference(requestObject.getPageTitle)
     <p class="font-xsmall"><a href="@routes.CheckCsvFilesController.checkCsvFilesPage" class="link-back">@Html(Messages("ers.back"))</a></p>
-<!--TODO the descriptions are wrongly cased-->
     @header(messages("csv_file_upload.upload_your_file", messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,currentCsvFile.fileId+".description")).toLowerCase))
 
     <div id="errors" class="validation-summary visibility" role="group" aria-labelledby="error-summary-heading" tabindex="-1">

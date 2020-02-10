@@ -44,7 +44,7 @@ trait FileUploadCallbackController extends FrontendController with ErsConstants 
         val uploadStatus = callback match {
           case callback: UpscanReadyCallback =>
             UploadedSuccessfully(callback.uploadDetails.fileName, callback.downloadUrl.toExternalForm)
-          case UpscanFailedCallback(_, details) => //TODO logging
+          case UpscanFailedCallback(_, details) =>
             logger.warn(s"Callback for session id: $sessionId failed. Reason: ${details.failureReason}. Message: ${details.message}")
             Failed
         }

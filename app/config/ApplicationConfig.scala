@@ -37,6 +37,7 @@ trait ApplicationConfig extends AppName {
   val analyticsHost: String
   val validatorUrl: String
 
+  val upscanProtocol: String
   val upscanInitiateHost: String
   val upscanRedirectBase: String
 
@@ -54,6 +55,8 @@ trait ApplicationConfig extends AppName {
 
   val csvCacheInProgressRetryAmount: Int
   val csvCacheCompletedRetryAmount: Int
+  val odsSuccessRetryAmount: Int
+  val odsValidationRetryAmount: Int
   val retryDelay: FiniteDuration
 }
 
@@ -78,6 +81,7 @@ class ApplicationConfigImpl extends ApplicationConfig with ServicesConfig {
 
   override lazy val validatorUrl: String = baseUrl("ers-file-validator") + "/ers/:empRef/" + loadConfig("microservice.services.ers-file-validator.url")
 
+  override val upscanProtocol: String = configuration.getString("microservice.services.upscan.protocol").getOrElse("http").toLowerCase()
   override val upscanInitiateHost: String = baseUrl("upscan")
   override val upscanRedirectBase: String = configuration.getString("microservice.services.upscan.redirect-base").get
 
@@ -101,6 +105,8 @@ class ApplicationConfigImpl extends ApplicationConfig with ServicesConfig {
 
   val csvCacheInProgressRetryAmount: Int = runModeConfiguration.getInt("retry.csv-callback-cache.in-progress.amount").getOrElse(1)
   val csvCacheCompletedRetryAmount: Int = runModeConfiguration.getInt("retry.csv-callback-cache.completed-upload.amount").getOrElse(1)
+  val odsSuccessRetryAmount: Int = runModeConfiguration.getInt("retry.ods-success-cache.complete-upload.amount").getOrElse(1)
+  val odsValidationRetryAmount: Int = runModeConfiguration.getInt("retry.ods-success-cache.validation.amount").getOrElse(1)
   override val retryDelay: FiniteDuration = (runModeConfiguration.getMilliseconds("retry.delay").get) milliseconds
 }
 

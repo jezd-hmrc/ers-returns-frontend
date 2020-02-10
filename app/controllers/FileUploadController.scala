@@ -20,7 +20,7 @@ import _root_.models._
 import akka.actor.ActorSystem
 import config.{ApplicationConfig, ERSFileValidatorAuthConnector}
 import connectors.ErsConnector
-import models.upscan.{UploadStatus, UploadedSuccessfully}
+import models.upscan.{Failed, UploadStatus, UploadedSuccessfully, UpscanCsvFilesCallbackList}
 import play.api.Logger
 import play.api.Play.current
 import play.api.i18n.Messages
@@ -62,14 +62,19 @@ trait FileUploadController extends FrontendController with Authenticator with Le
             getGlobalErrorPage
         }
   }
-//TODO fix error logging everywhere for exceptions and timestamps
+
   def success(): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>
       implicit request =>
         val futureRequestObject: Future[RequestObject] = cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
-        val futureCallbackData: Future[Option[UploadStatus]] = sessionService.getCallbackRecord
+        val futureCallbackData: Future[Option[UploadStatus]] = sessionService.getCallbackRecord.withRetry(appConfig.odsSuccessRetryAmount){
+          opt => opt.fold(true) {
+            case _: UploadedSuccessfully | Failed => true
+            case _ => false
+          }
+        }
 
-       (for {
+        (for {
           requestObject <- futureRequestObject
           file          <- futureCallbackData
         } yield {
@@ -78,16 +83,19 @@ trait FileUploadController extends FrontendController with Authenticator with Le
               cacheUtil.cache[String](CacheUtil.FILE_NAME_CACHE, file.name, requestObject.getSchemeReference).map { _ =>
                 Redirect(routes.FileUploadController.validationResults())
               }
-            case _ => Future.successful(getGlobalErrorPage)
-            case Some(status: UploadStatus) => //TODO unreachable
-              //TODO can we only show page if cache is successful? For current behaviour yes.
-              // We can only cache on success upload. What do we do with other status? What to do with None?? - Probs retry! None fail
-              // This isnt tested either ATM
-              Future.successful(Redirect(???))
+            case Some(Failed) =>
+              logger.warn("Upload status is failed")
+              Future.successful(getGlobalErrorPage)
+            case None =>
+              logger.warn(s"Failed to verify upload. No data found in cache")
+              throw new Exception("Upload data missing in cache for ODS file.")
           }
         }).flatMap(identity) recover {
+         case e: LoopException[Option[UploadStatus]] =>
+           logger.error(s"Failed to verify upload. Upload status: ${e.finalFutureData.flatten}", e)
+           getGlobalErrorPage
          case e: Exception =>
-           Logger.error(s"success: failed to save ods filename with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.", e)
+           logger.error(s"success: failed to save ods file with exception ${e.getMessage}.", e)
            getGlobalErrorPage
        }
   }
@@ -96,10 +104,10 @@ trait FileUploadController extends FrontendController with Authenticator with Le
     implicit user =>
       implicit request =>
         val futureRequestObject = cacheUtil.fetch[RequestObject](CacheUtil.ersRequestObject)
-        val futureCallbackData = sessionService.getCallbackRecord.withRetry(appConfig.csvCacheCompletedRetryAmount)(_.exists(_.isInstanceOf[UploadedSuccessfully]))
+        val futureCallbackData = sessionService.getCallbackRecord.withRetry(appConfig.odsValidationRetryAmount)(_.exists(_.isInstanceOf[UploadedSuccessfully]))
         (for {
           requestObject <- futureRequestObject
-          all <- cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, requestObject.getSchemeReference) //TODO different config below
+          all <- cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, requestObject.getSchemeReference)
           connectorResponse <- ersConnector.removePresubmissionData(all.schemeInfo)
           callbackData <- futureCallbackData
           validationResponse <-
