@@ -76,15 +76,14 @@ trait FileUploadController extends FrontendController with Authenticator with Le
           file match {
             case Some(file: UploadedSuccessfully) =>
               cacheUtil.cache[String](CacheUtil.FILE_NAME_CACHE, file.name, requestObject.getSchemeReference).map { _ =>
-                Ok(views.html.upscan_ods_success(requestObject, file))
+                Redirect(routes.FileUploadController.validationResults())
               }
-            case Some(status: UploadStatus) =>
+            case _ => Future.successful(getGlobalErrorPage)
+            case Some(status: UploadStatus) => //TODO unreachable
               //TODO can we only show page if cache is successful? For current behaviour yes.
               // We can only cache on success upload. What do we do with other status? What to do with None?? - Probs retry! None fail
               // This isnt tested either ATM
-              //TODO depends on content. If design want file name here, then we put file name here and fail/retru if its not uploaded by this page
-              //TODO if they dont then we can cache on validation results post maybe??
-              Future.successful(Ok(views.html.upscan_ods_success(requestObject, status)))
+              Future.successful(Redirect(???))
           }
         }).flatMap(identity) recover {
          case e: Exception =>

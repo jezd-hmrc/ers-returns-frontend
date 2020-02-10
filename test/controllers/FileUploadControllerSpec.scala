@@ -103,8 +103,8 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
 
         withAuthorisedUser { request =>
           val result = TestFileUploadController.success()(request)
-          status(result) mustBe OK
-          contentAsString(result) must include (messages("ers.if_there_are_no_errors.page_title"))
+          status(result) mustBe SEE_OTHER
+          redirectLocation(result) mustBe Some(routes.FileUploadController.validationResults().url)
         }
 
       }
