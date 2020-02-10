@@ -330,7 +330,6 @@ ers_signed_out.link = Mewngofnodi’n ôl i’ch cyfrif Gwasanaethau ar-lein CTh
 file_upload.title = Uwchlwythwch eich ffeil ODS
 file_upload.contact_us = Cysylltwch â ni ar ein tudalen adborth
 file_upload.size_warning.link.before =Os yw’ch ffeil yn fwy na 10MB, ni allwch ddefnyddio’r gwasanaeth hwn. E-bostiwch
-file_upload.size_warning.link.after = a byddwn yn eich helpu gyda’ch cyflwyniad.
 file_upload.file_size = os yw’ch ffeil ODS yn fwy na 10MB.
 file_upload.csop.info = Dewiswch y ffeil {0} rydych am ei huwchlwytho fel rhan o’ch Datganiad Blynyddol ar gyfer Cynllun Opsiwn Prynu Cyfranddaliadau Cwmni.
 file_upload.emi.info = Dewiswch y ffeil {0} rydych am ei huwchlwytho fel rhan o’ch Datganiad Blynyddol ar gyfer Cymhellion Rheoli Mentrau.

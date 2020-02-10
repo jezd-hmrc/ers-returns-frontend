@@ -25,25 +25,25 @@
 	<script src='@routes.AssetsController.at("javascripts/ers_ods_scripts.js")'> </script>
 }
 
-@ers_main(title = Messages("ers.upload_ods_file.page_title"), scripts) {
+@ers_main(title = messages("ers.upload_ods_file.page_title"), scripts) {
 
 	@reference(requestObject.getPageTitle)
-	<p class="font-xsmall"><a href="@routes.CheckFileTypeController.checkFileTypePage" class="link-back">@Html(Messages("ers.back"))</a></p>
-	@header(Messages("file_upload.title"))
+	<p class="font-xsmall"><a href="@routes.CheckFileTypeController.checkFileTypePage" class="link-back">@Html(messages("ers.back"))</a></p>
+	@header(messages("file_upload.title"))
 
 	<div id="errors" class="validation-summary visibility" role="group" aria-labelledby="error-summary-heading" tabindex="-1">
 		<h1 class="heading-medium error-summary-heading" id="error-summary-heading">
-			@Html(Messages("validation.summary.heading"))
+			@Html(messages("validation.summary.heading"))
 		</h1>
 		<ul class="error-summary-list">
-			<li class="validation-summary-message"><a href="#fileToUpload" data-focuses="fileToUpload">@Messages("csv_file_upload.summary_error")</a></li>
+			<li class="validation-summary-message"><a href="#fileToUpload" data-focuses="fileToUpload">@messages("csv_file_upload.summary_error")</a></li>
 		</ul>
 	</div>
 	<div class="panel-indent">
-        <p>@Messages("file_upload.size_warning.link.before") <a href="mailto:shareschemes@@hmrc.gsi.gov.uk">shareschemes@@hmrc.gsi.gov.uk</a> @Messages("file_upload.size_warning.link.after")</p>
+		<p>@messages("file_upload.delay")</p>
 	</div>
 	<label for="fileToUpload" class="visuallyhidden">
-		<span>@Html(Messages("file_upload.title"))</span>
+		<span>@Html(messages("file_upload.title"))</span>
 	</label>
   @upscan_file_upload_form(".ods", upscanInitiateResponse.formFields, upscanInitiateResponse.postTarget)
 }

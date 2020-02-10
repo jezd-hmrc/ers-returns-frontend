@@ -431,13 +431,13 @@ ers_signed_out.link = Sign back in to your HMRC Online services account
 file_upload.title = Upload your ODS file
 file_upload.contact_us = Contact us on our feedback page
 file_upload.size_warning.link.before = If your file is larger than 10MB, you can’t use this service. Email
-file_upload.size_warning.link.after = and we’ll help you with your submission.
 file_upload.file_size = if your .ods file is larger than 10MB.
 file_upload.csop.info = Choose the {0} file you want to upload as part of your Company Share Option Plan annual return.
 file_upload.emi.info = Choose the {0} file you want to upload as part of your Enterprise Management Incentives annual return.
 file_upload.other.info = Choose the {0} file you want to upload as part of your Other annual return.
 file_upload.sip.info = Choose the {0} file you want to upload as part of your Share Incentive Plan annual return.
 file_upload.saye.info = Choose the {0} file you want to upload as part of your Save As You Earn annual return.
+file_upload.delay = Your file may take a few minutes to upload. You will have to wait until it has uploaded before you continue.
 
 file_upload_errors.title = Errors have been found
 file_upload_errors.para1 = Fix the errors before you use this service again or
@@ -457,7 +457,6 @@ ers_upload_successful.page_title = Successful upload
 
 csv_file_upload.upload_your_file_header = Upload your {0} file
 csv_file_upload.upload_your_file = Upload the file {0}
-csv_file_upload.delay = Your file may take a few minutes to upload. You will have to wait until it has uploaded before you continue.
 csv_file_upload.file_title = Upload your CSV file
 csv_file_upload.first_file_title = Upload your first CSV file
 csv_file_upload.next_file_title = Upload your next CSV file
