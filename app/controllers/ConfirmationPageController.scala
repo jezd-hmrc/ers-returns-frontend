@@ -26,7 +26,7 @@ import play.api.Logger
 import play.api.Play.current
 import play.api.i18n.Messages
 import play.api.i18n.Messages.Implicits._
-import play.api.mvc.{Request, Result}
+import play.api.mvc.{Action, AnyContent, Request, Result}
 import services.audit.AuditEvents
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 import utils.{CacheUtil, ExternalUrls, _}
@@ -49,13 +49,13 @@ trait ConfirmationPageController extends ERSReturnBaseController with Authentica
   val jsonParser: JsonParser
   val metrics: Metrics
 
-  def confirmationPage() = AuthorisedForAsync() {
-    implicit user =>
-      implicit request =>
-          showConfirmationPage()(user, request, hc)
+  def confirmationPage(): Action[AnyContent] = authorisedForAsync() {
+    implicit authContext: ERSAuthData =>
+			implicit request =>
+          showConfirmationPage()(authContext, request, hc)
   }
 
-  def showConfirmationPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showConfirmationPage()(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
       if (request.session.get(screenSchemeInfo).isEmpty) Logger.error(s"Session doesn't contain scheme info: ${request.session}")
       val schemeRef: String = requestObject.getSchemeReference
@@ -101,7 +101,8 @@ trait ConfirmationPageController extends ERSReturnBaseController with Authentica
     }
   }
 
-  def saveAndSubmit(alldata: ErsSummary, all: ErsMetaData, bundle: String)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def saveAndSubmit(alldata: ErsSummary, all: ErsMetaData, bundle: String)
+									 (implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
     val jsonDateTimeFormat = new SimpleDateFormat("d MMMM yyyy, h:mma")
     val dateTimeSubmitted = jsonDateTimeFormat.format(alldata.confirmationDateTime.toDate).replace("AM", "am").replace("PM", "pm")
@@ -149,7 +150,7 @@ trait ConfirmationPageController extends ERSReturnBaseController with Authentica
 
   }
 
-  def getGlobalErrorPage(implicit request: Request[_], messages: Messages) = Ok(views.html.global_error(
+  def getGlobalErrorPage(implicit request: Request[_], messages: Messages): Result = Ok(views.html.global_error(
     messages("ers.global_errors.title"),
     messages("ers.global_errors.heading"),
     messages("ers.global_errors.message"))(request, messages))

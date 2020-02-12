@@ -16,74 +16,60 @@
 
 package controllers
 
-import akka.stream.Materializer
 import connectors.{AttachmentsConnector, ErsConnector}
 import models._
 import org.joda.time.DateTime
-import org.jsoup.Jsoup
-import org.mockito.Matchers._
+import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mock.MockitoSugar
-import org.scalatestplus.play.OneAppPerSuite
-import play.api.Application
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.i18n.{Lang, Messages, MessagesApi}
-import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsString, Json}
+import play.api.libs.json.JsString
 import play.api.mvc.{Request, Result}
 import play.api.test.FakeRequest
+import play.api.test.Helpers._
 import services.SessionService
+import uk.gov.hmrc.auth.core.PlayAuthConnector
 import uk.gov.hmrc.http.cache.client.CacheMap
-import uk.gov.hmrc.play.frontend.auth.AuthContext
-import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.test.UnitSpec
-import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures}
+import utils.Fixtures.ersRequestObject
+import utils.{AuthHelper, CacheUtil, ERSFakeApplicationConfig, Fixtures}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import play.api.test.Helpers._
-import play.twirl.api.Html
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import utils.Fixtures.ersRequestObject
-
 import scala.util.Success
 
-class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSFakeApplicationConfig with ERSUsers with MockitoSugar with ScalaFutures {
+class CsvFileUploadControllerSpec extends UnitSpec with GuiceOneAppPerSuite with ERSFakeApplicationConfig with ScalaFutures with AuthHelper {
 
-
-  override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
-  implicit lazy val mat: Materializer = app.materializer
   implicit lazy val messages: Messages = Messages(Lang("en"), app.injector.instanceOf[MessagesApi])
   implicit val requests: Request[_] = FakeRequest()
-
-  val mockAuthConnector = mock[AuthConnector]
 
   "calling uploadFilePage" should {
 
     val csvFileUploadController: CsvFileUploadController = new CsvFileUploadController {
-      val authConnector = mockAuthConnector
-
-      override val attachmentsConnector = mock[AttachmentsConnector]
-      override val sessionService = mock[SessionService]
+      override val authConnector: PlayAuthConnector = mockAuthConnector
+      override val attachmentsConnector: AttachmentsConnector = mock[AttachmentsConnector]
+      override val sessionService: SessionService = mock[SessionService]
       override val ersConnector: ErsConnector = mock[ErsConnector]
       override val cacheUtil: CacheUtil = mock[CacheUtil]
 
-      override def showUploadFilePage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Ok
+      override def showUploadFilePage()(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Ok
     }
 
     "redirect for unauthorised users to login page" in {
+			setUnauthorisedMocks()
       val result = csvFileUploadController.uploadFilePage().apply(FakeRequest("GET", ""))
       status(result) shouldBe SEE_OTHER
       result.header.headers("Location").contains("/gg/sign-in") shouldBe true
     }
 
     "show the result of showUploadFilePage() for authorised users" in {
-      withAuthorisedUser { user =>
-        csvFileUploadController.uploadFilePage().apply(Fixtures.buildFakeRequestWithSessionIdCSOP("GET")).map { result =>
-          status(result) shouldBe OK
-        }
-      }
-    }
+			setAuthMocks()
+			csvFileUploadController.uploadFilePage().apply(Fixtures.buildFakeRequestWithSessionIdCSOP("GET")).map { result =>
+				status(result) shouldBe OK
+			}
+		}
 
   }
 
@@ -92,10 +78,9 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     val mockCacheUtil: CacheUtil = mock[CacheUtil]
 
     val csvFileUploadController: CsvFileUploadController = new CsvFileUploadController {
-      val authConnector = mockAuthConnector
-
-      override val attachmentsConnector = mock[AttachmentsConnector]
-      override val sessionService = mock[SessionService]
+      override val authConnector: PlayAuthConnector = mockAuthConnector
+      override val attachmentsConnector: AttachmentsConnector = mock[AttachmentsConnector]
+      override val sessionService: SessionService = mock[SessionService]
       override val ersConnector: ErsConnector = mock[ErsConnector]
       override val cacheUtil: CacheUtil = mockCacheUtil
 
@@ -104,12 +89,12 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     "direct to ers errors page if fetching csv callback list fails" in {
       reset(mockCacheUtil)
       when(
-        mockCacheUtil.fetch[CsvFilesCallbackList](anyString(), anyString())(any(), any(), any())
+        mockCacheUtil.fetch[CsvFilesCallbackList](any(), any())(any(), any(), any())
       ).thenReturn(
         Future.failed(new RuntimeException)
       )
       when(
-        mockCacheUtil.fetch[RequestObject](anyString())(any(), any(), any(), any())
+        mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
       ).thenReturn(
         Future.successful(ersRequestObject)
       )
@@ -125,12 +110,12 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     "direct to ers errors page if fetching request object fails" in {
       reset(mockCacheUtil)
       when(
-        mockCacheUtil.fetch[CsvFilesCallbackList](anyString(), anyString())(any(), any(), any())
+        mockCacheUtil.fetch[CsvFilesCallbackList](any(), any())(any(), any(), any())
       ).thenReturn(
         Future.successful(CsvFilesCallbackList(List()))
       )
       when(
-        mockCacheUtil.fetch[RequestObject](anyString())(any(), any(), any(), any())
+        mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
       ).thenReturn(
         Future.failed(new RuntimeException)
       )
@@ -146,12 +131,12 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     "direct to ers errors page if fetching attachments partial fails" in {
       reset(mockCacheUtil)
       when(
-        mockCacheUtil.fetch[CsvFilesCallbackList](anyString(), anyString())(any(), any(), any())
+        mockCacheUtil.fetch[CsvFilesCallbackList](any(), any())(any(), any(), any())
       ).thenReturn(
         Future.successful(CsvFilesCallbackList(List()))
       )
       when(
-        mockCacheUtil.fetch[RequestObject](anyString())(any(), any(), any(), any())
+        mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
       ).thenReturn(
         Future.successful(ersRequestObject)
       )
@@ -167,12 +152,12 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     "return the page with the partial if fetching from cache is successful" in {
       reset(mockCacheUtil)
       when(
-        mockCacheUtil.fetch[CsvFilesCallbackList](anyString(), anyString())(any(), any(), any())
+        mockCacheUtil.fetch[CsvFilesCallbackList](any(), any())(any(), any(), any())
       ).thenReturn(
         Future.successful(CsvFilesCallbackList(List()))
       )
       when(
-        mockCacheUtil.fetch[RequestObject](anyString())(any(), any(), any(), any())
+        mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
       ).thenReturn(
         Future.successful(ersRequestObject)
       )
@@ -194,28 +179,27 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
   "calling success" should {
 
     val csvFileUploadController: CsvFileUploadController = new CsvFileUploadController {
-      val authConnector = mockAuthConnector
-
-      override val attachmentsConnector = mock[AttachmentsConnector]
-      override val sessionService = mock[SessionService]
+      override val authConnector: PlayAuthConnector = mockAuthConnector
+      override val attachmentsConnector: AttachmentsConnector = mock[AttachmentsConnector]
+      override val sessionService: SessionService = mock[SessionService]
       override val ersConnector: ErsConnector = mock[ErsConnector]
       override val cacheUtil: CacheUtil = mock[CacheUtil]
 
-      override def showSuccess()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Ok)
+      override def showSuccess()(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Ok)
     }
 
     "redirect for unauthorised users to login page" in {
+			setUnauthorisedMocks()
       val result = csvFileUploadController.success().apply(FakeRequest("GET", ""))
       status(result) shouldBe SEE_OTHER
       result.header.headers("Location").contains("/gg/sign-in") shouldBe true
     }
 
     "show the result of showUploadFilePage() for authorised users" in {
-      withAuthorisedUser { user =>
+			setAuthMocks()
         csvFileUploadController.success().apply(Fixtures.buildFakeRequestWithSessionIdCSOP("GET")).map { result =>
           status(result) shouldBe OK
         }
-      }
     }
 
   }
@@ -225,14 +209,13 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     val mockSessionService = mock[SessionService]
 
     val csvFileUploadController: CsvFileUploadController = new CsvFileUploadController {
-      val authConnector = mockAuthConnector
-
-      override val attachmentsConnector = mock[AttachmentsConnector]
-      override val sessionService = mockSessionService
+      override val authConnector: PlayAuthConnector = mockAuthConnector
+      override val attachmentsConnector: AttachmentsConnector = mock[AttachmentsConnector]
+      override val sessionService: SessionService = mockSessionService
       override val ersConnector: ErsConnector = mock[ErsConnector]
       override val cacheUtil: CacheUtil = mock[CacheUtil]
 
-      override def proceedCallbackData(callbackData: Option[CallbackData])(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Ok)
+      override def proceedCallbackData(callbackData: Option[CallbackData])(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Ok)
     }
 
     "return the result of proceedCallbackData" in {
@@ -253,21 +236,29 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     val mockCacheUtil: CacheUtil = mock[CacheUtil]
 
     val csvFileUploadController: CsvFileUploadController = new CsvFileUploadController {
-      val authConnector = mockAuthConnector
-
-      override val attachmentsConnector = mock[AttachmentsConnector]
-      override val sessionService = mock[SessionService]
+      override val authConnector: PlayAuthConnector = mockAuthConnector
+      override val attachmentsConnector: AttachmentsConnector = mock[AttachmentsConnector]
+      override val sessionService: SessionService = mock[SessionService]
       override val ersConnector: ErsConnector = mock[ErsConnector]
       override val cacheUtil: CacheUtil = mockCacheUtil
 
-      override def updateCallbackData(requestObject: RequestObject, callbackData: Option[CallbackData], csvFilesCallbackList: List[CsvFilesCallback])(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): List[CsvFilesCallback] = List()
-      override def modifyCachedCallbackData(requestObject: RequestObject, newCsvFilesCallbackList: List[CsvFilesCallback])(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Ok)
+      override def updateCallbackData(requestObject: RequestObject, callbackData: Option[CallbackData], csvFilesCallbackList: List[CsvFilesCallback])
+																		 (implicit authContext: ERSAuthData,
+																			request: Request[AnyRef],
+																			hc: HeaderCarrier
+																		 ): List[CsvFilesCallback] = List()
+
+      override def modifyCachedCallbackData(requestObject: RequestObject, newCsvFilesCallbackList: List[CsvFilesCallback])
+																					 (implicit authContext: ERSAuthData,
+																						request: Request[AnyRef],
+																						hc: HeaderCarrier
+																					 ): Future[Result] = Future(Ok)
     }
 
     "direct to ers errors page if fetching CsvFilesCallbackList fails" in {
       reset(mockCacheUtil)
       when(
-        mockCacheUtil.fetch[CsvFilesCallbackList](anyString(), anyString())(any(), any(), any())
+        mockCacheUtil.fetch[CsvFilesCallbackList](any(), any())(any(), any(), any())
       ).thenReturn(
         Future.failed(new RuntimeException)
       )
@@ -282,7 +273,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     "return the result of modifyCallbackData if fetching CsvFilesCallbackList is successful" in {
       reset(mockCacheUtil)
       when(
-        mockCacheUtil.fetch[CsvFilesCallbackList](anyString(), anyString())(any(), any(), any())
+        mockCacheUtil.fetch[CsvFilesCallbackList](any(), any())(any(), any(), any())
       ).thenReturn(
         Future.successful(mock[CsvFilesCallbackList])
       )
@@ -302,10 +293,9 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
 
     val mockCacheUtil: CacheUtil = mock[CacheUtil]
     val csvFileUploadController: CsvFileUploadController = new CsvFileUploadController {
-      val authConnector = mockAuthConnector
-
-      override val attachmentsConnector = mock[AttachmentsConnector]
-      override val sessionService = mock[SessionService]
+      override val authConnector: PlayAuthConnector = mockAuthConnector
+      override val attachmentsConnector: AttachmentsConnector = mock[AttachmentsConnector]
+      override val sessionService: SessionService = mock[SessionService]
       override val ersConnector: ErsConnector = mock[ErsConnector]
       override val cacheUtil: CacheUtil = mockCacheUtil
     }
@@ -314,7 +304,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
 
       reset(mockCacheUtil)
       when(
-        mockCacheUtil.cache[CsvFilesCallbackList](anyString(), any[CsvFilesCallbackList](), anyString())(any(), any(), any())
+        mockCacheUtil.cache[CsvFilesCallbackList](any(), any[CsvFilesCallbackList](), any())(any(), any(), any())
       ).thenReturn(
         Future.failed(new RuntimeException)
       )
@@ -327,7 +317,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
 
       reset(mockCacheUtil)
       when(
-        mockCacheUtil.cache[CsvFilesCallbackList](anyString(), any[CsvFilesCallbackList](), anyString())(any(), any(), any())
+        mockCacheUtil.cache[CsvFilesCallbackList](any(), any[CsvFilesCallbackList](), any())(any(), any(), any())
       ).thenReturn(
         Future.successful(CacheMap("", Map()))
       )
@@ -339,14 +329,14 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
 
       val result = await(csvFileUploadController.modifyCachedCallbackData(ersRequestObject, csvFilesCallbackList)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       status(result) shouldBe SEE_OTHER
-      result.header.headers("Location") shouldBe routes.CsvFileUploadController.uploadFilePage().toString()
+      result.header.headers("Location") shouldBe routes.CsvFileUploadController.uploadFilePage().toString
     }
 
     "shows success page if caching is successful and there are no files to be uploaded" in {
 
       reset(mockCacheUtil)
       when(
-        mockCacheUtil.cache[CsvFilesCallbackList](anyString(), any[CsvFilesCallbackList](), anyString())(any(), any(), any())
+        mockCacheUtil.cache[CsvFilesCallbackList](any(), any[CsvFilesCallbackList](), any())(any(), any(), any())
       ).thenReturn(
         Future.successful(CacheMap("", Map()))
       )
@@ -365,10 +355,9 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
   "calling updateCallbackData" should {
 
     val csvFileUploadController: CsvFileUploadController = new CsvFileUploadController {
-      val authConnector = mockAuthConnector
-
-      override val attachmentsConnector = mock[AttachmentsConnector]
-      override val sessionService = mock[SessionService]
+      override val authConnector: PlayAuthConnector = mockAuthConnector
+      override val attachmentsConnector: AttachmentsConnector = mock[AttachmentsConnector]
+      override val sessionService: SessionService = mock[SessionService]
       override val ersConnector: ErsConnector = mock[ErsConnector]
       override val cacheUtil: CacheUtil = mock[CacheUtil]
     }
@@ -392,18 +381,20 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
 
   }
 
+	class Setup extends CsvFileUploadController {
+		override val authConnector: PlayAuthConnector = mockAuthConnector
+		override val attachmentsConnector: AttachmentsConnector = mock[AttachmentsConnector]
+		override val sessionService: SessionService = mock[SessionService]
+		override val ersConnector: ErsConnector = mock[ErsConnector]
+		override val cacheUtil: CacheUtil = mock[CacheUtil]
+	}
+
   "calling failure" should {
 
-    val csvFileUploadController: CsvFileUploadController = new CsvFileUploadController {
-      val authConnector = mockAuthConnector
-
-      override val attachmentsConnector = mock[AttachmentsConnector]
-      override val sessionService = mock[SessionService]
-      override val ersConnector: ErsConnector = mock[ErsConnector]
-      override val cacheUtil: CacheUtil = mock[CacheUtil]
-     }
+    val csvFileUploadController: Setup = new Setup
 
     "redirect for unauthorised users to login page" in {
+			setUnauthorisedMocks()
       val result = csvFileUploadController.failure().apply(FakeRequest("GET", ""))
       status(result) shouldBe SEE_OTHER
       result.header.headers("Location").contains("/gg/sign-in") shouldBe true
@@ -413,27 +404,20 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
 
   "calling validationFailure" should {
 
-    val csvFileUploadController: CsvFileUploadController = new CsvFileUploadController {
-      val authConnector = mockAuthConnector
-
-      override val attachmentsConnector = mock[AttachmentsConnector]
-      override val sessionService = mock[SessionService]
-      override val ersConnector: ErsConnector = mock[ErsConnector]
-      override val cacheUtil: CacheUtil = mock[CacheUtil]
-    }
+    val csvFileUploadController: Setup = new Setup
 
     "redirect for unauthorised users to login page" in {
+			setUnauthorisedMocks()
       val result = csvFileUploadController.validationFailure().apply(FakeRequest("GET", ""))
       status(result) shouldBe SEE_OTHER
       result.header.headers("Location").contains("/gg/sign-in") shouldBe true
     }
 
     "show the result of processValidationFailure() for authorised users" in {
-      withAuthorisedUser { user =>
-        csvFileUploadController.validationFailure().apply(Fixtures.buildFakeRequestWithSessionIdCSOP("GET")).map { result =>
-          status(result) shouldBe OK
-        }
-      }
+			setAuthMocks()
+			csvFileUploadController.validationFailure().apply(Fixtures.buildFakeRequestWithSessionIdCSOP("GET")).map { result =>
+				status(result) shouldBe OK
+			}
     }
 
   }
@@ -443,10 +427,9 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     val mockCacheUtil: CacheUtil = mock[CacheUtil]
 
     val csvFileUploadController: CsvFileUploadController = new CsvFileUploadController {
-      val authConnector = mockAuthConnector
-
-      override val attachmentsConnector = mock[AttachmentsConnector]
-      override val sessionService = mock[SessionService]
+      override val authConnector: PlayAuthConnector = mockAuthConnector
+      override val attachmentsConnector: AttachmentsConnector = mock[AttachmentsConnector]
+      override val sessionService: SessionService = mock[SessionService]
       override val ersConnector: ErsConnector = mock[ErsConnector]
       override val cacheUtil: CacheUtil = mockCacheUtil
     }
@@ -454,7 +437,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     "return Ok if fetching CheckFileType from cache is successful" in {
       reset(mockCacheUtil)
       when(
-        mockCacheUtil.fetch[CheckFileType](refEq(CacheUtil.FILE_TYPE_CACHE), anyString())(any(), any(), any())
+        mockCacheUtil.fetch[CheckFileType](refEq(CacheUtil.FILE_TYPE_CACHE), any())(any(), any(), any())
       ).thenReturn(
         Future.successful(CheckFileType(Some("csv")))
       )
@@ -472,7 +455,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     "return the globalErrorPage if fetching CheckFileType from cache fails" in {
       reset(mockCacheUtil)
       when(
-        mockCacheUtil.fetch[CheckFileType](refEq(CacheUtil.FILE_TYPE_CACHE), anyString())(any(), any(), any())
+        mockCacheUtil.fetch[CheckFileType](refEq(CacheUtil.FILE_TYPE_CACHE), any())(any(), any(), any())
       ).thenReturn(
         Future.failed(new RuntimeException)
       )
@@ -490,7 +473,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     "return the globalErrorPage if fetching requestObject from cache fails" in {
       reset(mockCacheUtil)
       when(
-        mockCacheUtil.fetch[CheckFileType](refEq(CacheUtil.FILE_TYPE_CACHE), anyString())(any(), any(), any())
+        mockCacheUtil.fetch[CheckFileType](refEq(CacheUtil.FILE_TYPE_CACHE), any())(any(), any(), any())
       ).thenReturn(
         Future.successful(CheckFileType(Some("csv")))
       )
@@ -510,28 +493,27 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
   "calling validationResults" should {
 
     val csvFileUploadController: CsvFileUploadController = new CsvFileUploadController {
-      val authConnector = mockAuthConnector
-
-      override val attachmentsConnector = mock[AttachmentsConnector]
-      override val sessionService = mock[SessionService]
+      override val authConnector: PlayAuthConnector = mockAuthConnector
+      override val attachmentsConnector: AttachmentsConnector = mock[AttachmentsConnector]
+      override val sessionService: SessionService = mock[SessionService]
       override val ersConnector: ErsConnector = mock[ErsConnector]
       override val cacheUtil: CacheUtil = mock[CacheUtil]
 
-      override def processValidationResults()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Ok)
+      override def processValidationResults()(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Ok)
     }
 
     "redirect for unauthorised users to login page" in {
+			setUnauthorisedMocks()
       val result = csvFileUploadController.validationResults().apply(FakeRequest("GET", ""))
       status(result) shouldBe SEE_OTHER
       result.header.headers("Location").contains("/gg/sign-in") shouldBe true
     }
 
     "show the result of processValidationFailure() for authorised users" in {
-      withAuthorisedUser { user =>
+			setAuthMocks()
         csvFileUploadController.validationResults().apply(Fixtures.buildFakeRequestWithSessionIdCSOP("GET")).map { result =>
           status(result) shouldBe OK
         }
-      }
     }
 
   }
@@ -541,20 +523,19 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     val mockCacheUtil: CacheUtil = mock[CacheUtil]
 
     val csvFileUploadController: CsvFileUploadController = new CsvFileUploadController {
-      val authConnector = mockAuthConnector
-
-      override val attachmentsConnector = mock[AttachmentsConnector]
-      override val sessionService = mock[SessionService]
+      override val authConnector: PlayAuthConnector = mockAuthConnector
+      override val attachmentsConnector: AttachmentsConnector = mock[AttachmentsConnector]
+      override val sessionService: SessionService = mock[SessionService]
       override val ersConnector: ErsConnector = mock[ErsConnector]
       override val cacheUtil: CacheUtil = mockCacheUtil
 
-      override def removePresubmissionData(schemeInfo: SchemeInfo)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Ok)
+      override def removePresubmissionData(schemeInfo: SchemeInfo)(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Ok)
     }
 
     "return result of removePresubmissionData if fetching from the cache is successful" in {
       reset(mockCacheUtil)
       when(
-        mockCacheUtil.fetch[ErsMetaData](anyString(), anyString())(any(), any(), any())
+        mockCacheUtil.fetch[ErsMetaData](any(), any())(any(), any(), any())
       ).thenReturn(
         Future.successful(ErsMetaData(SchemeInfo("", DateTime.now, "", "", "", ""), "", None, "", None, None))
       )
@@ -572,7 +553,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     "direct to ers errors page if fetching metaData from cache fails" in {
       reset(mockCacheUtil)
       when(
-        mockCacheUtil.fetch[ErsMetaData](anyString(), anyString())(any(), any(), any())
+        mockCacheUtil.fetch[ErsMetaData](any(), any())(any(), any(), any())
       ).thenReturn(
         Future.failed(new RuntimeException)
       )
@@ -590,13 +571,13 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     "direct to ers errors page if fetching requestObject from cache fails" in {
       reset(mockCacheUtil)
       when(
-        mockCacheUtil.fetch[ErsMetaData](anyString(), anyString())(any(), any(), any())
+        mockCacheUtil.fetch[ErsMetaData](any(), any())(any(), any(), any())
       ).thenReturn(
         Future.successful(ErsMetaData(SchemeInfo("", DateTime.now, "", "", "", ""), "", None, "", None, None))
       )
 
       when(
-        mockCacheUtil.fetch[RequestObject](anyString())(any(), any(), any(), any())
+        mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
       ).thenReturn(
         Future.failed(new Exception)
       )
@@ -612,14 +593,13 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     val mockErsConnector: ErsConnector = mock[ErsConnector]
 
     val csvFileUploadController: CsvFileUploadController = new CsvFileUploadController {
-      val authConnector = mockAuthConnector
-
-      override val attachmentsConnector = mock[AttachmentsConnector]
-      override val sessionService = mock[SessionService]
+      override val authConnector: PlayAuthConnector = mockAuthConnector
+      override val attachmentsConnector: AttachmentsConnector = mock[AttachmentsConnector]
+      override val sessionService: SessionService = mock[SessionService]
       override val ersConnector: ErsConnector = mockErsConnector
       override val cacheUtil: CacheUtil = mock[CacheUtil]
 
-      override def extractCsvCallbackData(schemeInfo: SchemeInfo)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Redirect(""))
+      override def extractCsvCallbackData(schemeInfo: SchemeInfo)(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Redirect(""))
     }
 
     "return the result of extractCsvCallbackData if deleting presubmission data is successful" in {
@@ -666,20 +646,19 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     val mockCacheUtil: CacheUtil = mock[CacheUtil]
 
     val csvFileUploadController: CsvFileUploadController = new CsvFileUploadController {
-      val authConnector = mockAuthConnector
-
-      override val attachmentsConnector = mock[AttachmentsConnector]
-      override val sessionService = mock[SessionService]
+      override val authConnector: PlayAuthConnector = mockAuthConnector
+      override val attachmentsConnector: AttachmentsConnector = mock[AttachmentsConnector]
+      override val sessionService: SessionService = mock[SessionService]
       override val ersConnector: ErsConnector = mock[ErsConnector]
       override val cacheUtil: CacheUtil = mockCacheUtil
 
-      override def validateCsv(csvCallbackValidatorData: List[CallbackData], schemeInfo: SchemeInfo)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Ok)
+      override def validateCsv(csvCallbackValidatorData: List[CallbackData], schemeInfo: SchemeInfo)(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Ok)
     }
 
     "throws exception if fetching from cache fails" in {
       reset(mockCacheUtil)
       when(
-        mockCacheUtil.fetch[CsvFilesCallbackList](anyString(), anyString())(any(), any(), any())
+        mockCacheUtil.fetch[CsvFilesCallbackList](any(), any())(any(), any(), any())
       ).thenReturn(
         Future.failed(new RuntimeException)
       )
@@ -690,7 +669,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     "return the result of validateCsv if fetching from cache is successful" in {
       reset(mockCacheUtil)
       when(
-        mockCacheUtil.fetch[CsvFilesCallbackList](anyString(), anyString())(any(), any(), any())
+        mockCacheUtil.fetch[CsvFilesCallbackList](any(), any())(any(), any(), any())
       ).thenReturn(
         Future.successful(CsvFilesCallbackList(List(CsvFilesCallback("", Some(mock[CallbackData])))))
       )
@@ -702,7 +681,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     "direct to ers errors if fetching from cache is successful but there is no callbackData" in {
       reset(mockCacheUtil)
       when(
-        mockCacheUtil.fetch[CsvFilesCallbackList](anyString(), anyString())(any(), any(), any())
+        mockCacheUtil.fetch[CsvFilesCallbackList](any(), any())(any(), any(), any())
       ).thenReturn(
         Future.successful(CsvFilesCallbackList(List(CsvFilesCallback("", None))))
       )
@@ -717,14 +696,13 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     val mockErsConnector: ErsConnector = mock[ErsConnector]
 
     val csvFileUploadController: CsvFileUploadController = new CsvFileUploadController {
-      val authConnector = mockAuthConnector
-
-      override val attachmentsConnector = mock[AttachmentsConnector]
-      override val sessionService = mock[SessionService]
+      override val authConnector: PlayAuthConnector = mockAuthConnector
+      override val attachmentsConnector: AttachmentsConnector = mock[AttachmentsConnector]
+      override val sessionService: SessionService = mock[SessionService]
       override val ersConnector: ErsConnector = mockErsConnector
       val mockCacheUtil: CacheUtil = mock[CacheUtil]
       when(
-        mockCacheUtil.cache[CsvFilesCallbackList](anyString(), any[CsvFilesCallbackList](), anyString())(any(), any(), any())
+        mockCacheUtil.cache[CsvFilesCallbackList](any(), any[CsvFilesCallbackList](), any())(any(), any(), any())
       ).thenReturn(
         Future.successful(CacheMap("", Map()))
       )
@@ -741,7 +719,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
 
       val result = await(csvFileUploadController.validateCsv(mock[List[CallbackData]], mock[SchemeInfo])(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       status(result) shouldBe SEE_OTHER
-      result.header.headers("Location") shouldBe routes.SchemeOrganiserController.schemeOrganiserPage.toString()
+      result.header.headers("Location") shouldBe routes.SchemeOrganiserController.schemeOrganiserPage().toString
     }
 
     "redirect to validationFailure if validating fails" in {
@@ -754,7 +732,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
 
       val result = await(csvFileUploadController.validateCsv(mock[List[CallbackData]], mock[SchemeInfo])(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       status(result) shouldBe SEE_OTHER
-      result.header.headers("Location") shouldBe routes.CsvFileUploadController.validationFailure.toString()
+      result.header.headers("Location") shouldBe routes.CsvFileUploadController.validationFailure().toString
     }
 
     "show error page if validating returns result other than OK and ACCEPTED" in {

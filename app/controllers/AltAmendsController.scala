@@ -38,13 +38,13 @@ trait AltAmendsController extends ERSReturnBaseController with Authenticator wit
   val cacheUtil: CacheUtil
   val ersConnector: ErsConnector
 
-  def altActivityPage(): Action[AnyContent] = AuthorisedForAsync() {
+  def altActivityPage(): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
         showAltActivityPage()(user, request, hc)
   }
 
-  def showAltActivityPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showAltActivityPage()(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
     (for {
       requestObject     <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
@@ -65,14 +65,14 @@ trait AltAmendsController extends ERSReturnBaseController with Authenticator wit
   }
 
 
-  def altActivitySelected(): Action[AnyContent] = AuthorisedForAsync() {
+  def altActivitySelected(): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
           showAltActivitySelected()(user, request, hc)
 
   }
 
-  def showAltActivitySelected()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showAltActivitySelected()(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
     cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
       RsFormMappings.altActivityForm.bindFromRequest.fold(
@@ -95,13 +95,13 @@ trait AltAmendsController extends ERSReturnBaseController with Authenticator wit
     }
   }
 
-  def altAmendsPage(): Action[AnyContent] = AuthorisedForAsync() {
+  def altAmendsPage(): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
           showAltAmendsPage()(user, request, hc)
   }
 
-  def showAltAmendsPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showAltAmendsPage()(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
     for {
       requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
@@ -113,13 +113,13 @@ trait AltAmendsController extends ERSReturnBaseController with Authenticator wit
     }
   }
 
-  def altAmendsSelected(): Action[AnyContent] = AuthorisedForAsync() {
+  def altAmendsSelected(): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
         showAltAmendsSelected()(user, request, hc)
   }
 
-  def showAltAmendsSelected()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showAltAmendsSelected()(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
     cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
       RsFormMappings.altAmendsForm.bindFromRequest.fold(

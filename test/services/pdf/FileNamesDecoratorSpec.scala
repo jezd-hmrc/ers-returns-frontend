@@ -17,10 +17,10 @@
 package services.pdf
 
 import akka.stream.Materializer
-import org.mockito.Matchers._
+import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.mockito.internal.verification.VerificationModeFactory
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
 import play.api.i18n.Messages
@@ -52,8 +52,8 @@ class FileNamesDecoratorSpec extends UnitSpec with MockitoSugar with ERSFakeAppl
 
       decorator.decorate(streamer)
 
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq(Messages("ers_summary_declaration.file_name"): String), org.mockito.Matchers.eq(1.0F: Float))(any())
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("odsFile": String), org.mockito.Matchers.eq(2.0F: Float))(any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.ArgumentMatchers.eq(Messages("ers_summary_declaration.file_name"): String), org.mockito.ArgumentMatchers.eq(1.0F: Float))(any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.ArgumentMatchers.eq("odsFile": String), org.mockito.ArgumentMatchers.eq(2.0F: Float))(any())
     }
 
     "show csv files names when nil return is true" in {
@@ -62,9 +62,9 @@ class FileNamesDecoratorSpec extends UnitSpec with MockitoSugar with ERSFakeAppl
 
       decorator.decorate(streamer)
 
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq(Messages("ers_summary_declaration.file_names"): String), org.mockito.Matchers.eq(1.0F: Float))(any())
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("csvFile0": String), org.mockito.Matchers.eq(2.0F: Float))(any())
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("csvFile1": String), org.mockito.Matchers.eq(2.0F: Float))(any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.ArgumentMatchers.eq(Messages("ers_summary_declaration.file_names"): String), org.mockito.ArgumentMatchers.eq(1.0F: Float))(any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.ArgumentMatchers.eq("csvFile0": String), org.mockito.ArgumentMatchers.eq(2.0F: Float))(any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.ArgumentMatchers.eq("csvFile1": String), org.mockito.ArgumentMatchers.eq(2.0F: Float))(any())
     }
 
     "show block spacer at the end" in {
@@ -73,7 +73,7 @@ class FileNamesDecoratorSpec extends UnitSpec with MockitoSugar with ERSFakeAppl
 
       decorator.decorate(streamer)
 
-      verify(streamer, VerificationModeFactory.times(2)).drawText(org.mockito.Matchers.eq("": String), org.mockito.Matchers.eq(4.0F: Float))(any())
+      verify(streamer, VerificationModeFactory.times(2)).drawText(org.mockito.ArgumentMatchers.eq("": String), org.mockito.ArgumentMatchers.eq(4.0F: Float))(any())
       verify(streamer, VerificationModeFactory.times(1)).drawLine()
     }
   }

@@ -41,7 +41,7 @@ trait FileUploadController extends FrontendController with Authenticator with Le
   val cacheUtil: CacheUtil
   val ersConnector: ErsConnector
 
-  def uploadFilePage(): Action[AnyContent] = AuthorisedForAsync() {
+  def uploadFilePage(): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
 
@@ -55,19 +55,19 @@ trait FileUploadController extends FrontendController with Authenticator with Le
           Ok(file_upload(responseObject, Html(partial.body)))
         }).recover{
           case e: Throwable =>
-          Logger.error(s"showUploadFilePage failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
+						Logger.error(s"showUploadFilePage failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
           getGlobalErrorPage
         }
   }
 
-  def success(): Action[AnyContent] = AuthorisedForAsync() {
+  def success(): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
           showSuccess()
   }
 
 
-  def showSuccess()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showSuccess()(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
     val futureRequestObject = cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
     val futureCallbackData = sessionService.retrieveCallbackData
@@ -92,7 +92,7 @@ trait FileUploadController extends FrontendController with Authenticator with Le
   }
 
 
-  def validationResults() = AuthorisedFor(ERSRegime, pageVisibility = GGConfidence).async {
+  def validationResults(): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
 
@@ -128,7 +128,8 @@ trait FileUploadController extends FrontendController with Authenticator with Le
         }
   }
 
-  def handleValidationResponse(response: HttpResponse, callbackData: Option[CallbackData], schemeInfo: SchemeInfo, schemeRef: String)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def handleValidationResponse(response: HttpResponse, callbackData: Option[CallbackData], schemeInfo: SchemeInfo, schemeRef: String)
+															(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
       ersConnector.validateFileData(callbackData.get, schemeInfo).map { res =>
         Logger.info(s"validationResults: Response from validator: ${res.status}, timestamp: ${System.currentTimeMillis()}.")
@@ -151,7 +152,7 @@ trait FileUploadController extends FrontendController with Authenticator with Le
 
   }
 
-  def validationFailure() = AuthorisedFor(ERSRegime, pageVisibility = GGConfidence).async {
+  def validationFailure(): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
 
@@ -172,14 +173,14 @@ trait FileUploadController extends FrontendController with Authenticator with Le
         }
   }
 
-  def failure() = AuthorisedFor(ERSRegime, pageVisibility = GGConfidence).async {
+  def failure(): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
         Logger.error("failure: Attachments Failure: " + (System.currentTimeMillis() / 1000))
         Future(getGlobalErrorPage)
   }
 
-  def getGlobalErrorPage(implicit request: Request[_], messages: Messages) = Ok(views.html.global_error(
+  def getGlobalErrorPage(implicit request: Request[_], messages: Messages): Result = Ok(views.html.global_error(
     messages("ers.global_errors.title"),
     messages("ers.global_errors.heading"),
     messages("ers.global_errors.message"))(request, messages))
@@ -187,9 +188,9 @@ trait FileUploadController extends FrontendController with Authenticator with Le
 }
 
 object FileUploadController extends FileUploadController {
-  val attachmentsConnector = AttachmentsConnector
-  val authConnector = ERSFileValidatorAuthConnector
-  val sessionService = SessionService
+  val attachmentsConnector: AttachmentsConnector.type = AttachmentsConnector
+  val authConnector: ERSFileValidatorAuthConnector.type = ERSFileValidatorAuthConnector
+  val sessionService: SessionService.type = SessionService
   val ersConnector: ErsConnector = ErsConnector
   override val cacheUtil: CacheUtil = CacheUtil
 }

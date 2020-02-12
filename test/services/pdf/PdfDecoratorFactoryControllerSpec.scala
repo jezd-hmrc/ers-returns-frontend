@@ -20,7 +20,7 @@ import akka.stream.Materializer
 import models.{AltAmendsActivity, AlterationAmends, ErsSummary}
 import org.joda.time.DateTime
 import org.scalatest.matchers.{BePropertyMatchResult, BePropertyMatcher}
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
 import play.api.Play.current

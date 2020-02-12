@@ -23,6 +23,7 @@ import play.api.Mode.Mode
 import play.api.{Configuration, Play}
 import play.api.Play.current
 import play.api.libs.ws.WSRequest
+import uk.gov.hmrc.auth.core.PlayAuthConnector
 import uk.gov.hmrc.crypto.ApplicationCrypto
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.cache.client.{SessionCache, ShortLivedCache, ShortLivedHttpCaching}
@@ -67,7 +68,7 @@ object WSHttpWithCustomTimeOut extends WSHttp with HttpAuditing {
   override protected def appNameConfiguration: Configuration = Play.current.configuration
 }
 
-object ERSAuthConnector extends AuthConnector with ServicesConfig {
+object ERSAuthConnector extends PlayAuthConnector with ServicesConfig {
   val serviceUrl: String = baseUrl("auth")
   Logger.info("got the ServiceURL " + serviceUrl)
   lazy val http = WSHttp
@@ -82,7 +83,7 @@ object ERSAuditConnector extends AuditConnector with AppName {
   override protected def appNameConfiguration: Configuration = Play.current.configuration
 }
 
-object ERSFileValidatorAuthConnector extends AuthConnector with ServicesConfig {
+object ERSFileValidatorAuthConnector extends PlayAuthConnector with ServicesConfig {
   val serviceUrl: String = baseUrl("auth")
   lazy val http = WSHttp
   override protected def mode: Mode = Play.current.mode

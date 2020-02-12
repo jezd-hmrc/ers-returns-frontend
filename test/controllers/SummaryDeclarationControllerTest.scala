@@ -21,9 +21,9 @@ import connectors.ErsConnector
 import metrics.Metrics
 import models._
 import org.joda.time.DateTime
-import org.mockito.Matchers
+import org.mockito.ArgumentMatchers
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
 import play.api.http.Status
@@ -71,16 +71,12 @@ class SummaryDeclarationControllerTest extends UnitSpec with ERSFakeApplicationC
 
         override def ersUrl = "ers-returns"
 
-        override def ersRegime = "regime"
-
         override def validatorUrl = "ers-file-validator"
 
-        override def getAuthID(implicit authContext: AuthContext) = EmpRef("", "")
-
-        override def connectToEtmpSapRequest(schemeRef: String)(implicit authContext: AuthContext, hc: HeaderCarrier): Future[String] = Future("1234567890")
+        override def connectToEtmpSapRequest(schemeRef: String)(implicit authContext: ERSAuthData, hc: HeaderCarrier): Future[String] = Future("1234567890")
 
       }
-    when(mockHttp.POST[ValidatorData, HttpResponse](Matchers.any(), Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(Future.successful(HttpResponse(OK)))
+    when(mockHttp.POST[ValidatorData, HttpResponse](ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(HttpResponse(OK)))
 
     override val cacheUtil: CacheUtil = new CacheUtil {
       override val sessionService: SessionService = mockSessionCache

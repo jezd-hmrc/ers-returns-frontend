@@ -60,7 +60,7 @@ trait ReturnServiceController extends ERSReturnBaseController with Authenticator
   val accessThreshold: Int
   val metrics: Metrics
 
-  def cacheParams(ersRequestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def cacheParams(ersRequestObject: RequestObject)(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
     implicit val formatRSParams: OFormat[RequestObject] = Json.format[RequestObject]
 
@@ -95,7 +95,7 @@ trait ReturnServiceController extends ERSReturnBaseController with Authenticator
     reqObj
   }
 
-  def hmacCheck(): Action[AnyContent] = AuthenticatedBy(ERSGovernmentGateway, pageVisibility = AllowAll).async {
+  def hmacCheck(): Action[AnyContent] = authorisedByGG {
     implicit user =>
       implicit request =>
         Logger.warn("HMAC Check Authenticated")
@@ -118,14 +118,14 @@ trait ReturnServiceController extends ERSReturnBaseController with Authenticator
         }
   }
 
-  def showInitialStartPage(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Result = {
+  def showInitialStartPage(requestObject: RequestObject)(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Result = {
 
     val sessionData = s"${requestObject.getSchemeId} - ${requestObject.getPageTitle}"
     Ok(views.html.start(requestObject)).
       withSession(request.session + (screenSchemeInfo -> sessionData) - BUNDLE_REF - DATE_TIME_SUBMITTED)
   }
 
-  def startPage(): Action[AnyContent] = AuthenticatedBy(ERSGovernmentGateway, pageVisibility = AllowAll).async {
+  def startPage(): Action[AnyContent] = authorisedByGG {
     implicit user =>
       implicit request =>
         cacheUtil.fetch[RequestObject](CacheUtil.ersRequestObject).map{
@@ -138,7 +138,7 @@ trait ReturnServiceController extends ERSReturnBaseController with Authenticator
     Future.successful(Ok(views.html.unauthorised()(request, context)))
   }
 
-  def getGlobalErrorPage(implicit request: Request[_], messages: Messages) = Ok(views.html.global_error(
+  def getGlobalErrorPage(implicit request: Request[_], messages: Messages): Result = Ok(views.html.global_error(
     messages("ers.global_errors.title"),
     messages("ers.global_errors.heading"),
     messages("ers.global_errors.message"))(request, messages))

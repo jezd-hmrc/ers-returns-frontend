@@ -18,9 +18,9 @@ package controllers
 
 import akka.stream.Materializer
 import models._
-import org.mockito.Matchers._
+import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
 import play.api.i18n.{Lang, Messages, MessagesApi}
@@ -51,7 +51,7 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
       override val cacheUtil: CacheUtil = mock[CacheUtil]
       override val pageBuilder: PageBuilder = mock[PageBuilder]
 
-      override def showCheckCsvFilesPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future.successful(Ok)
+      override def showCheckCsvFilesPage()(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future.successful(Ok)
     }
 
     "redirect to company authentication frontend if user is not authenticated" in {
@@ -160,7 +160,7 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
       override val cacheUtil: CacheUtil = mock[CacheUtil]
       override val pageBuilder: PageBuilder = mock[PageBuilder]
 
-      override def validateCsvFilesPageSelected()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future.successful(Ok)
+      override def validateCsvFilesPageSelected()(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future.successful(Ok)
     }
 
     "redirect to company authentication frontend if user is not authenticated to access checkCsvFilesPage" in {
@@ -176,7 +176,7 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
       override val cacheUtil: CacheUtil = mock[CacheUtil]
       override val pageBuilder: PageBuilder = mock[PageBuilder]
 
-      override def performCsvFilesPageSelected(formData: CsvFilesList)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future.successful(Ok)
+      override def performCsvFilesPageSelected(formData: CsvFilesList)(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future.successful(Ok)
 
     }
 

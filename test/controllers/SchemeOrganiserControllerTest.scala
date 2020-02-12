@@ -23,15 +23,12 @@ import connectors.ErsConnector
 import models._
 import org.joda.time.DateTime
 import org.jsoup.Jsoup
-import org.mockito.Matchers._
+import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
-import org.scalatestplus.play.OneAppPerSuite
-import play.api.Application
+import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http.Status
 import play.api.i18n.{Lang, Messages, MessagesApi}
-import play.api.inject.Injector
-import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc.Request
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -41,26 +38,30 @@ import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures, PageBuilder}
 
 import scala.concurrent.Future
 
-class SchemeOrganiserControllerTest extends UnitSpec with OneAppPerSuite with ERSFakeApplicationConfig with MockitoSugar {
+class SchemeOrganiserControllerTest extends UnitSpec with GuiceOneAppPerSuite with ERSFakeApplicationConfig with MockitoSugar {
 
-  def injector: Injector = app.injector
-  def messagesApi: MessagesApi = injector.instanceOf[MessagesApi]
+  val messagesApi: MessagesApi = app.injector.instanceOf[MessagesApi]
   implicit val messages: Messages = messagesApi.preferred(Seq(Lang.get("en").get))
   implicit val requests: Request[_] = FakeRequest()
-
-  override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit val mat: Materializer = app.materializer
 
   "calling Scheme Organiser Page" should {
 
-    def buildFakeSchemeOrganiserController(groupSchemeActivityRes: Boolean = true, schemeOrganiserDetailsRes: Boolean = true, schemeOrganiserDataCached: Boolean = false, reportableEventsRes: Boolean = true, fileTypeRes: Boolean = true, altAmendsActivityRes: Boolean = true, cacheRes: Boolean = true) = new SchemeOrganiserController {
+    def buildFakeSchemeOrganiserController(groupSchemeActivityRes: Boolean = true,
+																					 schemeOrganiserDetailsRes: Boolean = true,
+																					 schemeOrganiserDataCached: Boolean = false,
+																					 reportableEventsRes: Boolean = true,
+																					 fileTypeRes: Boolean = true,
+																					 altAmendsActivityRes: Boolean = true,
+																					 cacheRes: Boolean = true
+																					): SchemeOrganiserController = new SchemeOrganiserController {
 
       val mockErsConnector: ErsConnector = mock[ErsConnector]
       val mockCacheUtil: CacheUtil = mock[CacheUtil]
       override val cacheUtil: CacheUtil = mockCacheUtil
 
       when(
-        mockCacheUtil.fetch[ReportableEvents](refEq(CacheUtil.reportableEvents), anyString())(any(), any(), any())
+        mockCacheUtil.fetch[ReportableEvents](refEq(CacheUtil.reportableEvents), any())(any(), any(), any())
       ).thenReturn(
         if (reportableEventsRes) {
           Future.successful(ReportableEvents(Some(PageBuilder.OPTION_NO)))
@@ -69,7 +70,7 @@ class SchemeOrganiserControllerTest extends UnitSpec with OneAppPerSuite with ER
         }
       )
       when(
-        mockCacheUtil.fetchOption[CheckFileType](refEq(CacheUtil.FILE_TYPE_CACHE), anyString())(any(), any(), any())
+        mockCacheUtil.fetchOption[CheckFileType](refEq(CacheUtil.FILE_TYPE_CACHE), any())(any(), any(), any())
       ).thenReturn(
         if (fileTypeRes) {
           Future.successful(Some(CheckFileType(Some(PageBuilder.OPTION_CSV))))
@@ -78,7 +79,7 @@ class SchemeOrganiserControllerTest extends UnitSpec with OneAppPerSuite with ER
         }
       )
       when(
-        mockCacheUtil.fetch[SchemeOrganiserDetails](refEq(CacheUtil.SCHEME_ORGANISER_CACHE), anyString())(any(), any(), any())
+        mockCacheUtil.fetch[SchemeOrganiserDetails](refEq(CacheUtil.SCHEME_ORGANISER_CACHE), any())(any(), any(), any())
       ).thenReturn(
         if (schemeOrganiserDetailsRes) {
           if (schemeOrganiserDataCached) {
@@ -143,7 +144,13 @@ class SchemeOrganiserControllerTest extends UnitSpec with OneAppPerSuite with ER
 
   "calling Scheme Organiser Submit Page" should {
 
-    def buildFakeSchemeOrganiserController(schemeOrganiserDetailsRes: Boolean = true, schemeOrganiserDataCached: Boolean = false, reportableEventsRes: Boolean = true, fileTypeRes: Boolean = true, altAmendsActivityRes: Boolean = true, schemeOrganiserDataCachedOk: Boolean = true) = new SchemeOrganiserController {
+    def buildFakeSchemeOrganiserController(schemeOrganiserDetailsRes: Boolean = true,
+																					 schemeOrganiserDataCached: Boolean = false,
+																					 reportableEventsRes: Boolean = true,
+																					 fileTypeRes: Boolean = true,
+																					 altAmendsActivityRes: Boolean = true,
+																					 schemeOrganiserDataCachedOk: Boolean = true
+																					): SchemeOrganiserController = new SchemeOrganiserController {
 
       val schemeInfo = SchemeInfo("XA1100000000000", DateTime.now, "1", "2016", "CSOP 2015/16", "CSOP")
       val rsc = ErsMetaData(schemeInfo, "ipRef", Some("aoRef"), "empRef", Some("agentRef"), Some("sapNumber"))
@@ -152,27 +159,21 @@ class SchemeOrganiserControllerTest extends UnitSpec with OneAppPerSuite with ER
       val mockCacheUtil: CacheUtil = mock[CacheUtil]
       override val cacheUtil: CacheUtil = mockCacheUtil
 
-      when(
-        mockCacheUtil.fetch[ReportableEvents](refEq(CacheUtil.reportableEvents), anyString())(any(), any(), any())
-      ).thenReturn(
+      when(mockCacheUtil.fetch[ReportableEvents](refEq(CacheUtil.reportableEvents), any())(any(), any(), any())).thenReturn(
         if (reportableEventsRes) {
           Future.successful(ReportableEvents(Some(PageBuilder.OPTION_NO)))
         } else {
           Future.failed(new Exception)
         }
       )
-      when(
-        mockCacheUtil.fetchOption[CheckFileType](refEq(CacheUtil.FILE_TYPE_CACHE), anyString())(any(), any(), any())
-      ).thenReturn(
+      when(mockCacheUtil.fetchOption[CheckFileType](refEq(CacheUtil.FILE_TYPE_CACHE), any())(any(), any(), any())).thenReturn(
         if (fileTypeRes) {
           Future.successful(Some(CheckFileType(Some(PageBuilder.OPTION_CSV))))
         } else {
           Future.failed(new NoSuchElementException)
         }
       )
-      when(
-        mockCacheUtil.fetch[SchemeOrganiserDetails](refEq(CacheUtil.SCHEME_ORGANISER_CACHE), anyString())(any(), any(), any())
-      ).thenReturn(
+      when(mockCacheUtil.fetch[SchemeOrganiserDetails](refEq(CacheUtil.SCHEME_ORGANISER_CACHE), any())(any(), any(), any())).thenReturn(
         if (schemeOrganiserDetailsRes) {
           if (schemeOrganiserDataCached) {
             Future.successful(SchemeOrganiserDetails("Name", Fixtures.companyName, None, None, None, None, None, None, None))
@@ -183,9 +184,7 @@ class SchemeOrganiserControllerTest extends UnitSpec with OneAppPerSuite with ER
           Future.failed(new NoSuchElementException)
         }
       )
-      when(
-        mockCacheUtil.cache(refEq(CacheUtil.SCHEME_ORGANISER_CACHE), anyString(), anyString())(any(), any(), any())
-      ).thenReturn(
+      when(mockCacheUtil.cache(refEq(CacheUtil.SCHEME_ORGANISER_CACHE), any(), any())(any(), any(), any())).thenReturn(
         if (schemeOrganiserDataCachedOk) {
           Future.successful(null)
         } else {
@@ -218,17 +217,35 @@ class SchemeOrganiserControllerTest extends UnitSpec with OneAppPerSuite with ER
 
     "give a redirect status on POST if no form errors" in {
       val controllerUnderTest = buildFakeSchemeOrganiserController()
-      val schemeOrganiserData = Map("companyName" -> Fixtures.companyName, "addressLine1" -> "Add1", "addressLine" -> "Add2", "addressLine3" -> "Add3", "addressLine1" -> "Add4", "postcode" -> "AA11 1AA", "country" -> "United Kingdom", "companyReg" -> "AB123456", "corporationRef" -> "1234567890")
+      val schemeOrganiserData = Map("companyName" -> Fixtures.companyName,
+				"addressLine1" -> "Add1",
+				"addressLine" -> "Add2",
+				"addressLine3" -> "Add3",
+				"addressLine1" -> "Add4",
+				"postcode" -> "AA11 1AA",
+				"country" -> "United Kingdom",
+				"companyReg" -> "AB123456",
+				"corporationRef" -> "1234567890"
+			)
       val form = _root_.models.RsFormMappings.schemeOrganiserForm.bind(schemeOrganiserData)
       val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
       val result = controllerUnderTest.showSchemeOrganiserSubmit(ersRequestObject)(Fixtures.buildFakeUser, request, hc)
       status(result) shouldBe Status.SEE_OTHER
-      result.header.headers.get("Location").get shouldBe routes.GroupSchemeController.groupSchemePage().toString()
+      result.header.headers("Location") shouldBe routes.GroupSchemeController.groupSchemePage().toString
     }
 
     "direct to ers errors page if saving scheme organiser data throws exception" in {
       val controllerUnderTest = buildFakeSchemeOrganiserController(schemeOrganiserDataCachedOk = false)
-      val schemeOrganiserData = Map("companyName" -> Fixtures.companyName, "addressLine1" -> "Add1", "addressLine" -> "Add2", "addressLine3" -> "Add3", "addressLine1" -> "Add4", "postcode" -> "AA11 1AA", "country" -> "United Kingdom", "companyReg" -> "AB123456", "corporationRef" -> "1234567890")
+      val schemeOrganiserData = Map("companyName" -> Fixtures.companyName,
+				"addressLine1" -> "Add1",
+				"addressLine" -> "Add2",
+				"addressLine3" -> "Add3",
+				"addressLine1" -> "Add4",
+				"postcode" -> "AA11 1AA",
+				"country" -> "United Kingdom",
+				"companyReg" -> "AB123456",
+				"corporationRef" -> "1234567890"
+			)
       val form = _root_.models.RsFormMappings.schemeOrganiserForm.bind(schemeOrganiserData)
       val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
       val result = controllerUnderTest.showSchemeOrganiserSubmit(ersRequestObject)(Fixtures.buildFakeUser, request, hc)

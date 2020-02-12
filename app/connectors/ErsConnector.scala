@@ -39,8 +39,6 @@ object ErsConnector extends ErsConnector with ServicesConfig {
   override protected def runModeConfiguration: Configuration = Play.current.configuration
   override def ersUrl = baseUrl("ers-returns")
 
-  override def ersRegime = config("ers-returns").getString("regime").get
-
   override def validatorUrl = baseUrl("ers-file-validator")
 
   override def httpPost: HttpPost = WSHttpWithCustomTimeOut
@@ -54,18 +52,16 @@ trait ErsConnector {
 
   def ersUrl: String
 
-  def ersRegime: String
-
   def validatorUrl: String
 
   def httpPost: HttpPost
 
   def httpGet: HttpGet
 
-  def connectToEtmpSapRequest(schemeRef: String)(implicit authContext: AuthContext, hc: HeaderCarrier): Future[String] = {
-    val empref: String = getAuthID(authContext).encodedValue
+  def connectToEtmpSapRequest(schemeRef: String)(implicit authContext: ERSAuthData, hc: HeaderCarrier): Future[String] = {
+    val empref: String = authContext.empRef.encodedValue
     val url: String = s"${ersUrl}/ers/${empref}/sapRequest/" + schemeRef
-    val startTime = System.currentTimeMillis()
+		val startTime = System.currentTimeMillis()
     httpGet.GET[HttpResponse](url).map { response =>
       response.status match {
         case 200 =>
@@ -83,8 +79,8 @@ trait ErsConnector {
     }
   }
 
-  def connectToEtmpSummarySubmit(sap: String, payload: JsValue)(implicit authContext: AuthContext, hc: HeaderCarrier): Future[String] = {
-    val empRef: String = getAuthID(authContext).encodedValue
+  def connectToEtmpSummarySubmit(sap: String, payload: JsValue)(implicit authContext: ERSAuthData, hc: HeaderCarrier): Future[String] = {
+    val empRef: String = authContext.empRef.encodedValue
     val url: String = s"${ersUrl}/ers/${empRef}/summarySubmit/" + sap
     httpPost.POST(url, payload).map { res =>
       res.status match {
@@ -98,23 +94,17 @@ trait ErsConnector {
     }
   }
 
-  def getAuthID(implicit authContext: AuthContext) = {
-    authContext.principal.accounts.epaye match {
-      case Some(account) => account.empRef
-      case None => EmpRef("", "")
-    }
-  }
-
-  def submitReturnToBackend(allData: ErsSummary)(implicit authContext: AuthContext, hc: HeaderCarrier): Future[HttpResponse] = {
+  def submitReturnToBackend(allData: ErsSummary)(implicit authContext: ERSAuthData, hc: HeaderCarrier): Future[HttpResponse] = {
     import ErsModelFormats._
-    val empref: String = getAuthID(authContext).encodedValue
+    val empref: String = authContext.empRef.encodedValue
     val url: String = s"${ersUrl}/ers/${empref}/saveReturnData"
     httpPost.POST(url, allData)
   }
 
 
-  def validateFileData(callbackData: CallbackData, schemeInfo: SchemeInfo)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[HttpResponse] = {
-    val empref: String = getAuthID(authContext).encodedValue
+  def validateFileData(callbackData: CallbackData, schemeInfo: SchemeInfo)
+											(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[HttpResponse] = {
+    val empref: String = authContext.empRef.encodedValue
     val url: String = s"${validatorUrl}/ers/${empref}/process-file"
     val startTime = System.currentTimeMillis()
     Logger.info("validateFileData: Call to Validator: " + (System.currentTimeMillis() / 1000))
@@ -130,8 +120,9 @@ trait ErsConnector {
     }
   }
 
-  def validateCsvFileData(callbackData: List[CallbackData], schemeInfo: SchemeInfo)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[HttpResponse] = {
-    val empref: String = getAuthID(authContext).encodedValue
+  def validateCsvFileData(callbackData: List[CallbackData], schemeInfo: SchemeInfo)
+												 (implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[HttpResponse] = {
+    val empref: String = authContext.empRef.encodedValue
     val url: String = s"${validatorUrl}/ers/${empref}/process-csv-file"
     val startTime = System.currentTimeMillis()
     Logger.info("validateFileData: Call to Validator: " + (System.currentTimeMillis() / 1000))
@@ -147,28 +138,28 @@ trait ErsConnector {
     }
   }
 
-  def saveMetadata(allData: ErsSummary)(implicit authContext: AuthContext, hc: HeaderCarrier): Future[HttpResponse] = {
+  def saveMetadata(allData: ErsSummary)(implicit authContext: ERSAuthData, hc: HeaderCarrier): Future[HttpResponse] = {
     import ErsModelFormats._
-    val empref: String = getAuthID(authContext).encodedValue
+    val empref: String = authContext.empRef.encodedValue
     val url: String = s"${ersUrl}/ers/${empref}/saveMetadata"
     httpPost.POST(url, allData)
   }
 
-  def checkForPresubmission(schemeInfo: SchemeInfo, validatedSheets: String)(implicit authContext: AuthContext, hc: HeaderCarrier): Future[HttpResponse] = {
+  def checkForPresubmission(schemeInfo: SchemeInfo, validatedSheets: String)(implicit authContext: ERSAuthData, hc: HeaderCarrier): Future[HttpResponse] = {
     import ErsModelFormats._
-    val empref: String = getAuthID(authContext).encodedValue
+    val empref: String = authContext.empRef.encodedValue
     val url: String = s"${ersUrl}/ers/${empref}/check-for-presubmission/${validatedSheets}"
     httpPost.POST(url, schemeInfo)
   }
 
-  def removePresubmissionData(schemeInfo: SchemeInfo)(implicit authContext: AuthContext, hc: HeaderCarrier): Future[HttpResponse] = {
-    val empref: String = getAuthID(authContext).encodedValue
+  def removePresubmissionData(schemeInfo: SchemeInfo)(implicit authContext: ERSAuthData, hc: HeaderCarrier): Future[HttpResponse] = {
+    val empref: String = authContext.empRef.encodedValue
     val url: String = s"${ersUrl}/ers/${empref}/removePresubmissionData"
     httpPost.POST(url, schemeInfo)
   }
 
-  def retrieveSubmissionData(data: JsObject)(implicit authContext: AuthContext, hc: HeaderCarrier): Future[HttpResponse] = {
-    val empref: String = getAuthID(authContext).encodedValue
+  def retrieveSubmissionData(data: JsObject)(implicit authContext: ERSAuthData, hc: HeaderCarrier): Future[HttpResponse] = {
+    val empref: String = authContext.empRef.encodedValue
     val url: String = s"${ersUrl}/ers/${empref}/retrieve-submission-data"
     httpPost.POST(url, data)
   }

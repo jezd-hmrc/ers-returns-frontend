@@ -21,10 +21,10 @@ import java.util.UUID
 import akka.stream.Materializer
 import com.typesafe.config.Config
 import config.{ERSFileValidatorAuditConnector, WSHttp}
-import org.mockito.Matchers
+import org.mockito.ArgumentMatchers
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.{OneServerPerSuite, PlaySpec}
 import play.api.{Application, Configuration, Play}
 import play.api.http.HeaderNames
@@ -76,7 +76,7 @@ class AttachmentsConnectorSpec extends PlaySpec with OneServerPerSuite with ERSF
         implicit val request = FakeRequest()
 
         val html = "<h1>helloworld</h1>"
-        when(mockHttp.GET[HttpResponse](Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(Future.successful(HttpResponse(200, responseString = Some
+        when(mockHttp.GET[HttpResponse](ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(HttpResponse(200, responseString = Some
         (html))))
         TestAttachmentsConnector.getFileUploadPartial().map {
           response => response.body must equal(html)
