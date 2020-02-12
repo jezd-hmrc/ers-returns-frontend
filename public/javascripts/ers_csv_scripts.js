@@ -74,37 +74,29 @@
 	}
 
 	function validateFile(fileName, fileSize, e) {
-		// Check file name
-//		TODO remove validFileName
-		if (validFileName(fileName)) {
-			// check file name length
-				// Check file extn
-				if (getFileNameExtension(fileName) == "csv") {
-					if (csvFileSizeOK(fileSize)) {
-						if (isValidCSVFile(fileName)) {
-							// file ok
-							return true;
-						} else {
-							var filesListMsg = GOVUK.getLocalisedContent("ers.file.upload.wrong.file");
-							showCSVErrorMsg(e, filesListMsg);
-					    	errors++;
-							return false;
-						}
-					} else {
-						showCSVErrorMsg(e, GOVUK.getLocalisedContent("ers.file.upload.csv.file.large"));
-						errors++;
-						return false;
-					}
-				} else {
-					showCSVErrorMsg(e, GOVUK.getLocalisedContent("ers.file.upload.csv.wrong.type"));
-					errors++;
-					return false;
-				}
-		} else {
-			showCSVErrorMsg(e, GOVUK.getLocalisedContent("ers.file.upload.csv.choose.other"));
-			errors++;
-			return false;
-		}
+        // check file name length
+        // Check file extn
+        if (getFileNameExtension(fileName) == "csv") {
+            if (csvFileSizeOK(fileSize)) {
+                if (isValidCSVFile(fileName)) {
+                    // file ok
+                    return true;
+                } else {
+                    var filesListMsg = GOVUK.getLocalisedContent("ers.file.upload.wrong.file");
+                    showCSVErrorMsg(e, filesListMsg);
+                    errors++;
+                    return false;
+                }
+            } else {
+                showCSVErrorMsg(e, GOVUK.getLocalisedContent("ers.file.upload.csv.file.large"));
+                errors++;
+                return false;
+            }
+        } else {
+            showCSVErrorMsg(e, GOVUK.getLocalisedContent("ers.file.upload.csv.wrong.type"));
+            errors++;
+            return false;
+        }
 	}
 
 	$("#fileToUpload").change(function(e){
