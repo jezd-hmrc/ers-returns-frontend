@@ -20,7 +20,7 @@ import java.net.URL
 import java.time.Instant
 
 import akka.stream.Materializer
-import config.ApplicationConfig
+import config.{ApplicationConfig, ApplicationConfigImpl}
 import models.upscan._
 import org.mockito.ArgumentCaptor
 import org.mockito.Matchers.{eq => meq, _}
@@ -28,7 +28,7 @@ import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
-import play.api.Application
+import play.api.{Application, Configuration}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{Json, _}
 import play.api.mvc.Request
@@ -40,7 +40,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 import utils.{CacheUtil, ERSFakeApplicationConfig, UpscanData}
 
 import scala.concurrent.Future
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.Try
 
 class CsvFileUploadCallbackControllerSpec extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with OneAppPerSuite with BeforeAndAfterEach with UpscanData {
@@ -59,7 +59,10 @@ class CsvFileUploadCallbackControllerSpec extends UnitSpec with ERSFakeApplicati
   lazy val csvFileUploadCallbackController: CsvFileUploadCallbackController = new CsvFileUploadCallbackController {
     lazy val authConnector: AuthConnector = mockAuthConnector
     override val cacheUtil: CacheUtil = mockCacheUtil
-    override val appConfig: ApplicationConfig = ApplicationConfig
+    override val appConfig: ApplicationConfig = new ApplicationConfigImpl(app.injector.instanceOf[Configuration]){
+      import scala.concurrent.duration._
+      override val retryDelay: FiniteDuration = 1 millisecond
+    }
   }
 
   override def beforeEach(): Unit = {

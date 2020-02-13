@@ -35,14 +35,14 @@ import utils._
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
-trait CsvFileUploadController extends FrontendController with Authenticator {
+trait CsvFileUploadController extends FrontendController with Authenticator with Retryable {
 
   private val logger = Logger(this.getClass)
 
   val sessionService: SessionService
   val cacheUtil: CacheUtil
   val ersConnector: ErsConnector
-  val appConfig: ApplicationConfig = ApplicationConfig
+  val appConfig: ApplicationConfig
   val upscanService: UpscanService = current.injector.instanceOf[UpscanService]
   implicit val actorSystem: ActorSystem = current.actorSystem
 
@@ -131,7 +131,7 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
 
   def extractCsvCallbackData(schemeInfo: SchemeInfo)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     cacheUtil.fetch[UpscanCsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, schemeInfo.schemeRef).withRetry(appConfig.csvCacheCompletedRetryAmount)(
-      _.areAllFilesComplete()
+      data => data.files.nonEmpty && data.areAllFilesComplete()
     ).flatMap { csvFilesCallbackList =>
       if(csvFilesCallbackList.areAllFilesSuccessful()) {
         val callbackDataList: List[UploadedSuccessfully] = csvFilesCallbackList.files.map(_.uploadStatus.asInstanceOf[UploadedSuccessfully])
@@ -215,5 +215,6 @@ object CsvFileUploadController extends CsvFileUploadController {
   val authConnector = ERSFileValidatorAuthConnector
   val sessionService = SessionService
   val ersConnector: ErsConnector = ErsConnector
+  val appConfig: ApplicationConfig = ApplicationConfig
   override val cacheUtil: CacheUtil = CacheUtil
 }

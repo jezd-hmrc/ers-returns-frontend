@@ -50,9 +50,6 @@ trait CheckCsvFilesController extends ERSReturnBaseController with Authenticator
     val requestObjectFuture = cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
     (for {
       requestObject <- requestObjectFuture
-      /*cacheData <- cacheUtil.fetchOption[UpscanCsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, requestObject.getSchemeReference).recover{
-        case _: NoSuchElementException => None
-      }*/
     } yield {
       val csvFilesList: List[CsvFiles] = PageBuilder.getCsvFilesList(requestObject.getSchemeType)
       Ok(views.html.check_csv_file(requestObject, CsvFilesList(csvFilesList)))
@@ -60,16 +57,6 @@ trait CheckCsvFilesController extends ERSReturnBaseController with Authenticator
       case _: Throwable => getGlobalErrorPage
     }
   }
-
- /* def mergeCsvFilesListWithCsvFilesCallback(csvFilesList: List[CsvFiles], cacheData: UpscanCsvFilesCallbackList): List[CsvFiles] = {
-    for (file <- csvFilesList) yield {
-      if (cacheData.files.exists(_.fileId == file.fileId)) {
-        CsvFiles(file.fileId, Some(PageBuilder.OPTION_YES))
-      } else {
-        file
-      }
-    }
-  }*/
 
   def checkCsvFilesPageSelected(): Action[AnyContent] = AuthorisedForAsync() {
     implicit user =>

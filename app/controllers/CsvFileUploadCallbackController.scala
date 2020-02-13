@@ -30,7 +30,7 @@ import utils.CacheUtil
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
-trait CsvFileUploadCallbackController extends FrontendController with Actions with ErsConstants {
+trait CsvFileUploadCallbackController extends FrontendController with Actions with ErsConstants with Retryable {
   val cacheUtil: CacheUtil
   val appConfig: ApplicationConfig
   implicit val actorSystem: ActorSystem = Play.current.actorSystem

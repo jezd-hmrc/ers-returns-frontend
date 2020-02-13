@@ -20,7 +20,7 @@ import _root_.models._
 import akka.actor.ActorSystem
 import config.{ApplicationConfig, ERSFileValidatorAuthConnector}
 import connectors.ErsConnector
-import models.upscan.{Failed, UploadStatus, UploadedSuccessfully, UpscanCsvFilesCallbackList}
+import models.upscan.{Failed, UploadStatus, UploadedSuccessfully}
 import play.api.Logger
 import play.api.Play.current
 import play.api.i18n.Messages
@@ -35,7 +35,7 @@ import views.html.upscan_ods_file_upload
 
 import scala.concurrent.Future
 
-trait FileUploadController extends FrontendController with Authenticator with LegacyI18nSupport {
+trait FileUploadController extends FrontendController with Authenticator with LegacyI18nSupport with Retryable {
 
   private val logger = Logger(this.getClass)
 
@@ -58,7 +58,7 @@ trait FileUploadController extends FrontendController with Authenticator with Le
           Ok(upscan_ods_file_upload(requestObject, response))
         }) recover{
           case e: Throwable =>
-            Logger.error(s"showUploadFilePage failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
+            logger.error(s"showUploadFilePage failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
             getGlobalErrorPage
         }
   }
@@ -124,7 +124,7 @@ trait FileUploadController extends FrontendController with Authenticator with Le
             logger.error(s"Failed to validate as file is not yet successfully uploaded. Current cache data: ${e.finalFutureData.flatten}", e)
             getGlobalErrorPage
           case e: Throwable =>
-            Logger.error(s"validationResults: validationResults failed with Exception ${e.getMessage}", e)
+            logger.error(s"validationResults: validationResults failed with Exception ${e.getMessage}", e)
             getGlobalErrorPage
         }
   }
@@ -132,17 +132,17 @@ trait FileUploadController extends FrontendController with Authenticator with Le
   def handleValidationResponse(callbackData: UploadedSuccessfully, schemeInfo: SchemeInfo)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     val schemeRef = schemeInfo.schemeRef
     ersConnector.validateFileData(callbackData, schemeInfo).map { res =>
-      Logger.info(s"validationResults: Response from validator: ${res.status}, timestamp: ${System.currentTimeMillis()}.")
+      logger.info(s"validationResults: Response from validator: ${res.status}, timestamp: ${System.currentTimeMillis()}.")
 
       res.status match {
 
         case OK =>
-          Logger.warn(s"validationResults: Validation is successful for schemeRef: $schemeRef, timestamp: ${System.currentTimeMillis()}.")
+          logger.warn(s"validationResults: Validation is successful for schemeRef: $schemeRef, timestamp: ${System.currentTimeMillis()}.")
           cacheUtil.cache(cacheUtil.VALIDATED_SHEEETS, res.body, schemeRef)
           Redirect(routes.SchemeOrganiserController.schemeOrganiserPage())
 
         case ACCEPTED =>
-          Logger.warn(s"validationResults: Validation is not successful for schemeRef: $schemeRef, timestamp: ${System.currentTimeMillis()}.")
+          logger.warn(s"validationResults: Validation is not successful for schemeRef: $schemeRef, timestamp: ${System.currentTimeMillis()}.")
           Redirect(routes.FileUploadController.validationFailure())
 
         case _ => logger.error(s"validationResults: Validate file data failed with Status ${res.status}, timestamp: ${System.currentTimeMillis()}.")

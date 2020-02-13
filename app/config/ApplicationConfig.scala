@@ -16,20 +16,20 @@
 
 package config
 
-import play.api.Play._
-import uk.gov.hmrc.play.config.{AppName, ServicesConfig}
+import com.google.inject.{ImplementedBy, Inject}
+import controllers.routes
+import javax.inject.Singleton
 import play.Logger
 import play.api.Mode.Mode
-import play.api.{Configuration, Play}
 import play.api.i18n.Lang
 import play.api.mvc.Call
+import play.api.{Configuration, Play}
+import uk.gov.hmrc.play.config.{AppName, ServicesConfig}
 
-import scala.util.Try
-import controllers.routes
-import uk.gov.hmrc.play.partials.CachedStaticHtmlPartialRetriever
 import scala.concurrent.duration._
-import scala.concurrent.duration.Duration
+import scala.util.Try
 
+@ImplementedBy(classOf[ApplicationConfigImpl])
 trait ApplicationConfig extends AppName {
 
   val assetsPrefix: String
@@ -60,7 +60,8 @@ trait ApplicationConfig extends AppName {
   val retryDelay: FiniteDuration
 }
 
-class ApplicationConfigImpl extends ApplicationConfig with ServicesConfig {
+@Singleton
+class ApplicationConfigImpl @Inject()(configuration: Configuration) extends ApplicationConfig with ServicesConfig {
 
   val contactHost = baseUrl("contact-frontend")
   private lazy val _reportAProblemPartialUrl = s"$contactHost/contact/problem_reports?secure=false"
@@ -68,12 +69,10 @@ class ApplicationConfigImpl extends ApplicationConfig with ServicesConfig {
   override def reportAProblemPartialUrl: String = _reportAProblemPartialUrl
 
   override protected def mode: Mode = Play.current.mode
-  override protected def runModeConfiguration: Configuration = Play.current.configuration
+  override protected def runModeConfiguration: Configuration = configuration
   override def appNameConfiguration: Configuration = runModeConfiguration
 
   private def loadConfig(key: String) = configuration.getString(key).getOrElse(throw new Exception(s"Missing key: $key"))
-
-  private val contactFormServiceIdentifier = "ERS"
 
   override lazy val assetsPrefix: String = loadConfig("assets.url") + loadConfig("assets.version")
   override lazy val analyticsToken: Option[String] = configuration.getString("govuk-tax.google-analytics.token")
@@ -110,5 +109,5 @@ class ApplicationConfigImpl extends ApplicationConfig with ServicesConfig {
   override val retryDelay: FiniteDuration = (runModeConfiguration.getMilliseconds("retry.delay").get) milliseconds
 }
 
-object ApplicationConfig extends ApplicationConfigImpl
+object ApplicationConfig extends ApplicationConfigImpl(Play.current.configuration)
 
