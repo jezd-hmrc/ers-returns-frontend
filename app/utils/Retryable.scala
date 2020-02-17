@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package controllers
+package utils
 
 import akka.actor.{ActorSystem, Scheduler}
 import akka.pattern.after
@@ -23,7 +23,7 @@ import play.api.Logger
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.concurrent.duration._
+import scala.concurrent.duration.FiniteDuration
 
 trait Retryable {
   val appConfig: ApplicationConfig

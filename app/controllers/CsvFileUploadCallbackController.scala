@@ -25,7 +25,7 @@ import play.api.mvc.Action
 import services.SessionService
 import uk.gov.hmrc.play.frontend.auth.Actions
 import uk.gov.hmrc.play.frontend.controller.FrontendController
-import utils.CacheUtil
+import utils.{CacheUtil, Retryable}
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
