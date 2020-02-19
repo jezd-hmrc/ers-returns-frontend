@@ -40,30 +40,32 @@ import play.api.mvc.Request
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers}
 import services.SessionService
+import uk.gov.hmrc.auth.core.PlayAuthConnector
 import uk.gov.hmrc.http.cache.client.{CacheMap, ShortLivedCache}
 import uk.gov.hmrc.play.test.UnitSpec
 import utils.ContentUtil._
-import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures}
+import utils.{AuthHelper, CacheUtil, ERSFakeApplicationConfig, Fixtures}
 
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpPost, HttpResponse}
 import utils.Fixtures.ersRequestObject
 
 
-class ReturnServiceControllerTest extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with OneAppPerSuite {
+class ReturnServiceControllerTest extends UnitSpec with ERSFakeApplicationConfig with AuthHelper with OneAppPerSuite {
 
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val mat: Materializer = app.materializer
   implicit val request: Request[_] = FakeRequest()
 
-  lazy val mockHttp = mock[HttpPost]
-  lazy val mockHttpGet = mock[HttpGet]
-  lazy val mockSessionCache = mock[SessionService]
+  lazy val mockHttp: HttpPost = mock[HttpPost]
+  lazy val mockHttpGet: HttpGet = mock[HttpGet]
+  lazy val mockSessionCache: SessionService = mock[SessionService]
   lazy val ExpectedRedirectionUrlIfNotSignedIn = "/gg/sign-in?continue=/submit-your-ers-return"
   lazy val schemeInfo = SchemeInfo("XA1100000000000", DateTime.now, "1", "2016", "EMI", "EMI")
   lazy val rsc: ErsMetaData = new ErsMetaData(schemeInfo, "ipRef", Some("aoRef"), "empRef", Some("agentRef"), Some("sapNumber"))
 
   def buildFakeReturnServiceController(accessThresholdValue: Int = 100) = new ReturnServiceController {
+		override val authConnector: PlayAuthConnector = mockAuthConnector
 
     val accessDeniedUrl = "/denied.html"
     var fetchMapVal = "e"
@@ -118,7 +120,7 @@ class ReturnServiceControllerTest extends UnitSpec with ERSFakeApplicationConfig
     override val metrics: Metrics = mock[Metrics]
   }
 
-  val schemeRef = Fixtures.schemeRef
+  val schemeRef: String = Fixtures.schemeRef
 
 
   "Calling ReturnServiceController.cacheParams with existing cache storage for the given schemeId and schemeRef" should {
@@ -146,6 +148,7 @@ class ReturnServiceControllerTest extends UnitSpec with ERSFakeApplicationConfig
   //Start Page
   "Calling ReturnServiceController.startPage (GET) without authentication" should {
     "give a redirect status (to company authentication frontend)" in {
+			setUnauthorisedMocks()
       val controllerUnderTest = buildFakeReturnServiceController()
       val result = controllerUnderTest.startPage().apply(FakeRequest("GET", ""))
       status(result) shouldBe Status.SEE_OTHER
@@ -154,6 +157,7 @@ class ReturnServiceControllerTest extends UnitSpec with ERSFakeApplicationConfig
 
   "Calling ReturnServiceController.hmacCheck" should {
     "without authentication should redirect to to company authentication frontend" in {
+			setUnauthorisedMocks()
       implicit val fakeRequest = Fixtures.buildFakeRequestWithSessionId("?")
       val controllerUnderTest = buildFakeReturnServiceController(accessThresholdValue = 0)
       val result = await(controllerUnderTest.hmacCheck()(fakeRequest))
@@ -163,6 +167,7 @@ class ReturnServiceControllerTest extends UnitSpec with ERSFakeApplicationConfig
 
   "Calling ReturnServiceController.startPage" should {
     "without authentication should redirect to to company authentication frontend" in {
+			setUnauthorisedMocks()
       implicit val fakeRequest = Fixtures.buildFakeRequestWithSessionId("?")
       val controllerUnderTest = buildFakeReturnServiceController(accessThresholdValue = 0)
       val result = await(controllerUnderTest.startPage()(fakeRequest))

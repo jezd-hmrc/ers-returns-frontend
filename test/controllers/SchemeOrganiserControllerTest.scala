@@ -32,13 +32,14 @@ import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.mvc.Request
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import uk.gov.hmrc.auth.core.PlayAuthConnector
 import uk.gov.hmrc.play.test.UnitSpec
 import utils.Fixtures.ersRequestObject
-import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures, PageBuilder}
+import utils.{AuthHelper, CacheUtil, ERSFakeApplicationConfig, Fixtures, PageBuilder}
 
 import scala.concurrent.Future
 
-class SchemeOrganiserControllerTest extends UnitSpec with GuiceOneAppPerSuite with ERSFakeApplicationConfig with MockitoSugar {
+class SchemeOrganiserControllerTest extends UnitSpec with GuiceOneAppPerSuite with ERSFakeApplicationConfig with AuthHelper {
 
   val messagesApi: MessagesApi = app.injector.instanceOf[MessagesApi]
   implicit val messages: Messages = messagesApi.preferred(Seq(Lang.get("en").get))
@@ -59,8 +60,11 @@ class SchemeOrganiserControllerTest extends UnitSpec with GuiceOneAppPerSuite wi
       val mockErsConnector: ErsConnector = mock[ErsConnector]
       val mockCacheUtil: CacheUtil = mock[CacheUtil]
       override val cacheUtil: CacheUtil = mockCacheUtil
+			override val authConnector: PlayAuthConnector = mockAuthConnector
 
-      when(
+			when(mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())).thenReturn(Future.successful(ersRequestObject))
+
+			when(
         mockCacheUtil.fetch[ReportableEvents](refEq(CacheUtil.reportableEvents), any())(any(), any(), any())
       ).thenReturn(
         if (reportableEventsRes) {
@@ -94,15 +98,17 @@ class SchemeOrganiserControllerTest extends UnitSpec with GuiceOneAppPerSuite wi
     }
 
     "give a redirect status (to company authentication frontend) on GET if user is not authenticated" in {
+			setUnauthorisedMocks()
       val controllerUnderTest = buildFakeSchemeOrganiserController()
       val result = controllerUnderTest.schemeOrganiserPage().apply(FakeRequest("GET", ""))
       status(result) shouldBe Status.SEE_OTHER
     }
 
     "give a status OK on GET if user is authenticated" in {
+			setAuthMocks()
       val controllerUnderTest = buildFakeSchemeOrganiserController()
       val result = controllerUnderTest.schemeOrganiserPage().apply(Fixtures.buildFakeRequestWithSessionIdCSOP("GET"))
-      status(result) shouldBe Status.SEE_OTHER
+      status(result) shouldBe Status.OK
     }
 
     "direct to ers errors page if fetching reportableEvents throws exception" in {
@@ -158,8 +164,11 @@ class SchemeOrganiserControllerTest extends UnitSpec with GuiceOneAppPerSuite wi
       val mockErsConnector: ErsConnector = mock[ErsConnector]
       val mockCacheUtil: CacheUtil = mock[CacheUtil]
       override val cacheUtil: CacheUtil = mockCacheUtil
+			override val authConnector: PlayAuthConnector = mockAuthConnector
 
-      when(mockCacheUtil.fetch[ReportableEvents](refEq(CacheUtil.reportableEvents), any())(any(), any(), any())).thenReturn(
+			when(mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())).thenReturn(Future.successful(ersRequestObject))
+
+			when(mockCacheUtil.fetch[ReportableEvents](refEq(CacheUtil.reportableEvents), any())(any(), any(), any())).thenReturn(
         if (reportableEventsRes) {
           Future.successful(ReportableEvents(Some(PageBuilder.OPTION_NO)))
         } else {
@@ -195,15 +204,17 @@ class SchemeOrganiserControllerTest extends UnitSpec with GuiceOneAppPerSuite wi
     }
 
     "give a redirect status (to company authentication frontend) on GET if user is not authenticated" in {
+			setUnauthorisedMocks()
       val controllerUnderTest = buildFakeSchemeOrganiserController()
       val result = controllerUnderTest.schemeOrganiserSubmit().apply(FakeRequest("GET", ""))
       status(result) shouldBe Status.SEE_OTHER
     }
 
     "give a status OK on GET if user is authenticated" in {
+			setAuthMocks()
       val controllerUnderTest = buildFakeSchemeOrganiserController()
       val result = controllerUnderTest.schemeOrganiserSubmit().apply(Fixtures.buildFakeRequestWithSessionIdCSOP("GET"))
-      status(result) shouldBe Status.SEE_OTHER
+      status(result) shouldBe Status.OK
     }
 
     "give a Ok status and stay on the same page if form errors and display the error" in {

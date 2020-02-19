@@ -94,7 +94,7 @@ trait SummaryDeclarationController extends ERSReturnBaseController with Authenti
   def getCompDetails(cacheMap: CacheMap): CompanyDetailsList =
     cacheMap.getEntry[CompanyDetailsList](CacheUtil.GROUP_SCHEME_COMPANIES).getOrElse(CompanyDetailsList(List[CompanyDetails]()))
 
-  def getGlobalErrorPage(implicit request: Request[_], messages: Messages) = Ok(views.html.global_error(
+  def getGlobalErrorPage(implicit request: Request[_], messages: Messages): Result = Ok(views.html.global_error(
     messages("ers.global_errors.title"),
     messages("ers.global_errors.heading"),
     messages("ers.global_errors.message"))(request, messages))

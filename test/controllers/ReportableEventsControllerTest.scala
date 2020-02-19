@@ -32,13 +32,14 @@ import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.mvc.Request
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import uk.gov.hmrc.auth.core.PlayAuthConnector
 import uk.gov.hmrc.play.test.UnitSpec
 import utils.Fixtures.ersRequestObject
-import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures, PageBuilder}
+import utils.{AuthHelper, CacheUtil, ERSFakeApplicationConfig, Fixtures, PageBuilder}
 
 import scala.concurrent.Future
 
-class ReportableEventsControllerTest extends UnitSpec with ERSFakeApplicationConfig with GuiceOneAppPerSuite with MockitoSugar {
+class ReportableEventsControllerTest extends UnitSpec with ERSFakeApplicationConfig with GuiceOneAppPerSuite with AuthHelper {
 
   val messagesApi: MessagesApi = app.injector.instanceOf[MessagesApi]
   implicit val messages: Messages = messagesApi.preferred(Seq(Lang.get("en").get))
@@ -66,6 +67,9 @@ class ReportableEventsControllerTest extends UnitSpec with ERSFakeApplicationCon
       val mockCacheUtil: CacheUtil = mock[CacheUtil]
       override val cacheUtil: CacheUtil = mockCacheUtil
       override val ersConnector: ErsConnector = mockErsConnector
+			override val authConnector: PlayAuthConnector = mockAuthConnector
+
+			when(mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())).thenReturn(Future.successful(ersRequestObject))
 
       when(
         mockErsConnector.connectToEtmpSapRequest(anyString())(any(), any())
@@ -115,15 +119,17 @@ class ReportableEventsControllerTest extends UnitSpec with ERSFakeApplicationCon
     }
 
     "give a redirect status (to company authentication frontend) on GET if user is not authenticated" in {
+			setUnauthorisedMocks()
       val controllerUnderTest = buildFakeReportableEventsController()
       val result = controllerUnderTest.reportableEventsPage().apply(FakeRequest("GET", ""))
       status(result) shouldBe Status.SEE_OTHER
     }
 
     "give a status OK on GET if user is authenticated" in {
+			setAuthMocks()
       val controllerUnderTest = buildFakeReportableEventsController()
       val result = controllerUnderTest.reportableEventsPage().apply(Fixtures.buildFakeRequestWithSessionIdCSOP("GET"))
-      status(result) shouldBe Status.SEE_OTHER
+      status(result) shouldBe Status.OK
     }
 
     "direct to ers errors page if fetching ersMetaData throws exception" in {
@@ -178,6 +184,9 @@ class ReportableEventsControllerTest extends UnitSpec with ERSFakeApplicationCon
       val mockCacheUtil: CacheUtil = mock[CacheUtil]
       override val cacheUtil: CacheUtil = mockCacheUtil
       override val ersConnector: ErsConnector = mockErsConnector
+			override val authConnector: PlayAuthConnector = mockAuthConnector
+
+			when(mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())).thenReturn(Future.successful(ersRequestObject))
 
       when(mockErsConnector.connectToEtmpSapRequest(anyString())(any(), any())
       ).thenReturn(
@@ -230,15 +239,17 @@ class ReportableEventsControllerTest extends UnitSpec with ERSFakeApplicationCon
     }
 
     "give a redirect status (to company authentication frontend) on GET if user is not authenticated" in {
+			setUnauthorisedMocks()
       val controllerUnderTest: ReportableEventsController = buildFakeReportableEventsController()
       val result = controllerUnderTest.reportableEventsSelected().apply(FakeRequest("GET", ""))
       status(result) shouldBe Status.SEE_OTHER
     }
 
     "give a status OK on GET if user is authenticated" in {
+			setAuthMocks()
       val controllerUnderTest: ReportableEventsController = buildFakeReportableEventsController()
       val result = controllerUnderTest.reportableEventsSelected().apply(Fixtures.buildFakeRequestWithSessionIdCSOP("GET"))
-      status(result) shouldBe Status.SEE_OTHER
+      status(result) shouldBe Status.OK
     }
 
     "if nothing selected give a status of OK and show the reportable events page displaying form errors" in {
