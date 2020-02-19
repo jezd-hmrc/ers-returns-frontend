@@ -26,7 +26,7 @@ import uk.gov.hmrc.play.frontend.auth.Actions
 import uk.gov.hmrc.play.frontend.controller.FrontendController
 import uk.gov.hmrc.http.logging.SessionId
 
-trait CsvFileUploadCallbackController extends FrontendController with Actions with ErsConstants {
+trait CsvFileUploadCallbackController extends FrontendController with ErsConstants {
   val sessionService: SessionService
 
   def callback(): Action[JsValue] = Action.async(parse.json) {

@@ -37,13 +37,13 @@ trait CheckCsvFilesController extends ERSReturnBaseController with Authenticator
   val cacheUtil: CacheUtil
   val pageBuilder: PageBuilder
 
-  def checkCsvFilesPage(): Action[AnyContent] = AuthorisedForAsync() {
+  def checkCsvFilesPage(): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
         showCheckCsvFilesPage()(user, request, hc)
   }
 
-  def showCheckCsvFilesPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showCheckCsvFilesPage()(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
     (for {
       requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
@@ -81,13 +81,13 @@ trait CheckCsvFilesController extends ERSReturnBaseController with Authenticator
     }
   }
 
-  def checkCsvFilesPageSelected(): Action[AnyContent] = AuthorisedForAsync() {
+  def checkCsvFilesPageSelected(): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
         validateCsvFilesPageSelected()
   }
 
-  def validateCsvFilesPageSelected()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def validateCsvFilesPageSelected()(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     RsFormMappings.csvFileCheckForm.bindFromRequest.fold(
       formWithErrors => {
         reloadWithError()
@@ -98,7 +98,7 @@ trait CheckCsvFilesController extends ERSReturnBaseController with Authenticator
     )
   }
 
-  def performCsvFilesPageSelected(formData: CsvFilesList)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def performCsvFilesPageSelected(formData: CsvFilesList)(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
     val csvFilesCallbackList: List[CsvFilesCallback] = createCacheData(formData.files)
     if (csvFilesCallbackList.length == 0) {

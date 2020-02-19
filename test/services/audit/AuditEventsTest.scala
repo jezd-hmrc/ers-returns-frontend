@@ -27,7 +27,7 @@ import uk.gov.hmrc.play.audit.model.DataEvent
 import scala.collection.mutable.ListBuffer
 import uk.gov.hmrc.http.HeaderCarrier
 
-class AuditEventsTest    extends WordSpec with Matchers {
+class AuditEventsTest extends WordSpec with Matchers {
 
   implicit val request = FakeRequest()
   implicit var hc = new HeaderCarrier()

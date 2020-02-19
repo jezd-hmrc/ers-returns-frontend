@@ -27,6 +27,7 @@ import utils.{PageBuilder, _}
 
 import scala.concurrent.Future
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.cache.client.CacheMap
 
 
 object CheckFileTypeController extends CheckFileTypeController {
@@ -39,14 +40,14 @@ trait CheckFileTypeController extends ERSReturnBaseController with Authenticator
   val contentUtil = ContentUtil
   val cacheUtil: CacheUtil
 
-  def checkFileTypePage(): Action[AnyContent] = AuthenticatedBy(ERSGovernmentGateway, pageVisibilityPredicate).async {
+  def checkFileTypePage(): Action[AnyContent] = authorisedByGG {
     implicit authContext =>
       implicit request =>
           showCheckFileTypePage()(authContext, request, hc)
 
   }
 
-  def showCheckFileTypePage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showCheckFileTypePage()(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
     (for {
       requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
@@ -62,13 +63,13 @@ trait CheckFileTypeController extends ERSReturnBaseController with Authenticator
     }
   }
 
-  def checkFileTypeSelected(): Action[AnyContent] = AuthenticatedBy(ERSGovernmentGateway, pageVisibilityPredicate).async {
-    implicit authContext =>
+  def checkFileTypeSelected(): Action[AnyContent] = authorisedByGG {
+    implicit authContext: ERSAuthData =>
       implicit request =>
-          showCheckFileTypeSelected()(authContext, request, hc)
+          showCheckFileTypeSelected()(request, hc)
   }
 
-  def showCheckFileTypeSelected()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showCheckFileTypeSelected()(implicit request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
       RsFormMappings.checkFileTypeForm.bindFromRequest.fold(
         errors => {
@@ -91,7 +92,7 @@ trait CheckFileTypeController extends ERSReturnBaseController with Authenticator
     }
   }
 
-  def getGlobalErrorPage(implicit request: Request[_], messages: Messages) = Ok(views.html.global_error(
+  def getGlobalErrorPage(implicit request: Request[_], messages: Messages): Result = Ok(views.html.global_error(
     messages("ers.global_errors.title"),
     messages("ers.global_errors.heading"),
     messages("ers.global_errors.message"))(request, messages))

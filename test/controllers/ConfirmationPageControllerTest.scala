@@ -20,12 +20,12 @@ import akka.stream.Materializer
 import config.ErsContextImpl
 import connectors.ErsConnector
 import metrics.Metrics
-import models.{ErsMetaData, ErsSummary, RequestObject, SchemeInfo}
+import models.{ERSAuthData, ErsMetaData, ErsSummary, RequestObject, SchemeInfo}
 import org.joda.time.DateTime
-import org.mockito.Matchers._
+import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
 import play.api.http.Status
@@ -108,7 +108,7 @@ class ConfirmationPageControllerTest extends UnitSpec with ERSFakeApplicationCon
 
       override val cacheUtil: CacheUtil = mockCacheUtil
 
-      override def saveAndSubmit(alldata: ErsSummary, all: ErsMetaData, bundle: String)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+      override def saveAndSubmit(alldata: ErsSummary, all: ErsMetaData, bundle: String)(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
         Future(Ok)
       }
 

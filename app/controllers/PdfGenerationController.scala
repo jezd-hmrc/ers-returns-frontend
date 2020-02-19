@@ -37,7 +37,7 @@ trait PdfGenerationController extends ERSReturnBaseController with Authenticator
   val pdfBuilderService: ErsReceiptPdfBuilderService
 
 
-  def buildPdfForBundle(bundle: String, dateSubmitted: String): Action[AnyContent] = AuthorisedForAsync() {
+  def buildPdfForBundle(bundle: String, dateSubmitted: String): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
         cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
@@ -45,7 +45,7 @@ trait PdfGenerationController extends ERSReturnBaseController with Authenticator
         }
   }
 
-  def generatePdf(requestObject: RequestObject, bundle: String, dateSubmitted: String)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def generatePdf(requestObject: RequestObject, bundle: String, dateSubmitted: String)(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
     Logger.debug("ers returns frontend getting into the controller to generate the pdf")
     val cache: Future[ErsMetaData] = cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, requestObject.getSchemeReference)

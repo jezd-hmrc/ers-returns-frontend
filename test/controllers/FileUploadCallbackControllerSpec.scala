@@ -19,9 +19,9 @@ package controllers
 import akka.stream.Materializer
 import models.{CallbackData, ErsMetaData, SchemeInfo}
 import org.joda.time.DateTime
-import org.mockito.Matchers
+import org.mockito.ArgumentMatchers
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, JsValue, Json}
@@ -71,9 +71,9 @@ class FileUploadCallbackControllerSpec extends PlaySpec with MockitoSugar with E
   "callback" must {
     "successfully store and validates callback data" in {
 
-      when(mockSessionService.storeCallbackData(Matchers.any[CallbackData]())(Matchers.any[Request[_]](), Matchers.any[HeaderCarrier]())).thenReturn(Future.successful(Some(callbackData)))
-      when(mockCacheUtil.fetch[ErsMetaData](Matchers.any[String](), Matchers.any[String]())(Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(Future.successful(rsc))
-      when(mockCacheUtil.cache(Matchers.anyString(), Matchers.any(), Matchers.anyString())(Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(Future.successful(mock[CacheMap]))
+      when(mockSessionService.storeCallbackData(ArgumentMatchers.any[CallbackData]())(ArgumentMatchers.any[Request[_]](), ArgumentMatchers.any[HeaderCarrier]())).thenReturn(Future.successful(Some(callbackData)))
+      when(mockCacheUtil.fetch[ErsMetaData](ArgumentMatchers.any[String](), ArgumentMatchers.any[String]())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(rsc))
+      when(mockCacheUtil.cache(ArgumentMatchers.anyString(), ArgumentMatchers.any(), ArgumentMatchers.anyString())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(mock[CacheMap]))
       val result = TestFileUploadCallbackController.callback().apply(fakeRequest)
 
       status(result) must be(OK)
@@ -84,9 +84,9 @@ class FileUploadCallbackControllerSpec extends PlaySpec with MockitoSugar with E
         customMetadata = None, sessionId = None, noOfRows = None)
 
       val fakeRequest = FakeRequest(method = "POST", uri = "", headers = fakeHeaders, body = Json.toJson(callbackData))
-      when(mockSessionService.storeCallbackData(Matchers.any[CallbackData]())(Matchers.any[Request[_]](), Matchers.any[HeaderCarrier]())).thenReturn(Future.successful(Some(callbackData)))
-      when(mockCacheUtil.fetch[ErsMetaData](Matchers.any[String](), Matchers.any[String]())(Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(Future.successful(rsc))
-      when(mockCacheUtil.cache(Matchers.anyString(), Matchers.any(), Matchers.anyString())(Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(Future.successful(mock[CacheMap]))
+      when(mockSessionService.storeCallbackData(ArgumentMatchers.any[CallbackData]())(ArgumentMatchers.any[Request[_]](), ArgumentMatchers.any[HeaderCarrier]())).thenReturn(Future.successful(Some(callbackData)))
+      when(mockCacheUtil.fetch[ErsMetaData](ArgumentMatchers.any[String](), ArgumentMatchers.any[String]())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(rsc))
+      when(mockCacheUtil.cache(ArgumentMatchers.anyString(), ArgumentMatchers.any(), ArgumentMatchers.anyString())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(mock[CacheMap]))
       val result = TestFileUploadCallbackController.callback().apply(fakeRequest)
 
       status(result) must be(OK)
@@ -98,7 +98,7 @@ class FileUploadCallbackControllerSpec extends PlaySpec with MockitoSugar with E
         customMetadata = None, sessionId = Some("testId"), noOfRows = None)
 
       val fakeRequest = FakeRequest(method = "POST", uri = "", headers = fakeHeaders, body = Json.toJson(callbackData))
-      when(mockSessionService.storeCallbackData(Matchers.any[CallbackData]())(Matchers.any[Request[_]](), Matchers.any[HeaderCarrier]())).thenReturn(Future.successful(None))
+      when(mockSessionService.storeCallbackData(ArgumentMatchers.any[CallbackData]())(ArgumentMatchers.any[Request[_]](), ArgumentMatchers.any[HeaderCarrier]())).thenReturn(Future.successful(None))
       val result = TestFileUploadCallbackController.callback().apply(fakeRequest)
       status(result) must be(INTERNAL_SERVER_ERROR)
 
@@ -106,7 +106,7 @@ class FileUploadCallbackControllerSpec extends PlaySpec with MockitoSugar with E
 
     "fail storing data when an exception occurs" in {
       val fakeRequest = FakeRequest(method = "POST", uri = "", headers = fakeHeaders, body = Json.toJson(callbackData))
-      when(mockSessionService.storeCallbackData(Matchers.any[CallbackData]())(Matchers.any[Request[_]](), Matchers.any[HeaderCarrier]())).thenReturn(Future.failed(new RuntimeException))
+      when(mockSessionService.storeCallbackData(ArgumentMatchers.any[CallbackData]())(ArgumentMatchers.any[Request[_]](), ArgumentMatchers.any[HeaderCarrier]())).thenReturn(Future.failed(new RuntimeException))
       val result = TestFileUploadCallbackController.callback().apply(fakeRequest)
       status(result) must be(INTERNAL_SERVER_ERROR)
 

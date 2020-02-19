@@ -20,10 +20,10 @@ import akka.stream.Materializer
 import connectors.{AttachmentsConnector, ErsConnector}
 import models._
 import org.joda.time.DateTime
-import org.mockito.Matchers
-import org.mockito.Matchers._
+import org.mockito.ArgumentMatchers
+import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
 import play.api.Application
 import play.api.i18n.{Lang, Messages, MessagesApi}
@@ -34,23 +34,20 @@ import play.api.mvc._
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import services.SessionService
+import uk.gov.hmrc.auth.core.PlayAuthConnector
 import uk.gov.hmrc.http.cache.client.CacheMap
-import uk.gov.hmrc.play.frontend.auth.AuthContext
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
-import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures}
+import utils.{AuthHelper, CacheUtil, ERSFakeApplicationConfig, Fixtures}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 
 class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
-  with MockitoSugar with ERSUsers with ErsConstants with LegacyI18nSupport
-  with ERSFakeApplicationConfig {
+  with MockitoSugar with ErsConstants with LegacyI18nSupport
+  with ERSFakeApplicationConfig with AuthHelper {
 
-  override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
-  implicit lazy val materializer: Materializer = app.materializer
-  def injector: Injector = app.injector
-  def messagesApi: MessagesApi = injector.instanceOf[MessagesApi]
+  lazy val messagesApi: MessagesApi = app.injector.instanceOf[MessagesApi]
   implicit val messages: Messages = messagesApi.preferred(Seq(Lang.get("en").get))
   implicit val request: Request[_] = FakeRequest()
 
@@ -60,124 +57,126 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
       val mockCallbackData = mock[CallbackData]
 
       when(
-        mockSessionService.retrieveCallbackData()(Matchers.any(), Matchers.any())
+        mockSessionService.retrieveCallbackData()(ArgumentMatchers.any(), ArgumentMatchers.any())
       ) thenReturn Future.successful(Some(mockCallbackData))
       when(
-        mockCacheUtil.fetch[ErsMetaData](Matchers.any[String](), Matchers.any[String]())(Matchers.any(), Matchers.any(), Matchers.any())
+        mockCacheUtil.fetch[ErsMetaData](ArgumentMatchers.any[String](), ArgumentMatchers.any[String]())
+					(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())
       ) thenReturn Future.successful(validErsMetaData)
 
       when(
-        mockErsConnector.validateFileData(Matchers.any[CallbackData](), Matchers.any())(Matchers.any[AuthContext](), Matchers.any(), Matchers.any[HeaderCarrier]())
+        mockErsConnector.validateFileData(ArgumentMatchers.any[CallbackData](), ArgumentMatchers.any())
+				(ArgumentMatchers.any[ERSAuthData](), ArgumentMatchers.any(), ArgumentMatchers.any[HeaderCarrier]())
       ) thenReturn Future.successful(HttpResponse(OK))
 
       when(
-        mockErsConnector.removePresubmissionData(Matchers.any[SchemeInfo]())(Matchers.any[AuthContext](), Matchers.any[HeaderCarrier]())
+        mockErsConnector.removePresubmissionData(ArgumentMatchers.any[SchemeInfo]())(ArgumentMatchers.any[ERSAuthData](), ArgumentMatchers.any[HeaderCarrier]())
       ) thenReturn Future.successful(HttpResponse(OK))
 
-      withAuthorisedUser { user =>
-        validationResults(Fixtures.buildFakeRequestWithSessionId("GET")) { result =>
-          status(result) must equal(SEE_OTHER)
-        }
-      }
+			when(
+				mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
+			) thenReturn Future.successful(ersRequestObject)
+
+			setAuthMocks()
+			validationResults(Fixtures.buildFakeRequestWithSessionId("GET")) { result =>
+				status(result) must equal(SEE_OTHER)
+			}
     }
 
     "redirect to Scheme Organizer page if validation is successful" in {
 
       when(
-        mockSessionService.retrieveCallbackData()(Matchers.any(), Matchers.any())
+        mockSessionService.retrieveCallbackData()(ArgumentMatchers.any(), ArgumentMatchers.any())
       ) thenReturn Future.successful(Some(callbackData))
 
       when(
-        mockCacheUtil.fetch[ErsMetaData](Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any())
+        mockCacheUtil.fetch[ErsMetaData](ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())
       ) thenReturn Future.successful(validErsMetaData)
 
       when(
-        mockErsConnector.validateFileData(Matchers.any[CallbackData](), Matchers.any())(Matchers.any[AuthContext](), Matchers.any(), Matchers.any[HeaderCarrier]())
+        mockErsConnector.validateFileData(ArgumentMatchers.any[CallbackData](), ArgumentMatchers.any())
+				(ArgumentMatchers.any[ERSAuthData](), ArgumentMatchers.any(), ArgumentMatchers.any[HeaderCarrier]())
       ) thenReturn Future.successful(HttpResponse(OK))
 
       when(
-        mockErsConnector.removePresubmissionData(Matchers.any[SchemeInfo]())(Matchers.any[AuthContext](), Matchers.any[HeaderCarrier]())
+        mockErsConnector.removePresubmissionData(ArgumentMatchers.any[SchemeInfo]())(ArgumentMatchers.any[ERSAuthData](), ArgumentMatchers.any[HeaderCarrier]())
       ) thenReturn Future.successful(HttpResponse(OK))
 
       when(
         mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
       ) thenReturn Future.successful(ersRequestObject)
 
-      withAuthorisedUser { user =>
-        validationResults(user) { result =>
-          status(result) must equal(SEE_OTHER)
-          redirectLocation(result).get must include("/company-details")
-        }
-      }
+			setAuthMocks()
+			validationResults() { result =>
+				status(result) must equal(SEE_OTHER)
+				redirectLocation(result).get must include("/company-details")
+			}
     }
 
     "redirect to Validation Failure page if validation fails with status 202" in {
 
       when(
-        mockSessionService.retrieveCallbackData()(Matchers.any(), Matchers.any())
+        mockSessionService.retrieveCallbackData()(ArgumentMatchers.any(), ArgumentMatchers.any())
       ) thenReturn Future.successful(Some(callbackData))
 
       when(
-        mockCacheUtil.fetch[ErsMetaData](Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any())
+        mockCacheUtil.fetch[ErsMetaData](ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())
       ) thenReturn Future.successful(validErsMetaData)
 
       when(
-        mockErsConnector.validateFileData(Matchers.any[CallbackData](), Matchers.any())(Matchers.any[AuthContext](), Matchers.any(), Matchers.any[HeaderCarrier]())
+        mockErsConnector.validateFileData(ArgumentMatchers.any[CallbackData](), ArgumentMatchers.any())
+				(ArgumentMatchers.any[ERSAuthData](), ArgumentMatchers.any(), ArgumentMatchers.any[HeaderCarrier]())
       ) thenReturn Future.successful(HttpResponse(ACCEPTED))
 
       when(
-        mockErsConnector.removePresubmissionData(Matchers.any[SchemeInfo]())(Matchers.any[AuthContext](), Matchers.any[HeaderCarrier]())
+        mockErsConnector.removePresubmissionData(ArgumentMatchers.any[SchemeInfo]())(ArgumentMatchers.any[ERSAuthData](), ArgumentMatchers.any[HeaderCarrier]())
       ) thenReturn Future.successful(HttpResponse(OK))
 
       when(
         mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
       ) thenReturn Future.successful(ersRequestObject)
 
-      withAuthorisedUser { user =>
-        validationResults(user) { result =>
+			setAuthMocks()
+        validationResults() { result =>
           status(result) must equal(SEE_OTHER)
           redirectLocation(result).get must include("/errors-have-been-found-ods")
         }
-      }
     }
 
     "return with a error page if validation fails" in {
-      when(mockSessionService.retrieveCallbackData()(Matchers.any(), Matchers.any())).thenReturn(Future.successful(Some(callbackData)))
-      when(mockCacheUtil.fetch[ErsMetaData](Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(Future.successful(validErsMetaData))
-      when(mockErsConnector.validateFileData(Matchers.any[CallbackData](), Matchers.any())(Matchers.any[AuthContext](), Matchers.any(), Matchers.any[HeaderCarrier]())).thenReturn(Future.successful(HttpResponse(500)))
-      when(mockErsConnector.removePresubmissionData(Matchers.any[SchemeInfo]())(Matchers.any[AuthContext](), Matchers.any[HeaderCarrier]()))
+      when(mockSessionService.retrieveCallbackData()(ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(Some(callbackData)))
+      when(mockCacheUtil.fetch[ErsMetaData](ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(validErsMetaData))
+      when(mockErsConnector.validateFileData(ArgumentMatchers.any[CallbackData](), ArgumentMatchers.any())(ArgumentMatchers.any[ERSAuthData](), ArgumentMatchers.any(), ArgumentMatchers.any[HeaderCarrier]())).thenReturn(Future.successful(HttpResponse(500)))
+      when(mockErsConnector.removePresubmissionData(ArgumentMatchers.any[SchemeInfo]())(ArgumentMatchers.any[ERSAuthData](), ArgumentMatchers.any[HeaderCarrier]()))
         .thenReturn(Future.successful(HttpResponse(OK)))
-      withAuthorisedUser { user =>
-        validationResults(user) { result =>
+			setAuthMocks()
+        validationResults() { result =>
           status(result) must equal(OK)
         }
-      }
     }
 
     "return with a error page if deleting old presubmission data fails" in {
-      when(mockSessionService.retrieveCallbackData()(Matchers.any(), Matchers.any())).thenReturn(Future.successful(Some(callbackData)))
-      when(mockCacheUtil.fetch[ErsMetaData](Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(Future.successful(validErsMetaData))
-      when(mockErsConnector.validateFileData(Matchers.any[CallbackData](), Matchers.any())(Matchers.any[AuthContext](), Matchers.any(), Matchers.any[HeaderCarrier]())).thenReturn(Future.successful(HttpResponse(OK)))
-      when(mockErsConnector.removePresubmissionData(Matchers.any[SchemeInfo]())(Matchers.any[AuthContext](), Matchers.any[HeaderCarrier]()))
+      when(mockSessionService.retrieveCallbackData()(ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(Some(callbackData)))
+      when(mockCacheUtil.fetch[ErsMetaData](ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(validErsMetaData))
+      when(mockErsConnector.validateFileData(ArgumentMatchers.any[CallbackData](), ArgumentMatchers.any())(ArgumentMatchers.any[ERSAuthData](), ArgumentMatchers.any(), ArgumentMatchers.any[HeaderCarrier]())).thenReturn(Future.successful(HttpResponse(OK)))
+      when(mockErsConnector.removePresubmissionData(ArgumentMatchers.any[SchemeInfo]())(ArgumentMatchers.any[ERSAuthData](), ArgumentMatchers.any[HeaderCarrier]()))
         .thenReturn(Future.successful(HttpResponse(INTERNAL_SERVER_ERROR)))
-      withAuthorisedUser { user =>
-        validationResults(user) { result =>
+			setAuthMocks()
+        validationResults() { result =>
           status(result) must equal(OK)
         }
-      }
     }
 
     "return with a error page if callback data is not found" in {
-      when(mockSessionService.retrieveCallbackData()(Matchers.any(), Matchers.any())).thenReturn(Future.successful(None))
-      when(mockCacheUtil.fetch[ErsMetaData](Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(Future.successful(validErsMetaData))
-      when(mockErsConnector.validateFileData(Matchers.any[CallbackData](), Matchers.any())(Matchers.any[AuthContext](), Matchers.any(), Matchers.any[HeaderCarrier]())).thenReturn(Future.successful(HttpResponse(OK)))
-      when(mockErsConnector.removePresubmissionData(Matchers.any[SchemeInfo]())(Matchers.any[AuthContext](), Matchers.any[HeaderCarrier]()))
+      when(mockSessionService.retrieveCallbackData()(ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(None))
+      when(mockCacheUtil.fetch[ErsMetaData](ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(validErsMetaData))
+      when(mockErsConnector.validateFileData(ArgumentMatchers.any[CallbackData](), ArgumentMatchers.any())(ArgumentMatchers.any[ERSAuthData](), ArgumentMatchers.any(), ArgumentMatchers.any[HeaderCarrier]())).thenReturn(Future.successful(HttpResponse(OK)))
+      when(mockErsConnector.removePresubmissionData(ArgumentMatchers.any[SchemeInfo]())(ArgumentMatchers.any[ERSAuthData](), ArgumentMatchers.any[HeaderCarrier]()))
         .thenReturn(Future.successful(HttpResponse(OK)))
-      withAuthorisedUser { user =>
-        validationResults(user) { result =>
+			setAuthMocks()
+        validationResults() { result =>
           status(result) must equal(OK)
         }
-      }
     }
 
     "respond to /submit-your-ers-annual-return/file-upload/callback/" in {
@@ -188,6 +187,7 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
 
   "get" must {
     "be authorised" in {
+			setUnauthorisedMocks()
       getFileUploadPartial() { result =>
         status(result) must equal(SEE_OTHER)
         redirectLocation(result).get must include("/gg/sign-in")
@@ -203,12 +203,11 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
           Future.successful(ersRequestObject)
         )
 
-        withAuthorisedUser { user =>
-          getFileUploadPartial(user) { result =>
+				setAuthMocks()
+          getFileUploadPartial() { result =>
             status(result) must be(OK)
           }
         }
-      }
 
       "display the attachments partial" in {
 
@@ -218,18 +217,17 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
           Future.successful(ersRequestObject)
         )
 
-        withAuthorisedUser { user =>
-          getFileUploadPartial(user) { result =>
+				setAuthMocks()
+          getFileUploadPartial() { result =>
             contentAsString(result) must include("id=\"file-uploader\"")
           }
-
-        }
       }
     }
   }
 
   "failure" must {
     "be authorised" in {
+			setUnauthorisedMocks()
       failure() { result =>
         status(result) must equal(SEE_OTHER)
         redirectLocation(result).get must include("/gg/sign-in")
@@ -238,39 +236,38 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
 
     "authorised users" must {
       "throw an Exception" in {
-        withAuthorisedUser { user =>
-          failure(user) { result =>
+				setAuthMocks()
+          failure() { result =>
             status(result) must equal(OK)
             contentAsString(result) must include(messages("ers.global_errors.message"))
           }
-        }
       }
     }
   }
 
   "calling success" should {
     val fileUploadController: FileUploadController = new FileUploadController {
-      val authConnector = mockAuthConnector
-      override val attachmentsConnector = mock[AttachmentsConnector]
-      override val sessionService = mock[SessionService]
+			val authConnector: PlayAuthConnector = mockAuthConnector
+      override val attachmentsConnector: AttachmentsConnector = mock[AttachmentsConnector]
+      override val sessionService: SessionService = mock[SessionService]
       override val ersConnector: ErsConnector = mock[ErsConnector]
       override val cacheUtil: CacheUtil = mock[CacheUtil]
 
-      override def showSuccess()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Ok)
+      override def showSuccess()(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Ok)
     }
 
     "redirect for unauthorised users to login page" in {
+			setUnauthorisedMocks()
       val result = fileUploadController.success().apply(FakeRequest("GET", ""))
       status(result) must be(SEE_OTHER)
       redirectLocation(result).get must include("/gg/sign-in")
     }
 
     "show the result of showUploadFilePage() for authorised users" in {
-      withAuthorisedUser { _ =>
+			setAuthMocks()
         fileUploadController.success().apply(Fixtures.buildFakeRequestWithSessionIdCSOP("GET")).map { result =>
           status(Future(result)) must be(OK)
         }
-      }
     }
   }
 
@@ -279,9 +276,9 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
     val mockSessionService = mock[SessionService]
     val mockCacheUtil: CacheUtil = mock[CacheUtil]
     val fileUploadController: FileUploadController = new FileUploadController {
-    val authConnector = mockAuthConnector
-    override val attachmentsConnector = mock[AttachmentsConnector]
-    override val sessionService = mockSessionService
+    val authConnector: PlayAuthConnector = mockAuthConnector
+    override val attachmentsConnector: AttachmentsConnector = mock[AttachmentsConnector]
+    override val sessionService: SessionService = mockSessionService
     override val ersConnector: ErsConnector = mock[ErsConnector]
     override val cacheUtil: CacheUtil = mockCacheUtil
 
@@ -351,6 +348,7 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
   "Validation failure" must {
 
     "be authorised" in {
+			setUnauthorisedMocks()
       validationFailure() { result =>
         status(result) must equal(SEE_OTHER)
         redirectLocation(result).get must include("/gg/sign-in")
@@ -366,15 +364,13 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
           Future.successful(ersRequestObject)
         )
 
-        when(mockCacheUtil.fetch[CheckFileType](Matchers.refEq(CacheUtil.FILE_TYPE_CACHE), Matchers.any[String]())(Matchers.any(), Matchers.any(), Matchers.any()))
+        when(mockCacheUtil.fetch[CheckFileType](ArgumentMatchers.refEq(CacheUtil.FILE_TYPE_CACHE), ArgumentMatchers.any[String]())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any()))
           .thenReturn(Future.successful(CheckFileType(Some("csv"))))
-
-        withAuthorisedUser { user =>
-          validationFailure(user) { result =>
+				setAuthMocks()
+          validationFailure() { result =>
             status(result) must be(OK)
             contentAsString(result) must include(messages("file_upload_errors.title"))
           }
-        }
       }
     }
   }
@@ -386,7 +382,7 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
       "all calls are successful" in {
 
         when(
-          mockCacheUtil.fetch[ErsMetaData](Matchers.eq(mockCacheUtil.ersMetaData), any())(any(), any(), any())
+          mockCacheUtil.fetch[ErsMetaData](ArgumentMatchers.eq(mockCacheUtil.ersMetaData), any())(any(), any(), any())
         ) thenReturn Future.successful(validErsMetaData)
 
         when(
@@ -402,23 +398,21 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
         ) thenReturn Future.successful(HttpResponse(OK))
 
         when(
-          mockCacheUtil.cache(Matchers.eq(mockCacheUtil.VALIDATED_SHEEETS), any(), anyString())(any(), any(), any())
+          mockCacheUtil.cache(ArgumentMatchers.eq(mockCacheUtil.VALIDATED_SHEEETS), any(), anyString())(any(), any(), any())
         ) thenReturn Future.successful(mock[CacheMap])
 
-        withAuthorisedUser { user =>
-          validationResults(user) { result =>
-
+				setAuthMocks()
+          validationResults() { result =>
             status(result) mustBe SEE_OTHER
             redirectLocation(result).get must include("/company-details")
 
           }
-        }
       }
 
       "ers connector returns Accepted to show a validation failure" in {
 
         when(
-          mockCacheUtil.fetch[ErsMetaData](Matchers.eq(mockCacheUtil.ersMetaData), any())(any(), any(), any())
+          mockCacheUtil.fetch[ErsMetaData](ArgumentMatchers.eq(mockCacheUtil.ersMetaData), any())(any(), any(), any())
         ) thenReturn Future.successful(validErsMetaData)
 
         when(
@@ -434,16 +428,14 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
         ) thenReturn Future.successful(HttpResponse(ACCEPTED))
 
         when(
-          mockCacheUtil.cache(Matchers.eq(mockCacheUtil.VALIDATED_SHEEETS), any(), anyString())(any(), any(), any())
+          mockCacheUtil.cache(ArgumentMatchers.eq(mockCacheUtil.VALIDATED_SHEEETS), any(), anyString())(any(), any(), any())
         ) thenReturn Future.successful(CacheMap("1", Map("something" -> JsString("that"))))
 
-        withAuthorisedUser { user =>
-          validationResults(user) { result =>
-
+				setAuthMocks()
+          validationResults() { result =>
             status(result) mustBe SEE_OTHER
             redirectLocation(result).get must include("/errors-have-been-found-ods")
           }
-        }
       }
     }
 
@@ -452,7 +444,7 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
       "ers connector returns a non 2xx status" in {
 
         when(
-          mockCacheUtil.fetch[ErsMetaData](Matchers.eq(mockCacheUtil.ersMetaData), any())(any(), any(), any())
+          mockCacheUtil.fetch[ErsMetaData](ArgumentMatchers.eq(mockCacheUtil.ersMetaData), any())(any(), any(), any())
         ) thenReturn Future.successful(validErsMetaData)
 
         when(
@@ -467,20 +459,18 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
           mockErsConnector.validateFileData(any(), any())(any(), any(), any())
         ) thenReturn Future.successful(HttpResponse(INTERNAL_SERVER_ERROR))
 
-        withAuthorisedUser { user =>
-          validationResults(user) { result =>
-
+				setAuthMocks()
+          validationResults() { result =>
             status(result) mustBe OK
             contentAsString(result) must include(messages("ers.global_errors.title"))
 
           }
-        }
       }
 
       "fetching ersMetaData fails" in {
 
         when(
-          mockCacheUtil.fetch[ErsMetaData](Matchers.eq(mockCacheUtil.ersMetaData), any())(any(), any(), any())
+          mockCacheUtil.fetch[ErsMetaData](ArgumentMatchers.eq(mockCacheUtil.ersMetaData), any())(any(), any(), any())
         ) thenReturn Future.failed(new Exception)
 
         when(
@@ -491,20 +481,18 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
           mockErsConnector.removePresubmissionData(any())(any(), any())
         ) thenReturn Future.successful(HttpResponse(OK))
 
-        withAuthorisedUser { user =>
-          validationResults(user) { result =>
-
+				setAuthMocks()
+          validationResults() { result =>
             status(result) mustBe OK
             contentAsString(result) must include(messages("ers.global_errors.title"))
 
           }
-        }
       }
 
       "fetching callbackData fails" in {
 
         when(
-          mockCacheUtil.fetch[ErsMetaData](Matchers.eq(mockCacheUtil.ersMetaData), any())(any(), any(), any())
+          mockCacheUtil.fetch[ErsMetaData](ArgumentMatchers.eq(mockCacheUtil.ersMetaData), any())(any(), any(), any())
         ) thenReturn Future.successful(validErsMetaData)
 
         when(
@@ -515,20 +503,17 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
           mockErsConnector.removePresubmissionData(any())(any(), any())
         ) thenReturn Future.successful(HttpResponse(OK))
 
-        withAuthorisedUser { user =>
-          validationResults(user) { result =>
-
+				setAuthMocks()
+          validationResults() { result =>
             status(result) mustBe OK
             contentAsString(result) must include(messages("ers.global_errors.title"))
-
           }
-        }
       }
 
       "removing pre-submission data fails" in {
 
         when(
-          mockCacheUtil.fetch[ErsMetaData](Matchers.eq(mockCacheUtil.ersMetaData), any())(any(), any(), any())
+          mockCacheUtil.fetch[ErsMetaData](ArgumentMatchers.eq(mockCacheUtil.ersMetaData), any())(any(), any(), any())
         ) thenReturn Future.successful(validErsMetaData)
 
         when(
@@ -539,14 +524,12 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
           mockErsConnector.removePresubmissionData(any())(any(), any())
         ) thenReturn Future.successful(HttpResponse(INTERNAL_SERVER_ERROR))
 
-        withAuthorisedUser { user =>
-          validationResults(user) { result =>
-
+				setAuthMocks()
+          validationResults() { result =>
             status(result) mustBe OK
             contentAsString(result) must include(messages("ers.global_errors.title"))
 
           }
-        }
       }
     }
   }
@@ -581,7 +564,7 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
       <button type="submit">Upload</button>
     </form>""""""
 
-    when(mockAttachmentsConnector.getFileUploadPartial()(Matchers.any(), Matchers.any()))
+    when(mockAttachmentsConnector.getFileUploadPartial()(ArgumentMatchers.any(), ArgumentMatchers.any()))
       .thenReturn(Future.successful(HttpResponse(OK, responseString = Some(html))))
     handler(TestFileUploadController.uploadFilePage().apply(request))
   }
@@ -616,11 +599,10 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
   lazy val invalidErsMetaData: ErsMetaData = new ErsMetaData(schemeInfoInvalidTimeStamp, "ipRef", Some("aoRef"),
     "empRef", Some("agentRef"), Some("sapNumber"))
 
-  lazy val mockAttachmentsConnector = mock[AttachmentsConnector]
-  lazy val mockAuthConnector = mock[AuthConnector]
-  lazy val mockSessionService = mock[SessionService]
-  lazy val mockCacheUtil = mock[CacheUtil]
-  lazy val mockErsConnector = mock[ErsConnector]
+  lazy val mockAttachmentsConnector: AttachmentsConnector = mock[AttachmentsConnector]
+  lazy val mockSessionService: SessionService = mock[SessionService]
+  lazy val mockCacheUtil: CacheUtil = mock[CacheUtil]
+  lazy val mockErsConnector: ErsConnector = mock[ErsConnector]
 
   /** Csv Callback List creation */
   lazy val jv: JsValue = Json.parse("""{}""")
@@ -630,18 +612,18 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
   lazy val csvFileData = new CsvFilesCallback("file0", Some(cb))
   lazy val csvCallBackList = new CsvFilesCallbackList(List(csvFileData, csvFileData, csvFileData))
 
-  when(mockCacheUtil.fetch[ErsMetaData](Matchers.refEq(CacheUtil.ersMetaData), Matchers.any[String]())(Matchers.any(),
-    Matchers.any(), Matchers.any())).thenReturn(Future.successful(validErsMetaData))
-  when(mockCacheUtil.fetch[CheckFileType](Matchers.refEq(CacheUtil.FILE_TYPE_CACHE), Matchers.any[String]())(Matchers.any(),
-    Matchers.any(), Matchers.any())).thenReturn(Future.successful(CheckFileType(Some("csv"))))
-  when(mockCacheUtil.fetchOption[CsvFilesCallbackList](Matchers.any[String](), Matchers.any[String]())(Matchers.any(),
-    Matchers.any(), Matchers.any())).thenReturn(Future.successful(Some(csvCallBackList)))
+  when(mockCacheUtil.fetch[ErsMetaData](ArgumentMatchers.refEq(CacheUtil.ersMetaData), ArgumentMatchers.any[String]())(ArgumentMatchers.any(),
+    ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(validErsMetaData))
+  when(mockCacheUtil.fetch[CheckFileType](ArgumentMatchers.refEq(CacheUtil.FILE_TYPE_CACHE), ArgumentMatchers.any[String]())(ArgumentMatchers.any(),
+    ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(CheckFileType(Some("csv"))))
+  when(mockCacheUtil.fetchOption[CsvFilesCallbackList](ArgumentMatchers.any[String](), ArgumentMatchers.any[String]())(ArgumentMatchers.any(),
+    ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(Some(csvCallBackList)))
 
   object TestFileUploadController extends FileUploadController {
-    val attachmentsConnector = mockAttachmentsConnector
-    val authConnector = mockAuthConnector
-    val sessionService = mockSessionService
-    val cacheUtil = mockCacheUtil
-    val ersConnector = mockErsConnector
+    val attachmentsConnector: AttachmentsConnector = mockAttachmentsConnector
+    val authConnector: PlayAuthConnector = mockAuthConnector
+    val sessionService: SessionService = mockSessionService
+    val cacheUtil: CacheUtil = mockCacheUtil
+    val ersConnector: ErsConnector = mockErsConnector
   }
 }

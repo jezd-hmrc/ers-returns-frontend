@@ -27,7 +27,7 @@ import uk.gov.hmrc.play.frontend.controller.FrontendController
 import utils.CacheUtil
 import uk.gov.hmrc.http.logging.SessionId
 
-trait FileUploadCallbackController extends FrontendController with Actions with ErsConstants {
+trait FileUploadCallbackController extends FrontendController with ErsConstants {
 
   val cacheUtil: CacheUtil
   val currentConfig: Configuration

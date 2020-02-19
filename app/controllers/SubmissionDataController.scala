@@ -18,12 +18,13 @@ package controllers
 
 import config.ApplicationConfig
 import connectors.ErsConnector
+import models.ERSAuthData
 import play.api.Logger
 import play.api.Play.current
 import play.api.i18n.Messages
 import play.api.i18n.Messages.Implicits._
 import play.api.libs.json.{JsObject, Json}
-import play.api.mvc.{Request, Result}
+import play.api.mvc.{Action, AnyContent, Request, Result}
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 
 import scala.concurrent.Future
@@ -56,13 +57,13 @@ trait SubmissionDataController extends ERSReturnBaseController with Authenticato
 
   }
 
-  def retrieveSubmissionData() = AuthorisedForAsync() {
+  def retrieveSubmissionData(): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
         getRetrieveSubmissionData()(user, request, hc)
   }
 
-  def getRetrieveSubmissionData()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def getRetrieveSubmissionData()(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
     Logger.debug("Retrieve Submission Data Request")
 

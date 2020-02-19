@@ -38,7 +38,7 @@ trait ReportableEventsController extends ERSReturnBaseController with Authentica
   val ersConnector: ErsConnector
   val cacheUtil: CacheUtil
 
-  def reportableEventsPage(): Action[AnyContent] = AuthorisedForAsync() {
+  def reportableEventsPage(): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
         cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObj =>
@@ -48,8 +48,8 @@ trait ReportableEventsController extends ERSReturnBaseController with Authentica
         }
   }
 
-  def updateErsMetaData(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Object] = {
-    ersConnector.connectToEtmpSapRequest(requestObject.getSchemeReference).flatMap { sapNumber =>
+  def updateErsMetaData(requestObject: RequestObject)(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Object] = {
+		ersConnector.connectToEtmpSapRequest(requestObject.getSchemeReference).flatMap { sapNumber =>
       cacheUtil.fetch[ErsMetaData](CacheUtil.ersMetaData, requestObject.getSchemeReference).map { metaData =>
         val ersMetaData = ErsMetaData(
           metaData.schemeInfo, metaData.ipRef, metaData.aoRef, metaData.empRef, metaData.agentRef, Some(sapNumber))
@@ -68,7 +68,7 @@ trait ReportableEventsController extends ERSReturnBaseController with Authentica
     }
   }
 
-  def showReportableEventsPage(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showReportableEventsPage(requestObject: RequestObject)(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     cacheUtil.fetch[ReportableEvents](CacheUtil.reportableEvents, requestObject.getSchemeReference).map { activity =>
       Ok(views.html.reportable_events(requestObject, activity.isNilReturn, RsFormMappings.chooseForm.fill(activity)))
     } recover {
@@ -78,7 +78,7 @@ trait ReportableEventsController extends ERSReturnBaseController with Authentica
     }
   }
 
-  def reportableEventsSelected(): Action[AnyContent] = AuthorisedForAsync() {
+  def reportableEventsSelected(): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
         cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObj =>
@@ -90,7 +90,7 @@ trait ReportableEventsController extends ERSReturnBaseController with Authentica
         }
   }
 
-  def showReportableEventsSelected(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef]): Future[Result] = {
+  def showReportableEventsSelected(requestObject: RequestObject)(implicit authContext: ERSAuthData, request: Request[AnyRef]): Future[Result] = {
     RsFormMappings.chooseForm.bindFromRequest.fold(
       errors => {
         Future.successful(Ok(views.html.reportable_events(requestObject, Some(""), errors)))
