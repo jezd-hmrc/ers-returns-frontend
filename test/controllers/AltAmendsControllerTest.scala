@@ -31,6 +31,7 @@ import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.mvc.Request
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import uk.gov.hmrc.auth.core.PlayAuthConnector
 import uk.gov.hmrc.http.cache.client.CacheMap
 import uk.gov.hmrc.play.test.UnitSpec
 import utils.Fixtures.ersRequestObject
@@ -38,7 +39,7 @@ import utils._
 
 import scala.concurrent.Future
 
-class AltAmendsControllerTest extends UnitSpec with ERSFakeApplicationConfig with GuiceOneAppPerSuite with MockitoSugar {
+class AltAmendsControllerTest extends UnitSpec with ERSFakeApplicationConfig with GuiceOneAppPerSuite with AuthHelper {
 
   val messagesApi: MessagesApi = app.injector.instanceOf[MessagesApi]
   implicit val messages: Messages = messagesApi.preferred(Seq(Lang.get("en").get))
@@ -63,6 +64,7 @@ class AltAmendsControllerTest extends UnitSpec with ERSFakeApplicationConfig wit
 
 			override val ersConnector: ErsConnector = mockErsConnector
       override val cacheUtil: CacheUtil = mockCacheUtil
+			override val authConnector: PlayAuthConnector = mockAuthConnector
 
       when(mockCacheUtil.fetch[GroupSchemeInfo](ArgumentMatchers.eq(CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER), any())(any(), any(), any()))
         .thenReturn(groupSchemeActivity)
@@ -78,15 +80,17 @@ class AltAmendsControllerTest extends UnitSpec with ERSFakeApplicationConfig wit
     }
 
     "give a redirect status (to company authentication frontend) on GET if user is not authenticated" in {
+			setUnauthorisedMocks()
       val controllerUnderTest: AltAmendsController = buildFakeAltAmendsPageController()
       val result = controllerUnderTest.altActivityPage().apply(FakeRequest("GET", ""))
       status(result) shouldBe Status.SEE_OTHER
     }
 
     "give a status OK on GET if user is authenticated" in {
+			setAuthMocks()
       val controllerUnderTest = buildFakeAltAmendsPageController()
       val result = controllerUnderTest.altActivityPage().apply(Fixtures.buildFakeRequestWithSessionIdCSOP("GET"))
-      status(result) shouldBe Status.SEE_OTHER
+      status(result) shouldBe Status.OK
     }
 
     "direct to ers errors page if fetching groupSchemeActivity throws exception" in {
@@ -124,15 +128,17 @@ class AltAmendsControllerTest extends UnitSpec with ERSFakeApplicationConfig wit
     }
 
     "give a redirect status (to company authentication frontend) on POST if user is not authenticated" in {
+			setUnauthorisedMocks()
       val controllerUnderTest = buildFakeAltAmendsPageController()
       val result = controllerUnderTest.altActivitySelected()(FakeRequest("GET", ""))
       status(result) shouldBe Status.SEE_OTHER
     }
 
     "give a status OK on POST if user is authenticated" in {
+			setAuthMocks()
       val controllerUnderTest = buildFakeAltAmendsPageController()
       val result = controllerUnderTest.altActivitySelected()(Fixtures.buildFakeRequestWithSessionIdCSOP("GET"))
-      status(result) shouldBe Status.SEE_OTHER
+      status(result) shouldBe Status.OK
     }
 
     "give a Ok status and stay on the same page if form errors and display the error" in {
@@ -203,6 +209,7 @@ class AltAmendsControllerTest extends UnitSpec with ERSFakeApplicationConfig wit
       override val ersConnector: ErsConnector = mockErsConnector
       val mockCacheUtil: CacheUtil = mock[CacheUtil]
       override val cacheUtil: CacheUtil = mockCacheUtil
+			override val authConnector: PlayAuthConnector = mockAuthConnector
 
       when(
         mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())
@@ -217,15 +224,17 @@ class AltAmendsControllerTest extends UnitSpec with ERSFakeApplicationConfig wit
       ).thenReturn(cache)
     }
     "give a redirect status (to company authentication frontend) on GET if user is not authenticated" in {
+			setUnauthorisedMocks()
       val controllerUnderTest: AltAmendsController = buildFakeAltAmendsPageController()
       val result = controllerUnderTest.altAmendsPage().apply(FakeRequest("GET", ""))
       status(result) shouldBe Status.SEE_OTHER
     }
 
     "give a status OK on GET if user is authenticated" in {
+			setAuthMocks()
       val controllerUnderTest: AltAmendsController = buildFakeAltAmendsPageController()
       val result = controllerUnderTest.altAmendsPage().apply(Fixtures.buildFakeRequestWithSessionIdCSOP("GET"))
-      status(result) shouldBe Status.SEE_OTHER
+      status(result) shouldBe Status.OK
     }
 
 
@@ -267,12 +276,14 @@ class AltAmendsControllerTest extends UnitSpec with ERSFakeApplicationConfig wit
 
 
     "give a redirect status (to company authentication frontend) on POST if user is not authenticated" in {
+			setUnauthorisedMocks()
       val controllerUnderTest: AltAmendsController = buildFakeAltAmendsPageController()
       val result = controllerUnderTest.altAmendsSelected().apply(FakeRequest("GET", ""))
       status(result) shouldBe Status.SEE_OTHER
     }
 
     "give a status OK on POST if user is authenticated" in {
+			setAuthMocks()
       val controllerUnderTest: AltAmendsController = buildFakeAltAmendsPageController()
       val result = controllerUnderTest.altAmendsSelected().apply(Fixtures.buildFakeRequestWithSessionIdCSOP("GET"))
       status(result) shouldBe Status.SEE_OTHER

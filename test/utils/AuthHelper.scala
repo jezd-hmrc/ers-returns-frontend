@@ -16,19 +16,15 @@
 
 package utils
 
-import java.util.UUID
-
 import models.ERSAuthData
 import org.mockito.ArgumentMatchers
+import org.mockito.Mockito._
 import org.mockito.stubbing.OngoingStubbing
 import org.scalatest.mockito.MockitoSugar
 import uk.gov.hmrc.auth.core.AffinityGroup.Organisation
 import uk.gov.hmrc.auth.core.retrieve.~
-import org.mockito.Mockito._
-import play.api.test.FakeRequest
-import uk.gov.hmrc.auth.core.{AffinityGroup, Enrolment, EnrolmentIdentifier, Enrolments, MissingBearerToken, PlayAuthConnector}
+import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.domain.EmpRef
-import uk.gov.hmrc.http.SessionKeys
 
 import scala.concurrent.Future
 

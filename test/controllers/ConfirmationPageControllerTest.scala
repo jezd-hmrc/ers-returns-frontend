@@ -35,6 +35,7 @@ import play.api.libs.json.JsValue
 import play.api.mvc.{Request, Result, Session}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import uk.gov.hmrc.auth.core.PlayAuthConnector
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.test.UnitSpec
 import utils._
@@ -44,7 +45,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import utils.Fixtures.ersRequestObject
 import views.html.confirmation
 
-class ConfirmationPageControllerTest extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with BeforeAndAfterEach with OneAppPerSuite {
+class ConfirmationPageControllerTest extends UnitSpec with ERSFakeApplicationConfig with AuthHelper with BeforeAndAfterEach with OneAppPerSuite {
 
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val mat: Materializer = app.materializer
@@ -75,6 +76,7 @@ class ConfirmationPageControllerTest extends UnitSpec with ERSFakeApplicationCon
 
       override val jsonParser: JsonParser = mock[JsonParser]
       override val metrics = mockMetrics
+			override val authConnector: PlayAuthConnector = mockAuthConnector
       val mockErsConnector: ErsConnector = mock[ErsConnector]
 
       when(
@@ -115,15 +117,17 @@ class ConfirmationPageControllerTest extends UnitSpec with ERSFakeApplicationCon
     }
 
     "give a redirect status (to company authentication frontend) if user is not authenticated" in {
-      val controllerUnderTest = buildFakeConfirmationPageController()
+			setUnauthorisedMocks()
+      val controllerUnderTest: ConfirmationPageController = buildFakeConfirmationPageController()
       val result = controllerUnderTest.confirmationPage().apply(FakeRequest("GET", ""))
       status(result) shouldBe Status.SEE_OTHER
     }
 
     "give a status OK if user is authenticated" in {
-      val controllerUnderTest = buildFakeConfirmationPageController()
+			setAuthMocks()
+      val controllerUnderTest: ConfirmationPageController = buildFakeConfirmationPageController()
       val result = controllerUnderTest.confirmationPage().apply(Fixtures.buildFakeRequestWithSessionId("GET"))
-      status(result) shouldBe Status.SEE_OTHER
+      status(result) shouldBe Status.OK
 
     }
 
@@ -136,7 +140,7 @@ class ConfirmationPageControllerTest extends UnitSpec with ERSFakeApplicationCon
     }
 
     "direct to ers errors page if bundle request throws exception" in {
-      val controllerUnderTest = buildFakeConfirmationPageController(bundleRes = Future.failed(new RuntimeException))
+      val controllerUnderTest: ConfirmationPageController = buildFakeConfirmationPageController(bundleRes = Future.failed(new RuntimeException))
       val result = await(controllerUnderTest.showConfirmationPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionId("GET"), hc))
       contentAsString(result) shouldBe contentAsString(controllerUnderTest.getGlobalErrorPage)
       contentAsString(result) should include(messages("ers.global_errors.message"))

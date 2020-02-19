@@ -33,21 +33,20 @@ import play.api.libs.json.Json
 import play.api.mvc.{AnyContentAsEmpty, Request, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import uk.gov.hmrc.auth.core.PlayAuthConnector
 import uk.gov.hmrc.http.cache.client.CacheMap
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.test.UnitSpec
 import utils.Fixtures.ersRequestObject
-import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures, PageBuilder}
+import utils.{AuthHelper, CacheUtil, ERSFakeApplicationConfig, Fixtures, PageBuilder}
 
 import scala.concurrent.Future
 
-class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSFakeApplicationConfig with BeforeAndAfterEach with OneAppPerSuite {
+class GroupSchemeControllerTest extends UnitSpec with AuthHelper with ERSFakeApplicationConfig with BeforeAndAfterEach with OneAppPerSuite {
 
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val materializer: Materializer = app.materializer
-  implicit val request: Request[_] = FakeRequest()
-
-  lazy val mockAuthConnector = mock[AuthConnector]
+  implicit lazy val request: Request[_] = FakeRequest()
 
   val company = CompanyDetails(Fixtures.companyName, "Address Line 1", None, None, None, None, None, None, None)
 
@@ -58,15 +57,16 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSFakeA
     )
   )
 
-  lazy val mockCacheUtil = mock[CacheUtil]
+  lazy val mockCacheUtil: CacheUtil = mock[CacheUtil]
 
-  override def beforeEach() = {
+  override def beforeEach(): Unit = {
     super.beforeEach()
     reset(mockCacheUtil)
   }
 
-  lazy val testGroupSchemeController = new GroupSchemeController {
+  lazy val testGroupSchemeController: GroupSchemeController = new GroupSchemeController {
     override val cacheUtil: CacheUtil = mockCacheUtil
+		override val authConnector: PlayAuthConnector = mockAuthConnector
   }
 
   "manualCompanyDetailsPage" should {
@@ -76,6 +76,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSFakeA
     }
 
     "redirect to sign in page if user is not authenticated" in {
+			setUnauthorisedMocks()
       manualCompanyDetailsPageHandler(0, Fixtures.buildFakeRequestWithSessionId("GET")) { result =>
         status(result) shouldBe SEE_OTHER
         headers(result).get("Location").get.contains("/gg/sign-in") shouldBe true
@@ -99,6 +100,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSFakeA
     }
 
     "redirect to sign in page if user is not authenticated" in {
+			setUnauthorisedMocks()
       manualCompanyDetailsSubmitHandler(0, Fixtures.buildFakeRequestWithSessionId("GET")) { result =>
         status(result) shouldBe SEE_OTHER
         headers(result).get("Location").get.contains("/gg/sign-in") shouldBe true
@@ -194,7 +196,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSFakeA
 
   "calling replace company" should {
 
-    val controllerUnderTest = new GroupSchemeController {
+   lazy val controllerUnderTest = new GroupSchemeController {
       override val cacheUtil: CacheUtil = mock[CacheUtil]
     }
 
@@ -380,6 +382,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSFakeA
     }
 
     "redirect to sign in page if user is not authenticated" in {
+			setUnauthorisedMocks()
       editCompanyHandler(0, Fixtures.buildFakeRequestWithSessionId("GET")) { result =>
         status(result) shouldBe SEE_OTHER
         headers(result).get("Location").get.contains("/gg/sign-in") shouldBe true
@@ -441,6 +444,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSFakeA
     }
 
     "redirect to sign in page if user is not authenticated" in {
+			setUnauthorisedMocks()
       groupSchemePageHandler(Fixtures.buildFakeRequestWithSessionId("GET")) { result =>
         status(result) shouldBe SEE_OTHER
         headers(result).get("Location").get.contains("/gg/sign-in") shouldBe true
@@ -483,6 +487,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSFakeA
     }
 
     "redirect to sign in page if user is not authenticated" in {
+			setUnauthorisedMocks()
       groupSchemeSelectedHandler("", Fixtures.buildFakeRequestWithSessionId("GET")) { result =>
         status(result) shouldBe SEE_OTHER
         headers(result).get("Location").get.contains("/gg/sign-in") shouldBe true
@@ -650,6 +655,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSFakeA
     }
 
     "redirect to sign in page if user is not authenticated" in {
+			setUnauthorisedMocks()
       groupPlanSummaryPageHandler(Fixtures.buildFakeRequestWithSessionId("GET")) { result =>
         status(result) shouldBe SEE_OTHER
         headers(result).get("Location").get.contains("/gg/sign-in") shouldBe true
@@ -710,6 +716,7 @@ class GroupSchemeControllerTest extends UnitSpec with MockitoSugar with ERSFakeA
     }
 
     "redirect to sign in page if user is not authenticated" in {
+			setUnauthorisedMocks()
       groupPlanSummaryContinueHandler("", Fixtures.buildFakeRequestWithSessionId("GET")) { result =>
         status(result) shouldBe SEE_OTHER
         headers(result).get("Location").get.contains("/gg/sign-in") shouldBe true
