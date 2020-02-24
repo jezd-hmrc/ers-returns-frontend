@@ -18,6 +18,7 @@ package controllers
 
 import controllers.auth.AuthFunctionality
 import models.{ERSAuthData, ErsMetaData, RequestObject}
+import play.api.Logger
 import play.api.libs.json.{Json, OFormat}
 import play.api.mvc._
 import uk.gov.hmrc.domain.EmpRef
