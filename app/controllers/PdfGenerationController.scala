@@ -60,10 +60,15 @@ trait PdfGenerationController extends ERSReturnBaseController with Authenticator
           if (all.getEntry[ReportableEvents](CacheUtil.reportableEvents).get.isNilReturn.get == PageBuilder.OPTION_UPLOAD_SPREEDSHEET) {
             val fileType = all.getEntry[CheckFileType](CacheUtil.FILE_TYPE_CACHE).get.checkFileType.get
             if (fileType == PageBuilder.OPTION_CSV) {
-              val csvFilesCallback: List[UpscanCsvFilesCallback] = all.getEntry[UpscanCsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES).get.files
-                .collect{
-                  case successfulUpload@UpscanCsvFilesCallback(_, _, _: UploadedSuccessfully) => successfulUpload
+              val csvCallback = all.getEntry[UpscanCsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES).get
+              val csvFilesCallback: List[UpscanCsvFilesCallback] = if(csvCallback.areAllFilesSuccessful()) {
+                csvCallback.files.collect{
+                  case successfulFile@UpscanCsvFilesCallback(_, _, _: UploadedSuccessfully) => successfulFile
                 }
+              } else {
+                throw new Exception("Not all files have been complete")
+              }
+              
               for (file <- csvFilesCallback) {
                 filesUploaded += PageBuilder.getPageElement(requestObject.getSchemeId, PageBuilder.PAGE_CHECK_CSV_FILE, file.fileId + ".file_name")
               }

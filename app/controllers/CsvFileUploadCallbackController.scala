@@ -65,8 +65,8 @@ trait CsvFileUploadCallbackController extends FrontendController with Actions wi
               }
           } recover {
             case e: LoopException[UpscanCsvFilesCallbackList] =>
-              logger.warn(s"Call to cache could not find InProgress file with uploadId of $uploadId. Data in cache: ${e.finalFutureData}", e)
-              InternalServerError(s"Could not match file of uploadId: $uploadId")
+              logger.error(s"Call to cache could not find InProgress file with uploadId of $uploadId. Data in cache: ${e.finalFutureData}", e)
+              Ok("")
             case NonFatal(e) =>
               logger.error(s"Failed to update cache after Upscan callback for UploadID: ${uploadId.value}, ScRef: $scRef", e)
               InternalServerError("Exception occurred when attempting to store data")

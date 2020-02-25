@@ -19,6 +19,7 @@ package controllers
 import akka.stream.Materializer
 import models._
 import models.upscan.{NotStarted, UploadId, UpscanCsvFilesCallback, UpscanCsvFilesCallbackList}
+import org.mockito.Matchers
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
@@ -36,7 +37,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures, PageBuilder}
 
 import scala.concurrent.Future
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import utils.Fixtures.ersRequestObject
 
 class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with OneAppPerSuite {
@@ -69,6 +70,8 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
     val checkCsvFilesController: CheckCsvFilesController = new CheckCsvFilesController {
       override val cacheUtil: CacheUtil = mockCacheUtil
       override val pageBuilder: PageBuilder = mock[PageBuilder]
+      when(mockCacheUtil.remove(Matchers.eq(CacheUtil.CHECK_CSV_FILES))(any(), any()))
+        .thenReturn(Future.successful(HttpResponse(OK)))
     }
 
     "show CheckCsvFilesPage" in {
@@ -79,6 +82,7 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
 
       val result = await(checkCsvFilesController.showCheckCsvFilesPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       status(result) shouldBe OK
+      verify(mockCacheUtil).remove(Matchers.eq(CacheUtil.CHECK_CSV_FILES))(any(), any())
     }
   }
 

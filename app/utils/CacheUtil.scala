@@ -31,7 +31,7 @@ import uk.gov.hmrc.http.cache.client.{CacheMap, ShortLivedCache}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 
 import scala.util.control.NonFatal
 
@@ -102,6 +102,10 @@ trait CacheUtil {
   def cache[T](key: String, body: T, cacheId: String)(implicit hc: HeaderCarrier, formats: json.Format[T], request: Request[AnyRef]) = {
     Logger.info(s"cache saving key:$key, cacheId:$cacheId")
     shortLivedCache.cache[T](cacheId, key, body)
+  }
+
+  def remove(cacheId: String)(implicit hc: HeaderCarrier, executionContext: ExecutionContext): Future[HttpResponse] = {
+    shortLivedCache.remove(cacheId)
   }
 
   @throws(classOf[NoSuchElementException])

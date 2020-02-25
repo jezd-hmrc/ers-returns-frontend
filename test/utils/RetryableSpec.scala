@@ -18,9 +18,8 @@ package utils
 
 import akka.actor.ActorSystem
 import config.{ApplicationConfig, ApplicationConfigImpl}
-import org.scalatest.mockito.MockitoSugar
 import org.mockito.Mockito.{times, verify, when}
-import org.mockito.Matchers.any
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import uk.gov.hmrc.play.test.UnitSpec
 

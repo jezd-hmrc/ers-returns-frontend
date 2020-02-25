@@ -62,10 +62,15 @@ trait SummaryDeclarationController extends ERSReturnBaseController with Authenti
       if (reportableEvents == PageBuilder.OPTION_YES) {
         fileType = all.getEntry[CheckFileType](CacheUtil.FILE_TYPE_CACHE).get.checkFileType.get
         if (fileType == PageBuilder.OPTION_CSV) {
-          val csvFilesCallback: List[UpscanCsvFilesCallback] = all.getEntry[UpscanCsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES).get.files
-            .collect{
+          val csvCallback = all.getEntry[UpscanCsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES).get
+          val csvFilesCallback: List[UpscanCsvFilesCallback] = if(csvCallback.areAllFilesSuccessful()) {
+            csvCallback.files.collect {
               case successfulFile@UpscanCsvFilesCallback(_, _, _: UploadedSuccessfully) => successfulFile
             }
+          } else {
+            throw new Exception("Not all files have been complete")
+          }
+          
           for (file <- csvFilesCallback) {
             fileNames = fileNames + Messages(PageBuilder.getPageElement(requestObject.getSchemeId, PageBuilder.PAGE_CHECK_CSV_FILE, file.fileId + ".file_name")) + "<br/>"
             fileCount += 1
@@ -84,7 +89,8 @@ trait SummaryDeclarationController extends ERSReturnBaseController with Authenti
       Future(Ok(views.html.summary(requestObject, reportableEvents, fileType, fileNames, fileCount, groupScheme, schemeOrganiser,
         getCompDetails(all), altActivity, getAltAmends(all), getTrustees(all))))
     } recover {
-      case e: Throwable => Logger.error(s"showSummaryDeclarationPage failed to fetch data with exception ${e.getMessage}.", e)
+      case e: Throwable => 
+        Logger.error(s"showSummaryDeclarationPage failed to load page with exception ${e.getMessage}.", e)
         getGlobalErrorPage
     }
   }

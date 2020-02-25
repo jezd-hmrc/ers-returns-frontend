@@ -48,6 +48,7 @@ trait CheckCsvFilesController extends ERSReturnBaseController with Authenticator
 
   def showCheckCsvFilesPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     val requestObjectFuture = cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
+    cacheUtil.remove(CacheUtil.CHECK_CSV_FILES)
     (for {
       requestObject <- requestObjectFuture
     } yield {
