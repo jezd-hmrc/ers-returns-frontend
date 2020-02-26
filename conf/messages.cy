@@ -30,11 +30,7 @@ ers.start.page_title = Cyflwyno eich Datganiad Blynyddol – Gwarantau ar Sail C
 ers.reportable_events.page_title = Digwyddiadau i’w nodi – Gwarantau ar Sail Cyflogaeth – GOV.UK
 ers.choose_file_type.page_title =Dewis math o ffeil – Gwarantau ar Sail Cyflogaeth – GOV.UK
 ers.choose_csv_files.page_title = Dewis a gwirio’r ffeiliau .csv – Gwarantau ar Sail Cyflogaeth – GOV.UK
-ers.upload_csv_file.page_title = Uwchlwytho eich ffeil – Gwarantau ar Sail Cyflogaeth – GOV.UK
-ers.upload_first_csv_file.page_title = Uwchlwytho eich ffeil gyntaf – Gwarantau ar Sail Cyflogaeth – GOV.UK
-ers.upload_next_csv_file.page_title = Uwchlwytho eich ffeil nesaf – Gwarantau ar Sail Cyflogaeth – GOV.UK
 ers.upload_ods_file.page_title = Uwchlwytho’r ffeil .ods – Gwarantau ar Sail Cyflogaeth – GOV.UK
-ers.if_there_are_no_errors.page_title = Os nad oes unrhyw wallau – Gwarantau ar Sail Cyflogaeth – GOV.UK
 ers.title.postfix =– Gwarantau ar Sail Cyflogaeth – GOV.UK
 ers.reference.info = Gwybodaeth rydych wedi’i dewis
 ers.csop.is_group_scheme.page_title = Cynlluniau grŵp
@@ -335,6 +331,7 @@ file_upload.emi.info = Dewiswch y ffeil {0} rydych am ei huwchlwytho fel rhan o�
 file_upload.other.info = Dewiswch y ffeil {0} rydych am ei huwchlwytho fel rhan o’ch Datganiad Blynyddol ar gyfer Arall.
 file_upload.sip.info = Dewiswch y ffeil {0} rydych am ei huwchlwytho fel rhan o’ch Datganiad Blynyddol ar gyfer Cynllun Cymell Cyfranddaliadau.
 file_upload.saye.info = Dewiswch y ffeil {0} rydych am ei huwchlwytho fel rhan o’ch Datganiad Blynyddol ar gyfer Cynilo Wrth Ennill.
+file_upload.delay = Gall eich ffeil gymryd ychydig o funudau i’w huwchlwytho. Bydd yn rhaid i chi ddisgwyl hyd nes ei bod wedi uwchlwytho cyn y gallwch fynd yn eich blaen.
 file_upload_errors.title = Mae gwallau wedi eu canfod
 file_upload_errors.para1 = Cywirwch y gwallau cyn i chi ddefnyddio’r gwasanaeth hwn eto neu
 file_upload_errors.upload_link = dewiswch ffeil wahanol i’w huwchlwytho
@@ -348,9 +345,8 @@ file_upload_errors.emi.guidance = <a href = "https://www.gov.uk/government/publi
 file_upload_errors.sip.guidance = <a href = "https://www.gov.uk/government/publications/share-incentive-plan-end-of-year-template">Defnyddiwch y dogfennau arweiniad Cynllun Cymell Cyfranddaliadau</a> i’ch helpu i gywiro’r gwallau.
 file_upload_errors.other.guidance = <a href = "https://www.gov.uk/government/publications/other-employment-related-securities-schemes-and-arrangements-end-of-year-return-template">Defnyddiwch y dogfennau arweiniad Cynlluniau a threfniadau eraill gwarantau ar sail cyflogaeth</a> i’ch helpu i gywiro’r gwallau.
 ers_upload_successful.page_title = Uwchlwytho llwyddiannus
-csv_file_upload.file_title = Uwchlwythwch eich ffeil CSV
-csv_file_upload.first_file_title = Uwchlwythwch eich ffeil CSV cyntaf
-csv_file_upload.next_file_title = Uwchlwythwch eich ffeil CSV nesaf
+csv_file_upload.upload_your_file_header = Upload your {0} file
+csv_file_upload.upload_your_file = Uwchlwytho’ch ffeil {0}
 csv_file_upload.contact_us = Cysylltwch â ni ar ein tudalen adborth
 csv_file_upload.file_size = os yw unrhyw un o’ch ffeiliau’n fwy na 100MB.
 csv_file_upload.you_have_uploaded = Rydych wedi uwchlwytho:

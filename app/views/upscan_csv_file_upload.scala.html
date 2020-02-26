@@ -25,23 +25,21 @@
     <script src='@routes.AssetsController.at("javascripts/ers_csv_scripts.js")'> </script>
 }
 
-@pageTitle = {
-    @if(csvFilesCallback.count(_.isStarted) == 0) {
-        @if(csvFilesCallback.map(_.fileId).size == 1) {
-            @Messages("ers.upload_csv_file.page_title")
-        } else {
-            @Messages("ers.upload_first_csv_file.page_title")
-        }
-    } else {
-        @Messages("ers.upload_next_csv_file.page_title")
-    }
+@uploadFileHeader = @{
+  messages("csv_file_upload.upload_your_file",
+    messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,currentCsvFile.fileId+".description")).toLowerCase
+  )
+}
+
+@pageTitle = @{
+  uploadFileHeader + " " + messages("ers.title.postfix").toString
 }
 
 @ers_main(title = pageTitle.toString, scripts) {
 
     @reference(requestObject.getPageTitle)
     <p class="font-xsmall"><a href="@routes.CheckCsvFilesController.checkCsvFilesPage" class="link-back">@Html(Messages("ers.back"))</a></p>
-    @header(messages("csv_file_upload.upload_your_file", messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,currentCsvFile.fileId+".description")).toLowerCase))
+    @header(uploadFileHeader)
 
     <div id="errors" class="validation-summary visibility" role="group" aria-labelledby="error-summary-heading" tabindex="-1">
       <h1 class="heading-medium error-summary-heading" id="error-summary-heading">

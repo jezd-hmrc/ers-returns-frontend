@@ -85,7 +85,8 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
           val result = csvFileUploadController.uploadFilePage()(req)
 
           status(result) shouldBe OK
-          contentAsString(result) should include(messages("ers.upload_first_csv_file.page_title"))
+
+          contentAsString(result) should include(messages("csv_file_upload.upload_your_file", ""))
         }
       }
 
