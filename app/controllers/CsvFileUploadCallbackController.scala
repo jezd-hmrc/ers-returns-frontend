@@ -19,18 +19,18 @@ package controllers
 import akka.actor.ActorSystem
 import config.{ApplicationConfig, ERSFileValidatorAuthConnector}
 import models.upscan._
-import play.api.{Logger, Play}
 import play.api.libs.json.JsValue
 import play.api.mvc.Action
+import play.api.{Logger, Play}
 import services.SessionService
 import uk.gov.hmrc.play.frontend.auth.Actions
 import uk.gov.hmrc.play.frontend.controller.FrontendController
-import utils.{CacheUtil, Retryable}
+import utils.CacheUtil
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
-trait CsvFileUploadCallbackController extends FrontendController with Actions with ErsConstants with Retryable {
+trait CsvFileUploadCallbackController extends FrontendController with Actions with ErsConstants {
   val cacheUtil: CacheUtil
   val appConfig: ApplicationConfig
   implicit val actorSystem: ActorSystem = Play.current.actorSystem
@@ -52,21 +52,9 @@ trait CsvFileUploadCallbackController extends FrontendController with Actions wi
               Failed
           }
           logger.info(s"Updating CSV callback for upload id: ${uploadId.value} to ${uploadStatus.getClass.getSimpleName}")
-
-          cacheUtil.fetch[UpscanCsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, scRef).withRetry(appConfig.csvCacheInProgressRetryAmount)(
-            _.findById(uploadId).exists(_.uploadStatus == InProgress)
-          ).flatMap {
-            csvFileList =>
-              val updatedCacheFileList: UpscanCsvFilesCallbackList =
-                csvFileList.updateUploadStatus(uploadId, uploadStatus)
-              logger.info(s"Updated cache data to: $updatedCacheFileList")
-              cacheUtil.cache(CacheUtil.CHECK_CSV_FILES, updatedCacheFileList, scRef).map {
-                _ => Ok("")
-              }
+          cacheUtil.cache(s"${CacheUtil.CHECK_CSV_FILES}-${uploadId.value}", uploadStatus, scRef).map {
+            _ => Ok("")
           } recover {
-            case e: LoopException[UpscanCsvFilesCallbackList] =>
-              logger.error(s"Call to cache could not find InProgress file with uploadId of $uploadId. Data in cache: ${e.finalFutureData}", e)
-              Ok("")
             case NonFatal(e) =>
               logger.error(s"Failed to update cache after Upscan callback for UploadID: ${uploadId.value}, ScRef: $scRef", e)
               InternalServerError("Exception occurred when attempting to store data")

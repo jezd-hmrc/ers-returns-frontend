@@ -30,26 +30,6 @@ object UpscanCsvFilesCallback {
 }
 
 case class UpscanCsvFilesCallbackList(files: List[UpscanCsvFilesCallback]){
-  def updateToInProgress(uploadId: UploadId): UpscanCsvFilesCallbackList = {
-    updateUploadStatus(uploadId, InProgress, _ == NotStarted)
-  }
-
-  def findById(uploadId: UploadId): Option[UpscanCsvFilesCallback] = {
-    files.find(_.uploadId == uploadId)
-  }
-
-  def updateUploadStatus(uploadId: UploadId, uploadStatus: UploadStatus, p: UploadStatus => Boolean = _ => true): UpscanCsvFilesCallbackList = {
-    this.copy(files =
-      files.map { file =>
-        if(file.uploadId == uploadId && p(file.uploadStatus)) {
-          file.copy(uploadStatus = uploadStatus)
-        } else {
-          file
-        }
-      }
-    )
-  }
-
   def areAllFilesComplete(): Boolean = files.forall(_.isComplete)
 
   def areAllFilesSuccessful(): Boolean = files.forall {
@@ -59,4 +39,34 @@ case class UpscanCsvFilesCallbackList(files: List[UpscanCsvFilesCallback]){
 object UpscanCsvFilesCallbackList {
   implicit val upscanCsvCallbackListFormat: Format[UpscanCsvFilesCallbackList] =
     Json.format[UpscanCsvFilesCallbackList]
+}
+
+case class UpscanCsvFilesList(ids: List[UpscanIds]) {
+  def updateToInProgress(uploadId: UploadId): UpscanCsvFilesList = {
+    val exists = ids.exists(id => id.uploadId == uploadId && id.uploadStatus == NotStarted)
+    if(exists) {
+      val newIds = ids.map {
+        case UpscanIds(id, fileId, NotStarted) if id == uploadId =>
+          UpscanIds(id, fileId, InProgress)
+        case other => other
+      }
+      UpscanCsvFilesList(ids = newIds)
+    } else {
+      throw new Exception(s"Could not find id ${uploadId.value} in $ids")
+    }
+  }
+
+  def noOfUploads: Int = ids.count(_.uploadStatus == InProgress)
+
+  def noOfFilesToUpload: Int = ids.size
+
+}
+object UpscanCsvFilesList {
+  implicit val upscanCsvFilesListFormat: Format[UpscanCsvFilesList] =
+    Json.format[UpscanCsvFilesList]
+}
+
+case class UpscanIds(uploadId: UploadId, fileId: String, uploadStatus: UploadStatus)
+object UpscanIds {
+  implicit val upscanIdsFormat: Format[UpscanIds] = Json.format[UpscanIds]
 }

@@ -53,8 +53,6 @@ trait ApplicationConfig extends AppName {
 
   def reportAProblemPartialUrl: String
 
-  val csvCacheInProgressRetryAmount: Int
-  val csvCacheCompletedRetryAmount: Int
   val odsSuccessRetryAmount: Int
   val odsValidationRetryAmount: Int
   val retryDelay: FiniteDuration
@@ -102,10 +100,8 @@ class ApplicationConfigImpl @Inject()(configuration: Configuration) extends Appl
     "cymraeg" -> Lang("cy"))
   def routeToSwitchLanguage = (lang: String) => routes.LanguageSwitchController.switchToLanguage(lang)
 
-  val csvCacheInProgressRetryAmount: Int = runModeConfiguration.getInt("retry.csv-callback-cache.in-progress.amount").getOrElse(1)
-  val csvCacheCompletedRetryAmount: Int = runModeConfiguration.getInt("retry.csv-callback-cache.completed-upload.amount").getOrElse(1)
-  val odsSuccessRetryAmount: Int = runModeConfiguration.getInt("retry.ods-success-cache.complete-upload.amount").getOrElse(1)
-  val odsValidationRetryAmount: Int = runModeConfiguration.getInt("retry.ods-success-cache.validation.amount").getOrElse(1)
+  override val odsSuccessRetryAmount: Int = runModeConfiguration.getInt("retry.ods-success-cache.complete-upload.amount").getOrElse(1)
+  override val odsValidationRetryAmount: Int = runModeConfiguration.getInt("retry.ods-success-cache.validation.amount").getOrElse(1)
   override val retryDelay: FiniteDuration = (runModeConfiguration.getMilliseconds("retry.delay").get) milliseconds
 }
 

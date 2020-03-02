@@ -65,6 +65,7 @@ trait CacheUtil {
   val altAmendsActivity: String = "alt-activity"
 
   val CHECK_CSV_FILES: String = "check-csv-files"
+  val CSV_FILES_UPLOAD: String = "csv-files-upload"
 
   val FILE_NAME_CACHE: String = "file-name"
 

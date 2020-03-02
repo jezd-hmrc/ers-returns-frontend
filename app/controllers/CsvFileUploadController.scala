@@ -35,7 +35,7 @@ import utils._
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
-trait CsvFileUploadController extends FrontendController with Authenticator with Retryable {
+trait CsvFileUploadController extends FrontendController with Authenticator {
 
   private val logger = Logger(this.getClass)
 
@@ -51,12 +51,12 @@ trait CsvFileUploadController extends FrontendController with Authenticator with
       implicit request =>
         (for {
           requestObject   <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
-          csvFilesList    <- cacheUtil.fetch[UpscanCsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, requestObject.getSchemeReference)
-          currentCsvFile  = csvFilesList.files.find(a => a.uploadStatus == NotStarted)
+          csvFilesList    <- cacheUtil.fetch[UpscanCsvFilesList](CacheUtil.CSV_FILES_UPLOAD, requestObject.getSchemeReference)
+          currentCsvFile  = csvFilesList.ids.find(ids => ids.uploadStatus == NotStarted)
           if currentCsvFile.isDefined
           upscanFormData  <- upscanService.getUpscanFormDataCsv(currentCsvFile.get.uploadId, requestObject.getSchemeReference)
         } yield {
-          Ok(views.html.upscan_csv_file_upload(requestObject, upscanFormData, currentCsvFile.get, csvFilesList.files))
+          Ok(views.html.upscan_csv_file_upload(requestObject, upscanFormData, currentCsvFile.get.fileId))
         }) recover {
           case _: NoSuchElementException =>
             logger.warn(s"Attempting to load upload page when no files are ready to upload")
@@ -73,14 +73,14 @@ trait CsvFileUploadController extends FrontendController with Authenticator with
         logger.info(s"Upload form submitted for ID: $uploadId")
         (for {
           requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
-          csvFileList   <- cacheUtil.fetch[UpscanCsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, requestObject.getSchemeReference)
+          csvFileList   <- cacheUtil.fetch[UpscanCsvFilesList](CacheUtil.CSV_FILES_UPLOAD, requestObject.getSchemeReference)
           updatedCacheFileList = {
             logger.info(s"Updating uploadId: ${uploadId.value} to InProgress")
             csvFileList.updateToInProgress(uploadId)
           }
-          _ <- cacheUtil.cache(CacheUtil.CHECK_CSV_FILES, updatedCacheFileList, requestObject.getSchemeReference)
+          _ <- cacheUtil.cache(CacheUtil.CSV_FILES_UPLOAD, updatedCacheFileList, requestObject.getSchemeReference)
         } yield {
-          if(updatedCacheFileList.files.count(_.uploadStatus == NotStarted) == 0)
+          if(updatedCacheFileList.noOfFilesToUpload == updatedCacheFileList.noOfUploads)
             Redirect(routes.CsvFileUploadController.validationResults())
           else
             Redirect(routes.CsvFileUploadController.uploadFilePage())
@@ -130,22 +130,35 @@ trait CsvFileUploadController extends FrontendController with Authenticator with
   }
 
   def extractCsvCallbackData(schemeInfo: SchemeInfo)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    cacheUtil.fetch[UpscanCsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, schemeInfo.schemeRef).withRetry(appConfig.csvCacheCompletedRetryAmount)(
-      data => data.files.nonEmpty && data.areAllFilesComplete()
-    ).flatMap { csvFilesCallbackList =>
-      if(csvFilesCallbackList.areAllFilesSuccessful()) {
-        val callbackDataList: List[UploadedSuccessfully] = csvFilesCallbackList.files.map(_.uploadStatus.asInstanceOf[UploadedSuccessfully])
-        validateCsv(callbackDataList, schemeInfo)
-      } else {
-        val failedFiles: String = csvFilesCallbackList.files.filter(_.uploadStatus == Failed).map(_.uploadId.value).mkString(", ")
-        logger.error(s"Validation failed as one or more csv files failed to upload via Upscan. Failure IDs: $failedFiles")
-        Future.successful(getGlobalErrorPage)
-      }
+    cacheUtil.fetch[UpscanCsvFilesList](CacheUtil.CSV_FILES_UPLOAD, schemeInfo.schemeRef).flatMap {
+      data =>
+        val uploadStatuses = Future.sequence(data.ids.map {
+          case UpscanIds(uploadId, fileId, _) =>
+            cacheUtil.fetch[UploadStatus](s"${CacheUtil.CHECK_CSV_FILES}-${uploadId.value}", schemeInfo.schemeRef).map {
+              UpscanCsvFilesCallback(uploadId, fileId, _)
+            }
+        })
+        uploadStatuses.flatMap {
+          files =>
+            val csvFilesCallbackList: UpscanCsvFilesCallbackList = UpscanCsvFilesCallbackList(files)
+            cacheUtil.cache(CacheUtil.CHECK_CSV_FILES, csvFilesCallbackList, schemeInfo.schemeRef).flatMap { _ =>
+              if (csvFilesCallbackList.files.nonEmpty && csvFilesCallbackList.areAllFilesComplete()) {
+                if(csvFilesCallbackList.areAllFilesSuccessful()) {
+                  val callbackDataList: List[UploadedSuccessfully] =
+                    csvFilesCallbackList.files.map(_.uploadStatus.asInstanceOf[UploadedSuccessfully])
+                  validateCsv(callbackDataList, schemeInfo)
+                } else {
+                  val failedFiles: String = csvFilesCallbackList.files.filter(_.uploadStatus == Failed).map(_.uploadId.value).mkString(", ")
+                  logger.error(s"Validation failed as one or more csv files failed to upload via Upscan. Failure IDs: $failedFiles")
+                  Future.successful(getGlobalErrorPage)
+                }
+              } else {
+                logger.error(s"Failed to validate as not all csv files have completed upload to upscan. Data: $csvFilesCallbackList")
+                Future.successful(getGlobalErrorPage)
+              }
+            }
+        }
     } recover {
-      case e: LoopException[UpscanCsvFilesCallbackList] =>
-        val incompleteFiles = e.finalFutureData.fold("Unknown")(_.files.filterNot(_.isComplete).map(_.uploadId.value).mkString(", "))
-        logger.error(s"Failed to validate as not all csv files have completed upload to upscan. Incomplete IDs: $incompleteFiles")
-        getGlobalErrorPage
       case e: Exception =>
         logger.error(s"Failed to fetch CsvFilesCallbackList with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.", e)
         getGlobalErrorPage

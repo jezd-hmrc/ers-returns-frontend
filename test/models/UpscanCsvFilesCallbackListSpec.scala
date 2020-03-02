@@ -16,35 +16,42 @@
 
 package models
 
-import models.upscan.InProgress
+import models.upscan.UploadId
 import uk.gov.hmrc.play.test.UnitSpec
 import utils.UpscanData
 
 class UpscanCsvFilesCallbackListSpec extends UnitSpec with UpscanData {
-
-  "updateUploadStatus" should {
-    "only update file with matching uploadId" in {
-      val res = notStartedCsvList.updateUploadStatus(testUploadId, InProgress)
-      res shouldBe incompleteCsvList2
+  "areAllFilesComplete" should {
+    "return true for failed or successful uploads" in {
+      failedCsvList.areAllFilesComplete() shouldBe true
+      successfulCsvList.areAllFilesComplete() shouldBe true
     }
 
-    "only update if predicate resolves to true" in {
-      val res = notStartedCsvList.updateUploadStatus(testUploadId, InProgress, _ => false)
-      res shouldBe notStartedCsvList
+    "return false" when {
+      "all files have status of InProgress or NotStarted" in {
+        incompleteCsvList.areAllFilesComplete() shouldBe false
+      }
+
+      "one file is not started or inprogress" in {
+        incompleteCsvList3.areAllFilesComplete() shouldBe false
+      }
     }
   }
 
-  "updateToInProgress" should {
-    "update status to InProgress" when {
-      "status is NotStarted" in {
-        val res = notStartedCsvList.updateToInProgress(testUploadId)
-        res shouldBe incompleteCsvList2
+  "areAllFilesSuccessful" should {
+    "return true" when {
+      "all files are uploaded successfully" in {
+        successfulCsvList.areAllFilesSuccessful() shouldBe true
       }
     }
 
-    "not update record" when {
-      "status code is not NotStarted" in {
-        failedCsvList.updateToInProgress(testUploadId) shouldBe failedCsvList
+    "return false" when {
+      "uploads are not complete" in {
+        incompleteCsvList.areAllFilesSuccessful() shouldBe false
+      }
+
+      "upload has failed" in {
+        failedCsvList.areAllFilesSuccessful() shouldBe false
       }
     }
   }

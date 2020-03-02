@@ -18,27 +18,26 @@ package controllers
 
 import akka.stream.Materializer
 import models._
-import models.upscan.{NotStarted, UploadId, UpscanCsvFilesCallback, UpscanCsvFilesCallbackList}
-import org.mockito.Matchers
+import models.upscan._
 import org.mockito.Matchers._
 import org.mockito.Mockito._
+import org.mockito.{Matchers, Mockito}
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
 import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.JsString
 import play.api.mvc.{Request, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.http.cache.client.CacheMap
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.test.UnitSpec
+import utils.Fixtures.ersRequestObject
 import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures, PageBuilder}
 
 import scala.concurrent.Future
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import utils.Fixtures.ersRequestObject
 
 class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with OneAppPerSuite {
 
@@ -82,7 +81,6 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
 
       val result = await(checkCsvFilesController.showCheckCsvFilesPage()(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       status(result) shouldBe OK
-      verify(mockCacheUtil).remove(Matchers.eq(CacheUtil.CHECK_CSV_FILES))(any(), any())
     }
   }
 
@@ -145,14 +143,14 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
 
   "calling performCsvFilesPageSelected" should {
 
-    val mockListCsvFilesCallback: List[UpscanCsvFilesCallback] = mock[List[UpscanCsvFilesCallback]]
+    val mockListCsvFilesCallback: UpscanCsvFilesList = mock[UpscanCsvFilesList](Mockito.RETURNS_DEEP_STUBS)
     val mockCacheUtil: CacheUtil = mock[CacheUtil]
 
     val checkCsvFilesController: CheckCsvFilesController = new CheckCsvFilesController {
       override val cacheUtil: CacheUtil = mockCacheUtil
       override val pageBuilder: PageBuilder = mock[PageBuilder]
 
-      override def createCacheData(csvFilesList: List[CsvFiles]): List[UpscanCsvFilesCallback] = mockListCsvFilesCallback
+      override def createCacheData(csvFilesList: List[CsvFiles]): UpscanCsvFilesList = mockListCsvFilesCallback
 
     }
 
@@ -169,16 +167,12 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
     "return the result of reloadWithError if createCacheData returns empty list" in {
       reset(mockListCsvFilesCallback)
       reset(mockCacheUtil)
-
       when(
         mockCacheUtil.fetch[RequestObject](refEq(mockCacheUtil.ersRequestObject))(any(), any(), any(), any())
       ) thenReturn Future.successful(ersRequestObject)
-
       when(
-        mockListCsvFilesCallback.isEmpty
-      ).thenReturn(
-        true
-      )
+        mockListCsvFilesCallback.ids.isEmpty
+      ).thenReturn(true)
 
       val result = await(checkCsvFilesController.performCsvFilesPageSelected(formData)(Fixtures.buildFakeRequestWithSessionIdCSOP("POST"), hc))
       status(result) shouldBe SEE_OTHER
@@ -188,12 +182,6 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
     "redirect to next page if createCacheData returns list with data and caching is successful" in {
       reset(mockListCsvFilesCallback)
       reset(mockCacheUtil)
-
-      when(
-        mockListCsvFilesCallback.length
-      ) thenReturn 1
-
-
       when(
         mockCacheUtil.fetch[RequestObject](refEq(mockCacheUtil.ersRequestObject))(any(), any(), any(), any())
       ) thenReturn Future.successful(ersRequestObject)
@@ -210,11 +198,6 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
     "direct to ers errors page if createCacheData returns list with data and caching fails" in {
       reset(mockListCsvFilesCallback)
       reset(mockCacheUtil)
-
-      when(
-        mockListCsvFilesCallback.length
-      ) thenReturn 1
-
       when(
         mockCacheUtil.fetch[RequestObject](refEq(mockCacheUtil.ersRequestObject))(any(), any(), any(), any())
       ) thenReturn Future.successful(ersRequestObject)
@@ -232,12 +215,6 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
     "direct to ers errors page if fetching request object fails fails" in {
       reset(mockListCsvFilesCallback)
       reset(mockCacheUtil)
-
-      when(
-        mockListCsvFilesCallback.length
-      ) thenReturn 1
-
-
       when(
         mockCacheUtil.fetch[RequestObject](refEq(mockCacheUtil.ersRequestObject))(any(), any(), any(), any())
       ) thenReturn Future.failed(new Exception)
@@ -270,13 +247,15 @@ class CheckCsvFilesControllerSpec extends UnitSpec with ERSFakeApplicationConfig
 
     "return only selected files" in {
       val result = checkCsvFilesController.createCacheData(formData)
-      result foreach {
+      result.ids.size shouldBe 2
+      result.ids.foreach {
         _ should matchPattern {
-            case UpscanCsvFilesCallback(UploadId(_), _: String, NotStarted) =>
-          }
+          case UpscanIds(UploadId(_), _: String, NotStarted) =>
+        }
       }
-      result.head.fileId shouldBe "file1"
-      result.apply(1).fileId shouldBe "file4"
+
+      result.noOfUploads shouldBe 0
+      result.noOfFilesToUpload shouldBe 2
     }
 
   }

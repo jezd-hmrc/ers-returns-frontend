@@ -18,7 +18,7 @@
 @import views.html.templates._
 @import views.html.includes.upscan_file_upload_form
 
-@(requestObject: RequestObject, upscanInitiateResponse: UpscanInitiateResponse, currentCsvFile: UpscanCsvFilesCallback, csvFilesCallback: List[UpscanCsvFilesCallback])(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
+@(requestObject: RequestObject, upscanInitiateResponse: UpscanInitiateResponse, fileId: String)(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
 @schemeId = @{requestObject.getSchemeId}
 
 @scripts = {
@@ -27,7 +27,7 @@
 
 @uploadFileHeader = @{
   messages("csv_file_upload.upload_your_file",
-    messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,currentCsvFile.fileId+".description")).toLowerCase
+    messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,fileId+".description")).toLowerCase
   )
 }
 
@@ -56,8 +56,8 @@
       <p>@messages("file_upload.delay")</p>
     </div>
 
-    <label class="form-label" id="fileName" for="fileToUpload" data-file-name="@messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,currentCsvFile.fileId+".file_name"))">
-      @messages("csv_file_upload.upload_your_file", messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,currentCsvFile.fileId+".file_name")))
+    <label class="form-label" id="fileName" for="fileToUpload" data-file-name="@messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,fileId+".file_name"))">
+      @messages("csv_file_upload.upload_your_file", messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,fileId+".file_name")))
     </label>
     @upscan_file_upload_form(".csv", upscanInitiateResponse.formFields, upscanInitiateResponse.postTarget)
 }

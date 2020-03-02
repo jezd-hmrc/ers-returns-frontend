@@ -17,7 +17,7 @@
 package controllers
 
 import models._
-import models.upscan.{UploadId, UpscanCsvFilesCallback, UpscanCsvFilesCallbackList}
+import models.upscan.{NotStarted, UploadId, UpscanCsvFilesCallback, UpscanCsvFilesCallbackList, UpscanCsvFilesList, UpscanIds}
 import play.api.Logger
 import play.api.Play.current
 import play.api.i18n.Messages
@@ -48,7 +48,7 @@ trait CheckCsvFilesController extends ERSReturnBaseController with Authenticator
 
   def showCheckCsvFilesPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     val requestObjectFuture = cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
-    cacheUtil.remove(CacheUtil.CHECK_CSV_FILES)
+    cacheUtil.remove(CacheUtil.CSV_FILES_UPLOAD)
     (for {
       requestObject <- requestObjectFuture
     } yield {
@@ -77,27 +77,28 @@ trait CheckCsvFilesController extends ERSReturnBaseController with Authenticator
   }
 
   def performCsvFilesPageSelected(formData: CsvFilesList)(implicit request: Request[AnyRef], hc: HeaderCarrier) = {
-    val csvFilesCallbackList: List[UpscanCsvFilesCallback] = createCacheData(formData.files)
-    if(csvFilesCallbackList.isEmpty) {
+    val csvFilesCallbackList: UpscanCsvFilesList = createCacheData(formData.files)
+    if(csvFilesCallbackList.ids.isEmpty) {
       reloadWithError()
     } else {
       (for{
         requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
-        _             <- cacheUtil.cache(CacheUtil.CHECK_CSV_FILES, UpscanCsvFilesCallbackList(csvFilesCallbackList), requestObject.getSchemeReference)
+        _             <- cacheUtil.cache(CacheUtil.CSV_FILES_UPLOAD, csvFilesCallbackList, requestObject.getSchemeReference)
       } yield {
         Redirect(routes.CsvFileUploadController.uploadFilePage())
       }).recover {
         case e: Throwable =>
-          logger.error(s"performCsvFilesPageSelected: Save data to cache failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.", e)
+          logger.error(s"performCsvFilesPageSelected: Save data to cache failed with exception ${e.getMessage}.", e)
           getGlobalErrorPage
       }
     }
   }
 
-  def createCacheData(csvFilesList: List[CsvFiles]): List[UpscanCsvFilesCallback] = {
-    for(fileData <- csvFilesList if fileData.isSelected.contains(PageBuilder.OPTION_YES)) yield {
-      UpscanCsvFilesCallback(UploadId.generate, fileData.fileId)
+  def createCacheData(csvFilesList: List[CsvFiles]): UpscanCsvFilesList = {
+    val ids = for(fileData <- csvFilesList if fileData.isSelected.contains(PageBuilder.OPTION_YES)) yield {
+      UpscanIds(UploadId.generate, fileData.fileId, NotStarted)
     }
+    UpscanCsvFilesList(ids)
   }
 
   def reloadWithError()(implicit messages: Messages): Future[Result] = {

@@ -70,14 +70,9 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
   "uploadFilePage" should {
     "display file upload page" when {
       "form data is successfully retrieved from upscan" in {
-        val upscanCsvFilesCallbackList: UpscanCsvFilesCallbackList = UpscanCsvFilesCallbackList(
-          List(
-            UpscanCsvFilesCallback(testUploadId, "file1", NotStarted),
-            UpscanCsvFilesCallback(UploadId("ID2"), "file4", NotStarted)
-          )
-        )
-        when(mockCacheUtil.fetch[UpscanCsvFilesCallbackList](meq(CacheUtil.CHECK_CSV_FILES), any[String])(any(), any(), any()))
-          .thenReturn(upscanCsvFilesCallbackList)
+        when(
+          mockCacheUtil.fetch[UpscanCsvFilesList](meq(CacheUtil.CSV_FILES_UPLOAD), anyString())(any(), any(), any())
+        ).thenReturn(Future.successful(notStartedUpscanCsvFilesList))
         when(mockUpscanService.getUpscanFormDataCsv(UploadId(anyString()), any())(any(), any()))
           .thenReturn(UpscanInitiateResponse(Reference("Reference"), "postTarget", formFields = Map()))
 
@@ -148,26 +143,22 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
       withAuthorisedUser { req =>
         val updatedCallbackCaptor: ArgumentCaptor[UpscanCsvFilesCallbackList] = ArgumentCaptor.forClass(classOf[UpscanCsvFilesCallbackList])
 
-        when(mockCacheUtil.fetch[UpscanCsvFilesCallbackList](meq(CacheUtil.CHECK_CSV_FILES), any[String])(any[HeaderCarrier], any(), any()))
-          .thenReturn(Future.successful(incompleteCsvList))
-        when(mockCacheUtil.cache(meq(CacheUtil.CHECK_CSV_FILES), updatedCallbackCaptor.capture(), any[String])(any[HeaderCarrier], any(), any()))
+        when(mockCacheUtil.fetch[UpscanCsvFilesList](meq(CacheUtil.CSV_FILES_UPLOAD), any[String])(any[HeaderCarrier], any(), any()))
+          .thenReturn(Future.successful(notStartedUpscanCsvFilesList))
+        when(mockCacheUtil.cache(meq(CacheUtil.CSV_FILES_UPLOAD), updatedCallbackCaptor.capture(), any[String])(any[HeaderCarrier], any(), any()))
           .thenReturn(Future.successful(mock[CacheMap]))
 
         await(csvFileUploadController.success(testUploadId)(req))
-        updatedCallbackCaptor.getValue shouldBe incompleteCsvList.copy (
-          files = incompleteCsvList.files.map {
-            _.copy(uploadStatus = InProgress)
-          }
-        )
+        updatedCallbackCaptor.getValue shouldBe inProgressUpscanCsvFilesList
       }
     }
 
     "redirect the user to validation results" when {
       "no file in the cache has UploadStatus of NotStarted after update" in {
         withAuthorisedUser { req =>
-          when(mockCacheUtil.fetch[UpscanCsvFilesCallbackList](meq(CacheUtil.CHECK_CSV_FILES), any[String])(any[HeaderCarrier], any(), any()))
-            .thenReturn(Future.successful(incompleteCsvList))
-          when(mockCacheUtil.cache(meq(CacheUtil.CHECK_CSV_FILES), any[UpscanCsvFilesCallbackList], any[String])(any[HeaderCarrier], any(), any()))
+          when(mockCacheUtil.fetch[UpscanCsvFilesList](meq(CacheUtil.CSV_FILES_UPLOAD), any[String])(any[HeaderCarrier], any(), any()))
+            .thenReturn(Future.successful(notStartedUpscanCsvFilesList))
+          when(mockCacheUtil.cache(meq(CacheUtil.CSV_FILES_UPLOAD), any[UpscanCsvFilesList], any[String])(any[HeaderCarrier], any(), any()))
             .thenReturn(Future.successful(mock[CacheMap]))
 
           val result = csvFileUploadController.success(testUploadId)(req)
@@ -180,10 +171,9 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     "redirect the user to upload a file" when {
       "a file in the cache has an UploadStatus of NotStarted after update" in {
         withAuthorisedUser { req =>
-
-          when(mockCacheUtil.fetch[UpscanCsvFilesCallbackList](meq(CacheUtil.CHECK_CSV_FILES), any[String])(any[HeaderCarrier], any(), any()))
-            .thenReturn(Future.successful(notStartedCsvList))
-          when(mockCacheUtil.cache(meq(CacheUtil.CHECK_CSV_FILES), any[UpscanCsvFilesCallbackList], any[String])(any[HeaderCarrier], any(), any()))
+          when(mockCacheUtil.fetch[UpscanCsvFilesList](meq(CacheUtil.CSV_FILES_UPLOAD), any[String])(any[HeaderCarrier], any(), any()))
+            .thenReturn(Future.successful(multipleNotStartedUpscanCsvFilesList))
+          when(mockCacheUtil.cache(meq(CacheUtil.CSV_FILES_UPLOAD), any[UpscanCsvFilesList], any[String])(any[HeaderCarrier], any(), any()))
             .thenReturn(Future.successful(mock[CacheMap]))
           val result = csvFileUploadController.success(testUploadId)(req)
           status(result) shouldBe SEE_OTHER
@@ -195,7 +185,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     "display global error page" when {
       "Fetching the cache fails" in {
         withAuthorisedUser { req: Request[AnyContent] =>
-          when(mockCacheUtil.fetch[UpscanCsvFilesCallbackList](meq(CacheUtil.CHECK_CSV_FILES), any[String])(any[HeaderCarrier], any(), any()))
+          when(mockCacheUtil.fetch[UpscanCsvFilesList](meq(CacheUtil.CSV_FILES_UPLOAD), any[String])(any[HeaderCarrier], any(), any()))
             .thenReturn(Future.failed(new Exception("Expected Exception")))
 
           val result = csvFileUploadController.success(testUploadId)(req)
@@ -206,9 +196,9 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
 
       "saving the cache fails" in {
         withAuthorisedUser { req =>
-          when(mockCacheUtil.fetch[UpscanCsvFilesCallbackList](meq(CacheUtil.CHECK_CSV_FILES), any[String])(any[HeaderCarrier], any(), any()))
-            .thenReturn(Future.successful(incompleteCsvList))
-          when(mockCacheUtil.cache(meq(CacheUtil.CHECK_CSV_FILES), any[UpscanCsvFilesCallbackList], any[String])(any[HeaderCarrier], any(), any()))
+          when(mockCacheUtil.fetch[UpscanCsvFilesList](meq(CacheUtil.CSV_FILES_UPLOAD), any[String])(any[HeaderCarrier], any(), any()))
+            .thenReturn(Future.successful(multipleNotStartedUpscanCsvFilesList))
+          when(mockCacheUtil.cache(meq(CacheUtil.CSV_FILES_UPLOAD), any[UpscanCsvFilesCallbackList], any[String])(any[HeaderCarrier], any(), any()))
             .thenReturn(Future.failed(new Exception("Expected Exception")))
 
           val result = csvFileUploadController.success(testUploadId)(req)
@@ -277,7 +267,6 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     }
 
     "return Ok if fetching CheckFileType from cache is successful" in {
-      reset(mockCacheUtil)
       when(
         mockCacheUtil.fetch[CheckFileType](refEq(CacheUtil.FILE_TYPE_CACHE), anyString())(any(), any(), any())
       ).thenReturn(
@@ -295,7 +284,6 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     }
 
     "return the globalErrorPage if fetching CheckFileType from cache fails" in {
-      reset(mockCacheUtil)
       when(
         mockCacheUtil.fetch[CheckFileType](refEq(CacheUtil.FILE_TYPE_CACHE), anyString())(any(), any(), any())
       ).thenReturn(
@@ -313,7 +301,6 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     }
 
     "return the globalErrorPage if fetching requestObject from cache fails" in {
-      reset(mockCacheUtil)
       when(
         mockCacheUtil.fetch[CheckFileType](refEq(CacheUtil.FILE_TYPE_CACHE), anyString())(any(), any(), any())
       ).thenReturn(
@@ -375,7 +362,6 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     }
 
     "return result of removePresubmissionData if fetching from the cache is successful" in {
-      reset(mockCacheUtil)
       when(
         mockCacheUtil.fetch[ErsMetaData](anyString(), anyString())(any(), any(), any())
       ).thenReturn(
@@ -393,7 +379,6 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     }
 
     "direct to ers errors page if fetching metaData from cache fails" in {
-      reset(mockCacheUtil)
       when(
         mockCacheUtil.fetch[ErsMetaData](anyString(), anyString())(any(), any(), any())
       ).thenReturn(
@@ -411,7 +396,6 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     }
 
     "direct to ers errors page if fetching requestObject from cache fails" in {
-      reset(mockCacheUtil)
       when(
         mockCacheUtil.fetch[ErsMetaData](anyString(), anyString())(any(), any(), any())
       ).thenReturn(
@@ -489,9 +473,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
 
     lazy val csvFileUploadController: CsvFileUploadController = new CsvFileUploadController {
       val authConnector = mockAuthConnector
-      val appConfig: ApplicationConfig = new ApplicationConfigImpl(app.injector.instanceOf[Configuration]){
-        override val csvCacheCompletedRetryAmount: Int = 1
-      }
+      val appConfig: ApplicationConfig = ApplicationConfig
       override val sessionService = mock[SessionService]
       override val ersConnector: ErsConnector = mock[ErsConnector]
       override val cacheUtil: CacheUtil = mockCacheUtil
@@ -510,23 +492,22 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     }
 
     "return the result of validateCsv if fetching from cache is successful" in {
-      reset(mockCacheUtil)
       when(
-        mockCacheUtil.fetch[UpscanCsvFilesCallbackList](anyString(), anyString())(any(), any(), any())
-      ).thenReturn(
-        Future.successful(UpscanCsvFilesCallbackList(List(
-          UpscanCsvFilesCallback(UploadId("ID1"), "file1", mock[UploadedSuccessfully]),
-          UpscanCsvFilesCallback(testUploadId, "file4", mock[UploadedSuccessfully])
-        ))))
-
-      val result = await(csvFileUploadController.extractCsvCallbackData(mock[SchemeInfo])(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+        mockCacheUtil.fetch[UpscanCsvFilesList](meq(CacheUtil.CSV_FILES_UPLOAD), anyString())(any(), any(), any())
+      ).thenReturn(Future.successful(inProgressUpscanCsvFilesList))
+      when(
+        mockCacheUtil.fetch[UploadStatus](meq(s"${CacheUtil.CHECK_CSV_FILES}-${testUploadId.value}"), anyString())(any(), any(), any())
+      ).thenReturn(uploadedSuccessfully)
+      when(
+        mockCacheUtil.cache(any(), any(), any())(any(), any(), any())
+      ).thenReturn(Future.successful(CacheMap("", Map())))
+      val result = await(csvFileUploadController.extractCsvCallbackData(Fixtures.EMISchemeInfo)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
       status(result) shouldBe OK
       contentAsString(result) shouldBe "Validated"
     }
 
     "direct to ers errors" when {
       "fetching from cache is successful but there is no callbackData" in {
-        reset(mockCacheUtil)
         when(
           mockCacheUtil.fetch[UpscanCsvFilesCallbackList](anyString(), anyString())(any(), any(), any())
         ).thenReturn(
@@ -536,7 +517,6 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
       }
 
       "one of the files are not complete" in {
-        reset(mockCacheUtil)
         when(
           mockCacheUtil.fetch[UpscanCsvFilesCallbackList](anyString(), anyString())(any(), any(), any())
         ).thenReturn(
@@ -606,7 +586,6 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
       ).thenReturn(
         Future.failed(new RuntimeException)
       )
-      println(csvFileUploadController.appConfig.csvCacheCompletedRetryAmount + " **********")
       contentAsString(await(csvFileUploadController.validateCsv(mock[List[UploadedSuccessfully]], mock[SchemeInfo])(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))) shouldBe contentAsString(csvFileUploadController.getGlobalErrorPage)
     }
   }
