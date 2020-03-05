@@ -451,7 +451,7 @@ file_upload_errors.other.guidance = <a href = "https://www.gov.uk/government/pub
 
 ers_upload_successful.page_title = Successful upload
 
-csv_file_upload.upload_your_file_header = Upload your {0} file
+csv_file_upload.upload_your_file_header = Upload your ‘{0}’ file
 csv_file_upload.upload_your_file = Upload the file {0}
 csv_file_upload.contact_us = Contact us on our feedback page
 csv_file_upload.file_size = if any of your files are larger than 100MB.
@@ -534,17 +534,17 @@ ers_check_csv_file.other.file1.description = Other option events
 ers_check_csv_file.other.file1.file_name = Other_Options_V3.csv
 ers_check_csv_file.other.file2.description = Acquisition of securities
 ers_check_csv_file.other.file2.file_name = Other_Acquisition_V3.csv
-ers_check_csv_file.other.file3.description = Restricted securities post acquisition events
+ers_check_csv_file.other.file3.description = Restricted securities post-acquisition events
 ers_check_csv_file.other.file3.file_name = Other_RestrictedSecurities_V3.csv
-ers_check_csv_file.other.file4.description = Receipt of other benefits from securities post acquisition
+ers_check_csv_file.other.file4.description = Receipt of other benefits from securities post-acquisition
 ers_check_csv_file.other.file4.file_name = Other_OtherBenefits_V3.csv
 ers_check_csv_file.other.file5.description = Convertible securities post-acquisition
 ers_check_csv_file.other.file5.file_name = Other_Convertible_V3.csv
 ers_check_csv_file.other.file6.description = Discharge of notional loans post-acquisition
 ers_check_csv_file.other.file6.file_name = Other_Notional_V3.csv
-ers_check_csv_file.other.file7.description = Artificial enhancement of market value. Value of securities post acquisition
+ers_check_csv_file.other.file7.description = Artificial enhancement of market value. Value of securities post-acquisition
 ers_check_csv_file.other.file7.file_name = Other_Enhancement_V3.csv
-ers_check_csv_file.other.file8.description = Securities sold for more than market value post acquisition
+ers_check_csv_file.other.file8.description = Securities sold for more than market value post-acquisition
 ers_check_csv_file.other.file8.file_name = Other_Sold_V3.csv
 
 ers_check_file.title = Choose and check your spreadsheet

@@ -345,7 +345,7 @@ file_upload_errors.emi.guidance = <a href = "https://www.gov.uk/government/publi
 file_upload_errors.sip.guidance = <a href = "https://www.gov.uk/government/publications/share-incentive-plan-end-of-year-template">Defnyddiwch y dogfennau arweiniad Cynllun Cymell Cyfranddaliadau</a> i’ch helpu i gywiro’r gwallau.
 file_upload_errors.other.guidance = <a href = "https://www.gov.uk/government/publications/other-employment-related-securities-schemes-and-arrangements-end-of-year-return-template">Defnyddiwch y dogfennau arweiniad Cynlluniau a threfniadau eraill gwarantau ar sail cyflogaeth</a> i’ch helpu i gywiro’r gwallau.
 ers_upload_successful.page_title = Uwchlwytho llwyddiannus
-csv_file_upload.upload_your_file_header = Upload your {0} file
+csv_file_upload.upload_your_file_header = Uwchlwytho’ch ffeil ‘{0}’
 csv_file_upload.upload_your_file = Uwchlwytho’ch ffeil {0}
 csv_file_upload.contact_us = Cysylltwch â ni ar ein tudalen adborth
 csv_file_upload.file_size = os yw unrhyw un o’ch ffeiliau’n fwy na 100MB.
