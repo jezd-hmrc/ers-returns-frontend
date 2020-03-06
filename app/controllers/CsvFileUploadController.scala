@@ -18,6 +18,7 @@ package controllers
 
 import akka.actor.ActorSystem
 import config.{ApplicationConfig, ERSFileValidatorAuthConnector}
+import uk.gov.hmrc.auth.core.PlayAuthConnector
 import connectors.ErsConnector
 import models._
 import models.upscan._
@@ -28,7 +29,6 @@ import play.api.i18n.Messages.Implicits._
 import play.api.mvc.{Action, AnyContent, Request, Result}
 import services.{SessionService, UpscanService}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.frontend.controller.FrontendController
 import utils._
 
@@ -46,7 +46,7 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
   val upscanService: UpscanService = current.injector.instanceOf[UpscanService]
   implicit val actorSystem: ActorSystem = current.actorSystem
 
-  def uploadFilePage(): Action[AnyContent] = AuthorisedForAsync() {
+  def uploadFilePage(): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
         (for {
@@ -67,7 +67,7 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
         }
   }
 
-  def success(uploadId: UploadId): Action[AnyContent] = AuthorisedForAsync() {
+  def success(uploadId: UploadId): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
         logger.info(s"Upload form submitted for ID: $uploadId")
@@ -91,13 +91,13 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
         }
   }
 
-  def validationResults(): Action[AnyContent] = AuthorisedFor(ERSRegime, pageVisibility = GGConfidence).async {
+  def validationResults(): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
         processValidationResults()
   }
 
-  def processValidationResults()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def processValidationResults()(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
     (for {
       requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
@@ -106,14 +106,13 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
     } yield {
       result
     }) recover {
-      case e: Exception => {
+      case e: Exception =>
         logger.error(s"Failed to fetch metadata data with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
         getGlobalErrorPage
-      }
     }
   }
 
-  def removePresubmissionData(schemeInfo: SchemeInfo)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def removePresubmissionData(schemeInfo: SchemeInfo)(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     ersConnector.removePresubmissionData(schemeInfo).flatMap { result =>
       result.status match {
         case OK => extractCsvCallbackData(schemeInfo)
@@ -129,7 +128,7 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
     }
   }
 
-  def extractCsvCallbackData(schemeInfo: SchemeInfo)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def extractCsvCallbackData(schemeInfo: SchemeInfo)(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     cacheUtil.fetch[UpscanCsvFilesList](CacheUtil.CSV_FILES_UPLOAD, schemeInfo.schemeRef).flatMap {
       data =>
         val uploadStatuses = Future.sequence(data.ids.map {
@@ -166,7 +165,9 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
   }
 
 
-  def validateCsv(csvCallbackData: List[UploadedSuccessfully], schemeInfo: SchemeInfo)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def validateCsv(csvCallbackData: List[UploadedSuccessfully], schemeInfo: SchemeInfo)(implicit authContext: ERSAuthData,
+                                                                                       request: Request[AnyRef],
+                                                                                       hc: HeaderCarrier): Future[Result] = {
     ersConnector.validateCsvFileData(csvCallbackData, schemeInfo).map { res =>
       res.status match {
         case OK =>
@@ -186,13 +187,13 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
     }
   }
 
-  def validationFailure(): Action[AnyContent] = AuthorisedFor(ERSRegime, pageVisibility = GGConfidence).async {
+  def validationFailure(): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
           processValidationFailure()(user, request, hc)
   }
 
-  def processValidationFailure()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def processValidationFailure()(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     logger.info("validationFailure: Validation Failure: " + (System.currentTimeMillis() / 1000))
     (for {
       requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
@@ -207,17 +208,17 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
     }
   }
 
-  def failure(): Action[AnyContent] = AuthorisedFor(ERSRegime, pageVisibility = GGConfidence){
+  def failure(): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
         val errorCode = request.getQueryString("errorCode").getOrElse("Unknown")
         val errorMessage = request.getQueryString("errorMessage").getOrElse("Unknown")
         val errorRequestId = request.getQueryString("errorRequestId").getOrElse("Unknown")
         logger.error(s"Upscan Failure. errorCode: $errorCode, errorMessage: $errorMessage, errorRequestId: $errorRequestId")
-        getGlobalErrorPage
+        Future.successful(getGlobalErrorPage)
   }
 
-  def getGlobalErrorPage(implicit request: Request[_], messages: Messages) = Ok(views.html.global_error(
+  def getGlobalErrorPage(implicit request: Request[AnyRef], messages: Messages): Result = Ok(views.html.global_error(
     messages("ers.global_errors.title"),
     messages("ers.global_errors.heading"),
     messages("ers.global_errors.message"))(request, messages))
@@ -225,8 +226,8 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
 }
 
 object CsvFileUploadController extends CsvFileUploadController {
-  val authConnector = ERSFileValidatorAuthConnector
-  val sessionService = SessionService
+  val authConnector: PlayAuthConnector = ERSFileValidatorAuthConnector
+  val sessionService: SessionService = SessionService
   val ersConnector: ErsConnector = ErsConnector
   val appConfig: ApplicationConfig = ApplicationConfig
   override val cacheUtil: CacheUtil = CacheUtil

@@ -23,14 +23,13 @@ import play.api.libs.json.JsValue
 import play.api.mvc.Action
 import play.api.{Logger, Play}
 import services.SessionService
-import uk.gov.hmrc.play.frontend.auth.Actions
 import uk.gov.hmrc.play.frontend.controller.FrontendController
 import utils.CacheUtil
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
-trait CsvFileUploadCallbackController extends FrontendController with Actions with ErsConstants {
+trait CsvFileUploadCallbackController extends FrontendController with ErsConstants {
   val cacheUtil: CacheUtil
   val appConfig: ApplicationConfig
   implicit val actorSystem: ActorSystem = Play.current.actorSystem

@@ -18,15 +18,16 @@ package connectors
 
 import akka.stream.Materializer
 import metrics.Metrics
-import models.SchemeInfo
+import models.{ERSAuthData, SchemeInfo, ValidatorData}
 import org.joda.time.DateTime
-import org.mockito.Matchers
+import org.mockito.ArgumentMatchers
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, Json}
+import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.domain.EmpRef
@@ -36,17 +37,41 @@ import uk.gov.hmrc.play.test.UnitSpec
 import utils.ERSFakeApplicationConfig
 
 import scala.concurrent.Future
+import utils.{AuthHelper, ERSFakeApplicationConfig, Fixtures}
 
-class ErsConnectorSpec extends UnitSpec with MockitoSugar with OneAppPerSuite with ERSFakeApplicationConfig {
+import scala.concurrent.Future
+import uk.gov.hmrc.http.{HttpGet, HttpPost, HttpResponse}
+
+class ERSConnectorSpec extends UnitSpec with MockitoSugar with OneAppPerSuite with ERSFakeApplicationConfig with AuthHelper {
 
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val mat: Materializer = app.materializer
 
-  implicit lazy val authContext = mock[AuthContext]
-  implicit lazy val request = FakeRequest()
+  implicit lazy val authContext: ERSAuthData = defaultErsAuthData
+  implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
 
 
   lazy val schemeInfo = SchemeInfo("XA1100000000000", DateTime.now, "1", "2016", "EMI", "EMI")
+
+  lazy val mockHttp = mock[HttpPost]
+  lazy val mockMetrics: Metrics = mock[Metrics]
+
+  lazy val ersConnector: ErsConnector = new ErsConnector {
+    override lazy val metrics: Metrics = mockMetrics
+
+    override def httpPost: HttpPost = mockHttp
+
+    override def httpGet: HttpGet = mock[HttpGet]
+
+    override def ersUrl = "ers-returns"
+
+    override def validatorUrl = "ers-file-validator"
+  }
+
+  lazy val data: JsObject = Json.obj(
+    "schemeRef" -> "XA1100000000000",
+    "confTime" -> "2016-08-05T11:14:43"
+  )
 
   "validateFileData" should {
     "return the response from file-validator" when {
@@ -63,43 +88,35 @@ class ErsConnectorSpec extends UnitSpec with MockitoSugar with OneAppPerSuite wi
       "file-validator returns 4xx" in {
 
       }
+    }
+    "validation fails" in {
+      reset(mockHttp)
+      when(
+        mockHttp.POST[ValidatorData, HttpResponse](ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())
+      ).thenReturn(
+        Future.successful(HttpResponse(INTERNAL_SERVER_ERROR))
+      )
 
+      }
+//TODO hmm
       "file-validator returns 5xx" in {
+      }
+    "validator throw Exception" in {
+      reset(mockHttp)
+      doThrow(
+        new RuntimeException
+      ).when(mockHttp).POST[ValidatorData, HttpResponse](ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())
 
       }
     }
-  }
+
 
   "calling retrieveSubmissionData" should {
-
-    lazy val mockHttp = mock[HttpPost]
-    lazy val mockMetrics: Metrics = mock[Metrics]
-
-    lazy val ersConnector: ErsConnector = new ErsConnector {
-      override lazy val metrics: Metrics = mockMetrics
-
-      override def httpPost: HttpPost = mockHttp
-
-      override def httpGet: HttpGet = mock[HttpGet]
-
-      override def ersUrl = "ers-returns"
-
-      override def ersRegime = "epaye"
-
-      override def validatorUrl = "ers-file-validator"
-
-      override def getAuthID(implicit authContext: AuthContext) = EmpRef("", "")
-    }
-
-    lazy val data: JsObject = Json.obj(
-      "schemeRef" -> "XA1100000000000",
-      "confTime" -> "2016-08-05T11:14:43"
-    )
 
     "successful retrieving" in {
       reset(mockHttp)
       when(
-        mockHttp.POST[SchemeInfo, HttpResponse](Matchers.any(), Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any())
+        mockHttp.POST[SchemeInfo, HttpResponse](ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())
       ).thenReturn(
         Future.successful(HttpResponse(OK))
       )
@@ -111,7 +128,7 @@ class ErsConnectorSpec extends UnitSpec with MockitoSugar with OneAppPerSuite wi
     "failed retrieving" in {
       reset(mockHttp)
       when(
-        mockHttp.POST[SchemeInfo, HttpResponse](Matchers.any(), Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any())
+        mockHttp.POST[SchemeInfo, HttpResponse](ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())
       ).thenReturn(
         Future.successful(HttpResponse(INTERNAL_SERVER_ERROR))
       )
@@ -123,7 +140,7 @@ class ErsConnectorSpec extends UnitSpec with MockitoSugar with OneAppPerSuite wi
     "throws exception" in {
       reset(mockHttp)
       when(
-        mockHttp.POST[SchemeInfo, HttpResponse](Matchers.any(), Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any())
+        mockHttp.POST[SchemeInfo, HttpResponse](ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())
       ).thenReturn(
         Future.failed(new RuntimeException)
       )

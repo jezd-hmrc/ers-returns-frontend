@@ -16,13 +16,10 @@
 
 package controllers
 
-import java.net.URL
-import java.time.Instant
-
 import akka.stream.Materializer
 import models.upscan._
 import org.mockito.ArgumentCaptor
-import org.mockito.Matchers.{eq => meq, _}
+import org.mockito.ArgumentMatchers.{eq => meq, _}
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}

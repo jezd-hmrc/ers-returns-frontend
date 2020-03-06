@@ -21,7 +21,7 @@ import connectors.ErsConnector
 import metrics.Metrics
 import models._
 import org.joda.time.DateTime
-import org.mockito.Matchers
+import org.mockito.ArgumentMatchers
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
@@ -35,28 +35,30 @@ import play.api.mvc.Request
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import services.SessionService
+import uk.gov.hmrc.auth.core.PlayAuthConnector
 import uk.gov.hmrc.domain.EmpRef
 import uk.gov.hmrc.http.cache.client.{CacheMap, ShortLivedCache}
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.test.UnitSpec
-import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures, PageBuilder, UpscanData}
+import utils.{AuthHelper, CacheUtil, ERSFakeApplicationConfig, Fixtures, PageBuilder, UpscanData}
 
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpPost, HttpResponse}
 import utils.Fixtures.ersRequestObject
 
-class SummaryDeclarationControllerTest extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with OneAppPerSuite with UpscanData {
+class SummaryDeclarationControllerTest extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with AuthHelper with OneAppPerSuite with UpscanData {
 
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val mat: Materializer = app.materializer
   implicit lazy val messages: Messages = Messages(Lang("en"), app.injector.instanceOf[MessagesApi])
   implicit val request: Request[_] = FakeRequest()
 
-  lazy val mockHttp = mock[HttpPost]
-  lazy val mockHttpGet = mock[HttpGet]
-  lazy val mockSessionCache = mock[SessionService]
+  lazy val mockHttp: HttpPost = mock[HttpPost]
+  lazy val mockHttpGet: HttpGet = mock[HttpGet]
+  lazy val mockSessionCache: SessionService = mock[SessionService]
 
   def buildFakeSummaryDeclarationController() = new SummaryDeclarationController {
+		override val authConnector: PlayAuthConnector = mockAuthConnector
     var fetchAllMapVal = "e"
     var fetchMapVal = "e"
     val schemeInfo = SchemeInfo("XA1100000000000", DateTime.now, "2", "2016", "EMI", "EMI")
@@ -71,16 +73,12 @@ class SummaryDeclarationControllerTest extends UnitSpec with ERSFakeApplicationC
 
         override def ersUrl = "ers-returns"
 
-        override def ersRegime = "regime"
-
         override def validatorUrl = "ers-file-validator"
 
-        override def getAuthID(implicit authContext: AuthContext) = EmpRef("", "")
-
-        override def connectToEtmpSapRequest(schemeRef: String)(implicit authContext: AuthContext, hc: HeaderCarrier): Future[String] = Future("1234567890")
+        override def connectToEtmpSapRequest(schemeRef: String)(implicit authContext: ERSAuthData, hc: HeaderCarrier): Future[String] = Future("1234567890")
 
       }
-    when(mockHttp.POST[ValidatorData, HttpResponse](Matchers.any(), Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(Future.successful(HttpResponse(OK)))
+    when(mockHttp.POST[ValidatorData, HttpResponse](ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(HttpResponse(OK)))
 
     override val cacheUtil: CacheUtil = new CacheUtil {
       override val sessionService: SessionService = mockSessionCache
@@ -269,6 +267,7 @@ class SummaryDeclarationControllerTest extends UnitSpec with ERSFakeApplicationC
 
   "Calling SummaryDeclarationController.summaryDeclarationPage (GET) without authentication" should {
     "give a redirect status (to company authentication frontend)" in {
+			setUnauthorisedMocks()
       val controllerUnderTest = buildFakeSummaryDeclarationController
       val result = controllerUnderTest.summaryDeclarationPage().apply(FakeRequest("GET", ""))
       status(result) shouldBe Status.SEE_OTHER
@@ -326,5 +325,4 @@ class SummaryDeclarationControllerTest extends UnitSpec with ERSFakeApplicationC
       status(result) shouldBe Status.OK
     }
   }
-
 }

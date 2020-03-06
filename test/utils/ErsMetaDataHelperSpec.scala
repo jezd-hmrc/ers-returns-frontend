@@ -21,6 +21,7 @@ import org.joda.time.DateTime
 import org.scalatest.Matchers
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.Application
 import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.inject.Injector
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -29,7 +30,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 class ErsMetaDataHelperSpec extends UnitSpec with MockitoSugar with Matchers with GuiceOneAppPerSuite {
   def injector: Injector = app.injector
   def messagesApi: MessagesApi = injector.instanceOf[MessagesApi]
-  override def fakeApplication() = new GuiceApplicationBuilder().configure(Map("play.i18n.langs"->List("en-GB","en","cy-GB", "cy"))).build()
+  override def fakeApplication(): Application = new GuiceApplicationBuilder().configure(Map("play.i18n.langs"->List("en-GB","en","cy-GB", "cy"))).build()
 
   "ErsMetaDataHelper" should {
 

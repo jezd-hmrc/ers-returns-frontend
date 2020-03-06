@@ -38,19 +38,19 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
   val cacheUtil: CacheUtil
 
 
-  def manualCompanyDetailsPage(index: Int) = AuthorisedForAsync() {
+  def manualCompanyDetailsPage(index: Int) = authorisedForAsync() {
     implicit user =>
       implicit request =>
         showManualCompanyDetailsPage(index)(user, request)
   }
 
-  def showManualCompanyDetailsPage(index: Int)(implicit authContext: AuthContext, request: Request[AnyContent]): Future[Result] = {
+  def showManualCompanyDetailsPage(index: Int)(implicit authContext: ERSAuthData, request: Request[AnyContent]): Future[Result] = {
     cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).map { requestObject =>
       Ok(views.html.manual_company_details(requestObject, index, RsFormMappings.companyDetailsForm))
     }
   }
 
-  def manualCompanyDetailsSubmit(index: Int) = AuthorisedForAsync() {
+  def manualCompanyDetailsSubmit(index: Int) = authorisedForAsync() {
     implicit user =>
       implicit request =>
         cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
@@ -58,7 +58,7 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
         }
   }
 
-  def showManualCompanyDetailsSubmit(requestObject: RequestObject, index: Int)(implicit authContext: AuthContext, request: Request[AnyRef]): Future[Result] = {
+  def showManualCompanyDetailsSubmit(requestObject: RequestObject, index: Int)(implicit authContext: ERSAuthData, request: Request[AnyRef]): Future[Result] = {
     RsFormMappings.companyDetailsForm.bindFromRequest.fold(
       errors => {
         Future(Ok(views.html.manual_company_details(requestObject, index, errors)))
@@ -93,13 +93,13 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
       }
     }).distinct
 
-  def deleteCompany(id: Int) = AuthorisedForAsync() {
+  def deleteCompany(id: Int) = authorisedForAsync() {
     implicit user =>
       implicit request =>
         showDeleteCompany(id)(user, request, hc)
   }
 
-  def showDeleteCompany(id: Int)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showDeleteCompany(id: Int)(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
     (for {
       requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
@@ -123,13 +123,13 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
   private def filterDeletedCompany(companyList: CompanyDetailsList, id: Int): List[CompanyDetails] =
     companyList.companies.zipWithIndex.filterNot(_._2 == id).map(_._1)
 
-  def editCompany(id: Int) = AuthorisedForAsync() {
+  def editCompany(id: Int) = authorisedForAsync() {
     implicit user =>
       implicit request =>
           showEditCompany(id)(user, request, hc)
   }
 
-  def showEditCompany(id: Int)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showEditCompany(id: Int)(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
     (for {
       requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
@@ -149,7 +149,7 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
     }
   }
 
-  def groupSchemePage() = AuthorisedForAsync() {
+  def groupSchemePage() = authorisedForAsync() {
     implicit user =>
       implicit request =>
         cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
@@ -157,7 +157,7 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
         }
   }
 
-  def showGroupSchemePage(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showGroupSchemePage(requestObject: RequestObject)(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     cacheUtil.fetch[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER, requestObject.getSchemeReference).map { groupSchemeInfo =>
       Ok(views.html.group(requestObject, groupSchemeInfo.groupScheme, RsFormMappings.groupForm.fill(RS_groupScheme(groupSchemeInfo.groupScheme))))
     } recover {
@@ -168,7 +168,7 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
     }
   }
 
-  def groupSchemeSelected(scheme: String) = AuthorisedForAsync() {
+  def groupSchemeSelected(scheme: String) = authorisedForAsync() {
     implicit user =>
       implicit request =>
         cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
@@ -176,7 +176,8 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
         }
   }
 
-  def showGroupSchemeSelected(requestObject: RequestObject, scheme: String)(implicit authContext: AuthContext, request: Request[AnyRef]): Future[Result] = {
+  def showGroupSchemeSelected(requestObject: RequestObject, scheme: String)(implicit authContext: ERSAuthData, request: Request[AnyRef]): Future[Result] = {
+    Logger.info(request.session.get(screenSchemeInfo).get.split(" - ").head)
     RsFormMappings.groupForm.bindFromRequest.fold(
       errors => {
         val correctOrder = errors.errors.map(_.key).distinct
@@ -212,13 +213,13 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
   }
 
 
-  def groupPlanSummaryPage() = AuthorisedForAsync() {
+  def groupPlanSummaryPage() = authorisedForAsync() {
     implicit user =>
       implicit request =>
           showGroupPlanSummaryPage()(user, request, hc)
   }
 
-  def showGroupPlanSummaryPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showGroupPlanSummaryPage()(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
     (for {
       requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
@@ -232,13 +233,13 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
     }
   }
 
-  def groupPlanSummaryContinue(scheme: String) = AuthorisedForAsync() {
+  def groupPlanSummaryContinue(scheme: String) = authorisedForAsync() {
     implicit user =>
       implicit request =>
         continueFromGroupPlanSummaryPage(scheme)(user, request, hc)
   }
 
-  def continueFromGroupPlanSummaryPage(scheme: String)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def continueFromGroupPlanSummaryPage(scheme: String)(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     scheme match {
       case SCHEME_CSOP | SCHEME_SAYE =>
         Future(Redirect(routes.AltAmendsController.altActivityPage()))

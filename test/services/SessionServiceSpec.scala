@@ -17,7 +17,8 @@
 package services
 
 import models.upscan.{Failed, InProgress, NotStarted, UploadStatus}
-import org.mockito.Matchers.{eq => meq, _}
+import models._
+import org.mockito.ArgumentMatchers.{eq => meq, _}
 import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar

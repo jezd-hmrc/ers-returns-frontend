@@ -17,7 +17,7 @@
 package services.pdf
 
 import models.SchemeOrganiserDetails
-import org.mockito.Matchers
+import org.mockito.ArgumentMatchers
 import org.mockito.Mockito._
 import org.mockito.internal.verification.VerificationModeFactory
 import org.scalatest.mockito.MockitoSugar
@@ -48,17 +48,17 @@ class SchemeOrganiserDetailsDecoratorSpec extends UnitSpec with MockitoSugar {
 
       decorator.decorate(streamer)
 
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("title": String), org.mockito.Matchers.eq(1.0F: Float))(Matchers.any())
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("companyName": String), org.mockito.Matchers.eq(2.0F: Float))(Matchers.any())
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("addressLine1": String), org.mockito.Matchers.eq(2.0F: Float))(Matchers.any())
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("addressLine2": String), org.mockito.Matchers.eq(2.0F: Float))(Matchers.any())
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("addressLine3": String), org.mockito.Matchers.eq(2.0F: Float))(Matchers.any())
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("addressLine4": String), org.mockito.Matchers.eq(2.0F: Float))(Matchers.any())
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("post code": String), org.mockito.Matchers.eq(2.0F: Float))(Matchers.any())
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("company reg": String), org.mockito.Matchers.eq(2.0F: Float))(Matchers.any())
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("corporationRef": String), org.mockito.Matchers.eq(2.0F: Float))(Matchers.any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.ArgumentMatchers.eq("title": String), org.mockito.ArgumentMatchers.eq(1.0F: Float))(ArgumentMatchers.any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.ArgumentMatchers.eq("companyName": String), org.mockito.ArgumentMatchers.eq(2.0F: Float))(ArgumentMatchers.any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.ArgumentMatchers.eq("addressLine1": String), org.mockito.ArgumentMatchers.eq(2.0F: Float))(ArgumentMatchers.any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.ArgumentMatchers.eq("addressLine2": String), org.mockito.ArgumentMatchers.eq(2.0F: Float))(ArgumentMatchers.any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.ArgumentMatchers.eq("addressLine3": String), org.mockito.ArgumentMatchers.eq(2.0F: Float))(ArgumentMatchers.any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.ArgumentMatchers.eq("addressLine4": String), org.mockito.ArgumentMatchers.eq(2.0F: Float))(ArgumentMatchers.any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.ArgumentMatchers.eq("post code": String), org.mockito.ArgumentMatchers.eq(2.0F: Float))(ArgumentMatchers.any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.ArgumentMatchers.eq("company reg": String), org.mockito.ArgumentMatchers.eq(2.0F: Float))(ArgumentMatchers.any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.ArgumentMatchers.eq("corporationRef": String), org.mockito.ArgumentMatchers.eq(2.0F: Float))(ArgumentMatchers.any())
 
-      verify(streamer, VerificationModeFactory.times(8)).drawText(org.mockito.Matchers.eq("": String), org.mockito.Matchers.eq(3.0F: Float))(Matchers.any())
+      verify(streamer, VerificationModeFactory.times(8)).drawText(org.mockito.ArgumentMatchers.eq("": String), org.mockito.ArgumentMatchers.eq(3.0F: Float))(ArgumentMatchers.any())
      }
 
     "show block spacer at the end of the section" in {
@@ -79,7 +79,7 @@ class SchemeOrganiserDetailsDecoratorSpec extends UnitSpec with MockitoSugar {
 
       decorator.decorate(streamer)
 
-      verify(streamer, VerificationModeFactory.times(3)).drawText(org.mockito.Matchers.eq("": String), org.mockito.Matchers.eq(4.0F: Float))(Matchers.any())
+      verify(streamer, VerificationModeFactory.times(3)).drawText(org.mockito.ArgumentMatchers.eq("": String), org.mockito.ArgumentMatchers.eq(4.0F: Float))(ArgumentMatchers.any())
       verify(streamer, VerificationModeFactory.times(1)).drawLine()
     }
   }

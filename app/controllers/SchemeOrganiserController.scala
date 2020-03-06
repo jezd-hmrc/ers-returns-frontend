@@ -36,7 +36,7 @@ object SchemeOrganiserController extends SchemeOrganiserController {
 trait SchemeOrganiserController extends ERSReturnBaseController with Authenticator with LegacyI18nSupport {
   val cacheUtil: CacheUtil
 
-  def schemeOrganiserPage() = AuthorisedForAsync() {
+  def schemeOrganiserPage() = authorisedForAsync() {
     implicit user =>
       implicit request =>
         cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
@@ -44,7 +44,7 @@ trait SchemeOrganiserController extends ERSReturnBaseController with Authenticat
         }
   }
 
-  def showSchemeOrganiserPage(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyContent], hc: HeaderCarrier): Future[Result] = {
+  def showSchemeOrganiserPage(requestObject: RequestObject)(implicit authContext: ERSAuthData, request: Request[AnyContent], hc: HeaderCarrier): Future[Result] = {
     Logger.warn(s"SchemeOrganiserController: showSchemeOrganiserPage:  schemeRef: ${requestObject.getSchemeReference}.")
 
     cacheUtil.fetch[ReportableEvents](CacheUtil.reportableEvents, requestObject.getSchemeReference).flatMap { reportableEvent =>
@@ -74,7 +74,7 @@ trait SchemeOrganiserController extends ERSReturnBaseController with Authenticat
     }
   }
 
-  def schemeOrganiserSubmit() = AuthorisedForAsync() {
+  def schemeOrganiserSubmit() = authorisedForAsync() {
     implicit user =>
       implicit request =>
         cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
@@ -82,7 +82,7 @@ trait SchemeOrganiserController extends ERSReturnBaseController with Authenticat
         }
   }
 
-  def showSchemeOrganiserSubmit(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showSchemeOrganiserSubmit(requestObject: RequestObject)(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     RsFormMappings.schemeOrganiserForm.bindFromRequest.fold(
       errors => {
         val correctOrder = errors.errors.map(_.key).distinct

@@ -23,9 +23,9 @@ import akka.stream.Materializer
 import config.{ApplicationConfig, ApplicationConfigImpl}
 import models.upscan._
 import org.mockito.ArgumentCaptor
-import org.mockito.Matchers.{eq => meq, _}
-import org.mockito.Mockito._
+import org.mockito.ArgumentMatchers.{eq => meq, _}
 import org.scalatest.BeforeAndAfterEach
+import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.{Application, Configuration}

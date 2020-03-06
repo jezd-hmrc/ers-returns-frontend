@@ -40,13 +40,13 @@ trait CheckCsvFilesController extends ERSReturnBaseController with Authenticator
   val pageBuilder: PageBuilder
   private val logger = Logger(this.getClass)
 
-  def checkCsvFilesPage(): Action[AnyContent] = AuthorisedForAsync() {
+  def checkCsvFilesPage(): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
         showCheckCsvFilesPage()(user, request, hc)
   }
 
-  def showCheckCsvFilesPage()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showCheckCsvFilesPage()(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     val requestObjectFuture = cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
     cacheUtil.remove(CacheUtil.CSV_FILES_UPLOAD)
     (for {
@@ -59,13 +59,13 @@ trait CheckCsvFilesController extends ERSReturnBaseController with Authenticator
     }
   }
 
-  def checkCsvFilesPageSelected(): Action[AnyContent] = AuthorisedForAsync() {
+  def checkCsvFilesPageSelected(): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
         validateCsvFilesPageSelected()
   }
 
-  def validateCsvFilesPageSelected()(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def validateCsvFilesPageSelected()(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     RsFormMappings.csvFileCheckForm.bindFromRequest.fold(
       _ => {
         reloadWithError()

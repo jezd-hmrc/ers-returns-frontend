@@ -22,7 +22,7 @@ import akka.stream.Materializer
 import models._
 import models.upscan.{UploadId, UploadedSuccessfully, UpscanCsvFilesCallback, UpscanCsvFilesCallbackList}
 import org.joda.time.DateTime
-import org.mockito.Matchers._
+import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
@@ -34,39 +34,42 @@ import play.api.mvc.Request
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import services.pdf.{ErsContentsStreamer, ErsReceiptPdfBuilderService}
+import uk.gov.hmrc.auth.core.PlayAuthConnector
 import uk.gov.hmrc.http.cache.client.CacheMap
 import uk.gov.hmrc.play.test.UnitSpec
-import utils.{CacheUtil, ERSFakeApplicationConfig, PageBuilder}
+import utils.{AuthHelper, CacheUtil, ERSFakeApplicationConfig, PageBuilder}
 import utils.Fixtures._
 
 import scala.concurrent.Future
 
-class GeneratePdfControllerSpec extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with OneAppPerSuite {
+class GeneratePdfControllerSpec extends UnitSpec with ERSFakeApplicationConfig with AuthHelper with OneAppPerSuite {
 
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val mat: Materializer = app.materializer
   implicit lazy val messages: Messages = Messages(Lang("en"), app.injector.instanceOf[MessagesApi])
   implicit val requests: Request[_] = FakeRequest()
 
-  lazy val pdfBuilderMock = mock[ErsReceiptPdfBuilderService]
-  lazy val cache = mock[CacheUtil]
+  lazy val pdfBuilderMock: ErsReceiptPdfBuilderService = mock[ErsReceiptPdfBuilderService]
+  lazy val cache: CacheUtil = mock[CacheUtil]
   lazy val schemeInfo = SchemeInfo("XA1100000000000", DateTime.now, "1", "2016", "EMI", "EMI")
   lazy val rsc = ErsMetaData(schemeInfo, "ipRef", Some("aoRef"), "empRef", Some("agentRef"), Some("sapNumber"))
   lazy val ersSummary = ErsSummary("testbundle", "2", None, DateTime.now, rsc, None, None, None, None, None, None, None, None)
-  lazy val cacheMap = mock[CacheMap]
+  lazy val cacheMap: CacheMap = mock[CacheMap]
 
   "pdf generation conroller" should {
 
     "give a redirect status (to company authentication frontend) on GET if user is not authenticated" in {
+			setUnauthorisedMocks()
       val controller = createController()
       val result = controller.buildPdfForBundle("", "").apply(FakeRequest("GET", ""))
       status(result) shouldBe Status.SEE_OTHER
     }
 
     "give a status OK on GET if user is authenticated" in {
+			setAuthMocks()
       val controller = createController()
       val result = controller.buildPdfForBundle("", "").apply(buildFakeRequestWithSessionIdCSOP("GET"))
-      status(result) shouldBe Status.SEE_OTHER
+      status(result) shouldBe Status.OK
     }
 
     "direct to errors page if fetch all res pdf throws exception" in {
@@ -108,6 +111,7 @@ class GeneratePdfControllerSpec extends UnitSpec with ERSFakeApplicationConfig w
 
     override val cacheUtil: CacheUtil = cache
     override val pdfBuilderService: ErsReceiptPdfBuilderService = pdfBuilderMock
+    override val authConnector: PlayAuthConnector = mockAuthConnector
     val byteArrayOutputStream = mock[ByteArrayOutputStream]
 
     val callbackData = UploadedSuccessfully("name", "downloadUrl")
@@ -115,6 +119,7 @@ class GeneratePdfControllerSpec extends UnitSpec with ERSFakeApplicationConfig w
     val csvFilesCallbackList = UpscanCsvFilesCallbackList(List(csvFilesCallBack))
 
     when(pdfBuilderMock.createPdf(any[ErsContentsStreamer], any[ErsSummary], any(), any())(any())).thenReturn(byteArrayOutputStream)
+    when(cache.fetch[RequestObject](any())(any(), any(), any(), any())).thenReturn(Future.successful(ersRequestObject))
     when(cache.fetch[ErsMetaData](refEq(CacheUtil.ersMetaData), anyString())(any(), any(), any())).thenReturn(Future.successful(rsc))
     when(cacheMap.getEntry[UpscanCsvFilesCallbackList](refEq(CacheUtil.CHECK_CSV_FILES))(any()))
       .thenReturn(Future.successful(Some(csvFilesCallbackList)))

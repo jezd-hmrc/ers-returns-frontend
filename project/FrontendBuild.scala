@@ -33,6 +33,7 @@ private object AppDependencies {
     "uk.gov.hmrc" %% "domain" % domainVersion,
     "uk.gov.hmrc" %% "http-caching-client" % httpCachingVersion,
     "uk.gov.hmrc" %% "play-language" % "3.4.0",
+		"uk.gov.hmrc" %% "auth-client" % "2.32.0-play-25",
     "org.scala-lang.modules" %% "scala-parser-combinators" % scalaParserCombinatorsVersion,
     "org.apache.pdfbox" % "pdfbox" % pdfboxVersion,
     "org.apache.pdfbox" % "xmpbox" % xmpboxVersion
@@ -52,7 +53,7 @@ private object AppDependencies {
         "org.pegdown" % "pegdown" % pegdownVersion % scope,
         "org.jsoup" % "jsoup" % jsoupVersion % scope,
         "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
-        "org.mockito" % "mockito-core" % mockitoCoreVersion % scope,
+        "org.mockito" % "mockito-core" % "3.1.0" % scope,
         "com.github.tomakehurst" % "wiremock-standalone" % "2.25.1" % scope
       )
     }.test

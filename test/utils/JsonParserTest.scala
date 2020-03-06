@@ -26,7 +26,7 @@ class JsonParserTest extends UnitSpec with ERSFakeApplicationConfig with Mockito
 			val schemeRef = "AA0000000000000"
 			val schemeType = "CSOP"
 			val taxYear = "2014/15"
-			val submissionType = "EOY-RETURN"	
+			val submissionType = "EOY-RETURN"
 			val result = JsonParser.getSubmissionJson(schemeRef, schemeType, taxYear, submissionType)
 			val schemeReference = (result \ "ERSSubmission" \ "schemeReference").as[String]
 			schemeReference shouldBe "AA0000000000000"

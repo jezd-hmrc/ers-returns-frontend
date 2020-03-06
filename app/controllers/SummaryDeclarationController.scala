@@ -41,7 +41,7 @@ trait SummaryDeclarationController extends ERSReturnBaseController with Authenti
   val cacheUtil: CacheUtil
   val ersConnector: ErsConnector
 
-  def summaryDeclarationPage(): Action[AnyContent] = AuthorisedForAsync() {
+  def summaryDeclarationPage(): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
         cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
@@ -49,7 +49,7 @@ trait SummaryDeclarationController extends ERSReturnBaseController with Authenti
         }
   }
 
-  def showSummaryDeclarationPage(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def showSummaryDeclarationPage(requestObject: RequestObject)(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     cacheUtil.fetchAll(requestObject.getSchemeReference).flatMap { all =>
       val schemeOrganiser: SchemeOrganiserDetails = all.getEntry[SchemeOrganiserDetails](CacheUtil.SCHEME_ORGANISER_CACHE).get
       val groupSchemeInfo: GroupSchemeInfo = all.getEntry[GroupSchemeInfo](CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER).getOrElse(new GroupSchemeInfo(None, None))
@@ -104,7 +104,7 @@ trait SummaryDeclarationController extends ERSReturnBaseController with Authenti
   def getCompDetails(cacheMap: CacheMap): CompanyDetailsList =
     cacheMap.getEntry[CompanyDetailsList](CacheUtil.GROUP_SCHEME_COMPANIES).getOrElse(CompanyDetailsList(List[CompanyDetails]()))
 
-  def getGlobalErrorPage(implicit request: Request[_], messages: Messages) = Ok(views.html.global_error(
+  def getGlobalErrorPage(implicit request: Request[_], messages: Messages): Result = Ok(views.html.global_error(
     messages("ers.global_errors.title"),
     messages("ers.global_errors.heading"),
     messages("ers.global_errors.message"))(request, messages))

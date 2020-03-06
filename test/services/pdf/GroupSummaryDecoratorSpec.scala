@@ -16,7 +16,7 @@
 
 package services.pdf
 
-import org.mockito.{Matchers, Mock}
+import org.mockito.{ArgumentMatchers, Mock}
 import org.scalatest.mockito.MockitoSugar
 import uk.gov.hmrc.play.test.UnitSpec
 import org.mockito.Mockito._
@@ -42,30 +42,30 @@ class GroupSummaryDecoratorSpec extends UnitSpec with MockitoSugar  {
       decorator.decorate(streamer)
 
       verify(streamer, VerificationModeFactory.times(0)).drawText(
-        org.mockito.Matchers.eq("title": String), org.mockito.Matchers.eq(1.0F: Float))(Matchers.any())
-      verify(streamer, VerificationModeFactory.times(0)).drawText(org.mockito.Matchers.eq("": String), org.mockito.Matchers.eq(3.0F: Float))(Matchers.any())
+        ArgumentMatchers.eq("title": String), ArgumentMatchers.eq(1.0F: Float))(ArgumentMatchers.any())
+      verify(streamer, VerificationModeFactory.times(0)).drawText(ArgumentMatchers.eq("": String), ArgumentMatchers.eq(3.0F: Float))(ArgumentMatchers.any())
 
     }
     "add title to section" in {
       val streamer = mock[ErsContentsStreamer]
       decorator.decorate(streamer)
 
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("title": String), org.mockito.Matchers.eq(1.0F: Float))(Matchers.any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(ArgumentMatchers.eq("title": String), ArgumentMatchers.eq(1.0F: Float))(ArgumentMatchers.any())
      }
 
     "add company name to section" in {
       val streamer = mock[ErsContentsStreamer]
       decorator.decorate(streamer)
 
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("testCompany": String), org.mockito.Matchers.eq(2.0F: Float))(Matchers.any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(ArgumentMatchers.eq("testCompany": String), ArgumentMatchers.eq(2.0F: Float))(ArgumentMatchers.any())
      }
 
     "add block spacer at the end of the section" in {
       val streamer = mock[ErsContentsStreamer]
       decorator.decorate(streamer)
 
-      verify(streamer, VerificationModeFactory.times(3)).drawText(org.mockito.Matchers.eq("": String), org.mockito.Matchers.eq(3.0F: Float))(Matchers.any())
-      verify(streamer, VerificationModeFactory.times(2)).drawText(org.mockito.Matchers.eq("": String), org.mockito.Matchers.eq(4.0F: Float))(Matchers.any())
+      verify(streamer, VerificationModeFactory.times(3)).drawText(ArgumentMatchers.eq("": String), ArgumentMatchers.eq(3.0F: Float))(ArgumentMatchers.any())
+      verify(streamer, VerificationModeFactory.times(2)).drawText(ArgumentMatchers.eq("": String), ArgumentMatchers.eq(4.0F: Float))(ArgumentMatchers.any())
       verify(streamer, VerificationModeFactory.times(1)).drawLine()
 
     }

@@ -18,7 +18,7 @@ package controllers
 
 import akka.stream.Materializer
 import connectors.ErsConnector
-import org.mockito.Matchers._
+import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
@@ -29,13 +29,14 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.Request
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import uk.gov.hmrc.auth.core.PlayAuthConnector
 import uk.gov.hmrc.play.test.UnitSpec
-import utils.{ERSFakeApplicationConfig, Fixtures}
+import utils.{AuthHelper, CacheUtil, ERSFakeApplicationConfig, Fixtures}
 
 import scala.concurrent.Future
 import uk.gov.hmrc.http.HttpResponse
 
-class SubmissionDataControllerSpec extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with OneAppPerSuite {
+class SubmissionDataControllerSpec extends UnitSpec with ERSFakeApplicationConfig with AuthHelper with OneAppPerSuite {
 
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val mat: Materializer = app.materializer
@@ -43,8 +44,10 @@ class SubmissionDataControllerSpec extends UnitSpec with ERSFakeApplicationConfi
 
   "calling createSchemeInfoFromURL" should {
 
-    val submissionDataController: SubmissionDataController = new SubmissionDataController {
+    lazy val submissionDataController: SubmissionDataController = new SubmissionDataController {
       override val ersConnector: ErsConnector = mock[ErsConnector]
+			override val authConnector: PlayAuthConnector = mockAuthConnector
+      override val cacheUtil: CacheUtil = CacheUtil
     }
 
     "return correct json if all parameters are given in request" in {
@@ -71,11 +74,14 @@ class SubmissionDataControllerSpec extends UnitSpec with ERSFakeApplicationConfi
   }
 
   "calling retrieveSubmissionData" should {
-    val submissionDataController: SubmissionDataController = new SubmissionDataController {
+    lazy val submissionDataController: SubmissionDataController = new SubmissionDataController {
       override val ersConnector: ErsConnector = mock[ErsConnector]
+			override val authConnector: PlayAuthConnector = mockAuthConnector
+      override val cacheUtil: CacheUtil = CacheUtil
     }
 
     "redirect to login page if user is not authenticated" in {
+			setUnauthorisedMocks()
       val result = submissionDataController.retrieveSubmissionData()(Fixtures.buildFakeRequestWithSessionIdCSOP("GET"))
       status(result) shouldBe SEE_OTHER
     }
@@ -85,69 +91,54 @@ class SubmissionDataControllerSpec extends UnitSpec with ERSFakeApplicationConfi
 
     val mockErsConnector: ErsConnector = mock[ErsConnector]
 
-    "returns NOT_FOUND if not all parameters are given" in {
-      reset(mockErsConnector)
-      val submissionDataController: SubmissionDataController = new SubmissionDataController {
-        override val ersConnector: ErsConnector = mockErsConnector
+		class Setup(obj: Option[JsObject] = None) extends SubmissionDataController {
+			override val ersConnector: ErsConnector = mockErsConnector
+			override val authConnector: PlayAuthConnector = mockAuthConnector
+			override def createSchemeInfoFromURL(request: Request[Any]): Option[JsObject] = obj
 
-        override def createSchemeInfoFromURL(request: Request[Any]): Option[JsObject] = None
-      }
+      override val cacheUtil: CacheUtil = CacheUtil //TODO
+    }
+
+    "returns NOT_FOUND if not all parameters are given" in {
+      lazy val submissionDataController: SubmissionDataController = new Setup()
       val result = submissionDataController.getRetrieveSubmissionData()(Fixtures.buildFakeUser, FakeRequest(), hc)
       status(result) shouldBe NOT_FOUND
     }
 
     "returns OK if all parameters are given and retrieveSubmissionData is successful" in {
-      reset(mockErsConnector)
-      val submissionDataController: SubmissionDataController = new SubmissionDataController {
-        override val ersConnector: ErsConnector = mockErsConnector
+			reset(mockErsConnector)
+			lazy val submissionDataController: SubmissionDataController = new Setup(Some(mock[JsObject]))
 
-        override def createSchemeInfoFromURL(request: Request[Any]): Option[JsObject] = Some(mock[JsObject])
-      }
-      when(
-        mockErsConnector.retrieveSubmissionData(any[JsObject]())(any(), any())
-      ).thenReturn(
-        Future.successful(HttpResponse(OK, Some(Json.obj())))
-      )
+      when(mockErsConnector.retrieveSubmissionData(any[JsObject]())(any(), any()))
+				.thenReturn(Future.successful(HttpResponse(OK, Some(Json.obj()))))
+
       val result = submissionDataController.getRetrieveSubmissionData()(Fixtures.buildFakeUser, FakeRequest(), hc)
       status(result) shouldBe OK
       bodyOf(result).contains("Retrieve Failure") shouldBe false
     }
 
     "shows error page if all parameters are given but retrieveSubmissionData fails" in {
-      reset(mockErsConnector)
-      val submissionDataController: SubmissionDataController = new SubmissionDataController {
-        override val ersConnector: ErsConnector = mockErsConnector
+			reset(mockErsConnector)
+			lazy val submissionDataController: SubmissionDataController = new Setup(Some(mock[JsObject]))
 
-        override def createSchemeInfoFromURL(request: Request[Any]): Option[JsObject] = Some(mock[JsObject])
-      }
-      when(
-        mockErsConnector.retrieveSubmissionData(any[JsObject]())(any(), any())
-      ).thenReturn(
-        Future.successful(HttpResponse(INTERNAL_SERVER_ERROR))
-      )
+			when(mockErsConnector.retrieveSubmissionData(any[JsObject]())(any(), any()))
+				.thenReturn(Future.successful(HttpResponse(INTERNAL_SERVER_ERROR)))
+
       val result = submissionDataController.getRetrieveSubmissionData()(Fixtures.buildFakeUser, FakeRequest(), hc)
       status(result) shouldBe OK
       bodyOf(result).contains(messages("ers.global_errors.message")) shouldBe true
     }
 
     "shows error page if all parameters are given but retrieveSubmissionData throws exception" in {
-      reset(mockErsConnector)
-      val submissionDataController: SubmissionDataController = new SubmissionDataController {
-        override val ersConnector: ErsConnector = mockErsConnector
+			reset(mockErsConnector)
+			lazy val submissionDataController: SubmissionDataController = new Setup(Some(mock[JsObject]))
 
-        override def createSchemeInfoFromURL(request: Request[Any]): Option[JsObject] = Some(mock[JsObject])
-      }
-      when(
-        mockErsConnector.retrieveSubmissionData(any[JsObject]())(any(), any())
-      ).thenReturn(
-        Future.failed(new RuntimeException)
-      )
+			when(mockErsConnector.retrieveSubmissionData(any[JsObject]())(any(), any()))
+				.thenReturn(Future.failed(new RuntimeException))
+
       val result = submissionDataController.getRetrieveSubmissionData()(Fixtures.buildFakeUser, FakeRequest(), hc)
       status(result) shouldBe OK
       bodyOf(result).contains(messages("ers.global_errors.message")) shouldBe true
     }
-
   }
-
-
 }

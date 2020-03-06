@@ -18,7 +18,7 @@ package services.pdf
 
 import akka.stream.Materializer
 import models.{TrusteeDetails, TrusteeDetailsList}
-import org.mockito.Matchers
+import org.mockito.ArgumentMatchers
 import org.mockito.Mockito._
 import org.mockito.internal.verification.VerificationModeFactory
 import org.scalatest.mockito.MockitoSugar
@@ -45,7 +45,7 @@ class TrusteeDecoratorSpec extends UnitSpec with MockitoSugar with ERSFakeApplic
       val streamer = mock[ErsContentsStreamer]
       decorator.decorate(streamer)
 
-      verify(streamer, VerificationModeFactory.times(2)).drawText(org.mockito.Matchers.eq("": String), org.mockito.Matchers.eq(4.0F: Float))(Matchers.any())
+      verify(streamer, VerificationModeFactory.times(2)).drawText(org.mockito.ArgumentMatchers.eq("": String), org.mockito.ArgumentMatchers.eq(4.0F: Float))(ArgumentMatchers.any())
       verify(streamer, VerificationModeFactory.times(1)).drawLine()
 
     }
@@ -53,13 +53,13 @@ class TrusteeDecoratorSpec extends UnitSpec with MockitoSugar with ERSFakeApplic
     "add title to section" in {
       val streamer = mock[ErsContentsStreamer]
       decorator.decorate(streamer)
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq(Messages("ers_trustee_summary.title"): String), org.mockito.Matchers.eq(1.0F: Float))(Matchers.any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.ArgumentMatchers.eq(Messages("ers_trustee_summary.title"): String), org.mockito.ArgumentMatchers.eq(1.0F: Float))(ArgumentMatchers.any())
     }
 
     "add trustee name to the section" in {
       val streamer = mock[ErsContentsStreamer]
       decorator.decorate(streamer)
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.Matchers.eq("name": String), org.mockito.Matchers.eq(2.0F: Float))(Matchers.any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.ArgumentMatchers.eq("name": String), org.mockito.ArgumentMatchers.eq(2.0F: Float))(ArgumentMatchers.any())
     }
 
     "not add trustee names if list is empty" in {
@@ -67,7 +67,7 @@ class TrusteeDecoratorSpec extends UnitSpec with MockitoSugar with ERSFakeApplic
       val streamer = mock[ErsContentsStreamer]
       decorator.decorate(streamer)
 
-      verify(streamer, VerificationModeFactory.times(0)).drawText(org.mockito.Matchers.eq(Messages("ers_trustee_summary.title"): String), org.mockito.Matchers.eq(2.0F: Float))(Matchers.any())
+      verify(streamer, VerificationModeFactory.times(0)).drawText(org.mockito.ArgumentMatchers.eq(Messages("ers_trustee_summary.title"): String), org.mockito.ArgumentMatchers.eq(2.0F: Float))(ArgumentMatchers.any())
     }
   }
 }

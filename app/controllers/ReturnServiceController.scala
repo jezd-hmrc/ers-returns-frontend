@@ -58,22 +58,22 @@ trait ReturnServiceController extends ERSReturnBaseController with Authenticator
   val accessThreshold: Int
   val metrics: Metrics
 
-  def cacheParams(ersRequestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def cacheParams(ersRequestObject: RequestObject)(implicit request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
 
     implicit val formatRSParams: OFormat[RequestObject] = Json.format[RequestObject]
 
     Logger.debug("Meta Data created --> " + ersRequestObject)
     Logger.debug("Request Object created --> " + ersRequestObject)
     cacheUtil.cache(CacheUtil.ersMetaData, ersRequestObject.toErsMetaData, ersRequestObject.getSchemeReference).flatMap { _ =>
-      Logger.debug("Meta Data Cached --> " + ersRequestObject);
-      cacheUtil.cache(CacheUtil.ersRequestObject, ersRequestObject).map {
+      Logger.info(s"[ReturnServiceController][cacheParams]Meta Data Cached --> ${ersRequestObject.toErsMetaData}")
+      cacheUtil.cache(CacheUtil.ersRequestObject, ersRequestObject) flatMap {
         _ => {
-          Logger.debug("Request Object Cached --> " + ersRequestObject);
-          showInitialStartPage(ersRequestObject)(authContext, request, hc)
+          Logger.info(s"[ReturnServiceController][cacheParams] Request Object Cached -->  $ersRequestObject")
+					Future.successful(showInitialStartPage(ersRequestObject)(request, hc))
         }
     }
     } recover { case e: Exception =>
-      Logger.warn(s"Caught exception ${e.getMessage}", e)
+      Logger.warn(s"[ReturnServiceController][cacheParams] Caught exception ${e.getMessage}", e)
       getGlobalErrorPage
     }
   }
@@ -89,41 +89,43 @@ trait ReturnServiceController extends ERSReturnBaseController with Authenticator
     val ts: Option[String] = request.getQueryString("ts")
     val hmac: Option[String] = request.getQueryString("hmac")
     val reqObj = RequestObject(aoRef, taxYear, ersSchemeRef, schemeName, schemeType, agentRef, empRef, ts, hmac)
-    Logger.warn(s"Request Parameters:  ${reqObj.toString}")
+    Logger.info(s"Request Parameters:  ${reqObj.toString}")
     reqObj
   }
 
-  def hmacCheck(): Action[AnyContent] = AuthenticatedBy(ERSGovernmentGateway, pageVisibility = AllowAll).async {
-    implicit user =>
+  def hmacCheck(): Action[AnyContent] = Action.async {
       implicit request =>
-        Logger.warn("HMAC Check Authenticated")
-        if (request.getQueryString("ersSchemeRef").getOrElse("") == "") {
-          Logger.warn("Missing SchemeRef in URL")
-          Future(getGlobalErrorPage)
-        } else {
-          if (HMACUtil.isHmacAndTimestampValid(getRequestParameters(request))) {
-            Logger.warn("HMAC Check Valid")
-            try {
-              cacheParams(getRequestParameters(request))
-            } catch {
-              case e: Throwable => Logger.warn(s"Caught exception ${e.getMessage}", e)
-                Future(getGlobalErrorPage)
-            }
-          } else {
-            Logger.warn("HMAC Check Invalid")
-            showUnauthorisedPage(request)
-          }
-        }
+				authorisedByGovGateway {
+					implicit user =>
+					Logger.info("HMAC Check Authenticated")
+					if (request.getQueryString("ersSchemeRef").getOrElse("") == "") {
+						Logger.warn("Missing SchemeRef in URL")
+						Future(getGlobalErrorPage)
+					} else {
+						if (HMACUtil.isHmacAndTimestampValid(getRequestParameters(request))) {
+							Logger.info("HMAC Check Valid")
+							try {
+								cacheParams(getRequestParameters(request))
+							} catch {
+								case e: Throwable => Logger.warn(s"Caught exception ${e.getMessage}", e)
+									Future(getGlobalErrorPage)
+							}
+						} else {
+							Logger.warn("HMAC Check Invalid")
+							showUnauthorisedPage(request)
+						}
+					}
+				}
   }
 
-  def showInitialStartPage(requestObject: RequestObject)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Result = {
-
+  def showInitialStartPage(requestObject: RequestObject)
+													(implicit request: Request[AnyRef], hc: HeaderCarrier): Result = {
     val sessionData = s"${requestObject.getSchemeId} - ${requestObject.getPageTitle}"
     Ok(views.html.start(requestObject)).
       withSession(request.session + (screenSchemeInfo -> sessionData) - BUNDLE_REF - DATE_TIME_SUBMITTED)
   }
 
-  def startPage(): Action[AnyContent] = AuthenticatedBy(ERSGovernmentGateway, pageVisibility = AllowAll).async {
+  def startPage(): Action[AnyContent] = authorisedByGG {
     implicit user =>
       implicit request =>
         cacheUtil.fetch[RequestObject](CacheUtil.ersRequestObject).map{
@@ -136,7 +138,7 @@ trait ReturnServiceController extends ERSReturnBaseController with Authenticator
     Future.successful(Ok(views.html.unauthorised()(request, context)))
   }
 
-  def getGlobalErrorPage(implicit request: Request[_], messages: Messages) = Ok(views.html.global_error(
+  def getGlobalErrorPage(implicit request: Request[_], messages: Messages): Result = Ok(views.html.global_error(
     messages("ers.global_errors.title"),
     messages("ers.global_errors.heading"),
     messages("ers.global_errors.message"))(request, messages))

@@ -16,82 +16,64 @@
 
 package controllers
 
-import models.{ErsMetaData, RequestObject}
-import play.api.libs.json.Json
+import controllers.auth.AuthFunctionality
+import models.{ERSAuthData, ErsMetaData, RequestObject}
+import play.api.Logger
+import play.api.libs.json.{Json, OFormat}
 import play.api.mvc._
 import uk.gov.hmrc.domain.EmpRef
-import uk.gov.hmrc.play.frontend.auth._
-import uk.gov.hmrc.play.frontend.auth.connectors.domain.{Accounts, EpayeAccount}
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.HeaderCarrierConverter
 import utils.CacheUtil
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.HeaderCarrierConverter
 
 
-trait Authenticator extends Actions with ErsConstants {
-  private val cacheUtil: CacheUtil = CacheUtil
-  private type AsyncUserRequest = AuthContext => Request[AnyContent] => Future[Result]
-  private type UserRequest = AuthContext => Request[AnyContent] => Result
+trait Authenticator extends AuthFunctionality with ErsConstants {
+	val cacheUtil: CacheUtil
+	private type AsyncUserRequest = ERSAuthData => Request[AnyContent] => Future[Result]
+	private type UserRequest = ERSAuthData => Request[AnyContent] => Result
 
-  def AuthorisedForAsync()(body: AsyncUserRequest): Action[AnyContent] = {
-    AuthorisedFor(ERSRegime, pageVisibility = GGConfidence).async {
-      implicit user =>
-        implicit request => {
-          implicit val hc = HeaderCarrierConverter.fromHeadersAndSession(request.headers, Some(request.session))
-          FilterAgentsWrapperAsync(user, body)
-        }
-    }
-  }
+	def authorisedForAsync()(body: AsyncUserRequest): Action[AnyContent] = Action.async {
+		implicit request =>
+			implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers, Some(request.session))
+			authoriseFor { implicit user =>
+				filterAgentsWrapperAsync(user, body)
+			}
+	}
 
-  def AuthorisedFor(body: UserRequest): Action[AnyContent] = {
-    AuthorisedFor(ERSRegime, pageVisibility = GGConfidence).async {
-      implicit user =>
-        implicit request =>
-          implicit val hc = HeaderCarrierConverter.fromHeadersAndSession(request.headers, Some(request.session))
-          FilterAgentsWrapper(user, body)
-    }
-  }
+	def authorisedByGG(body: AsyncUserRequest): Action[AnyContent] = Action.async {
+		implicit request =>
+			implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers, Some(request.session))
+			authorisedByGovGateway { implicit user =>
+				filterAgentsWrapperAsync(user, body)
+			}
+	}
 
-  def FilterAgentsWrapper(authContext: AuthContext, body: UserRequest)(implicit hc: HeaderCarrier, request: Request[AnyContent]): Future[Result] = {
-    implicit val formatRSParams = Json.format[ErsMetaData]
-    if (authContext.principal.accounts.agent.isDefined) {
+	def filterAgentsWrapperAsync(authContext: ERSAuthData, body: AsyncUserRequest)
+															(implicit hc: HeaderCarrier, request: Request[AnyContent]): Future[Result] = {
+		implicit val formatRSParams: OFormat[ErsMetaData] = Json.format[ErsMetaData]
+		if (authContext.isAgent) {
+			for {
+				requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
+				all <- cacheUtil.fetch[ErsMetaData](cacheUtil.ersMetaData, requestObject.getSchemeReference)
+				result <- body(delegationModelUser(all, authContext: ERSAuthData))(request)
+			} yield {
+				result
+			}
+		} else {
+			val alteredAuthContext: ERSAuthData = authContext.getEnrolment("IR-PAYE") map { enrol =>
+				authContext.copy(empRef = EmpRef(enrol.identifiers.head.value, enrol.identifiers(1).value))
+			} getOrElse authContext
 
-      for {
-        requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
-        all           <- cacheUtil.fetch[ErsMetaData](cacheUtil.ersMetaData, requestObject.getSchemeReference)
-      } yield {
-        body(delegationModelUser(all, authContext: AuthContext))(request)
-      }
+			body(alteredAuthContext)(request)
+		}
+	}
 
-    } else {
-      Future {body(authContext)(request)}
-    }
-  }
-
-  def FilterAgentsWrapperAsync(authContext: AuthContext, body: AsyncUserRequest)
-                              (implicit hc: HeaderCarrier, request: Request[AnyContent]): Future[Result] = {
-    implicit val formatRSParams = Json.format[ErsMetaData]
-    if (authContext.principal.accounts.agent.isDefined) {
-
-      for {
-        requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
-        all           <- cacheUtil.fetch[ErsMetaData](cacheUtil.ersMetaData, requestObject.getSchemeReference)
-        result        <- body(delegationModelUser(all, authContext: AuthContext))(request)
-      } yield {
-        result
-      }
-    } else {
-      body(authContext)(request)
-    }
-  }
-
-  def delegationModelUser(metaData: ErsMetaData, authContext: AuthContext): AuthContext = {
-    val empRef: String = metaData.empRef
-    val twoPartKey = empRef.split('/')
-    val accounts = Accounts(agent = authContext.principal.accounts.agent,
-      epaye = Some(EpayeAccount(s"/epaye/$empRef", EmpRef(twoPartKey(0), twoPartKey(1)))))
-    AuthContext(authContext.user, Principal(authContext.principal.name, accounts), authContext.attorney, None, None, None)
-  }
+		def delegationModelUser(metaData: ErsMetaData, authContext: ERSAuthData): ERSAuthData = {
+			val twoPartKey = metaData.empRef.split('/')
+			authContext.copy(empRef = EmpRef(twoPartKey(0), twoPartKey(1)))
+		}
 }
+

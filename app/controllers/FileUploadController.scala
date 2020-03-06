@@ -30,6 +30,7 @@ import services.{SessionService, UpscanService}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.frontend.controller.FrontendController
+import uk.gov.hmrc.auth.core.PlayAuthConnector
 import utils._
 import views.html.upscan_ods_file_upload
 
@@ -47,9 +48,9 @@ trait FileUploadController extends FrontendController with Authenticator with Le
   implicit val actorSystem: ActorSystem = current.actorSystem
 
 
-  def uploadFilePage(): Action[AnyContent] = AuthorisedForAsync() {
-    implicit request =>
-      implicit user =>
+  def uploadFilePage(): Action[AnyContent] = authorisedForAsync() {
+    implicit user =>
+      implicit request =>
         (for {
           requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
           response <- upscanService.getUpscanFormDataOds()
@@ -58,12 +59,12 @@ trait FileUploadController extends FrontendController with Authenticator with Le
           Ok(upscan_ods_file_upload(requestObject, response))
         }) recover{
           case e: Throwable =>
-            logger.error(s"showUploadFilePage failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
+            logger.error(s"showUploadFilePage failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.", e)
             getGlobalErrorPage
         }
   }
 
-  def success(): Action[AnyContent] = AuthorisedForAsync() {
+  def success(): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
         val futureRequestObject: Future[RequestObject] = cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
@@ -100,7 +101,7 @@ trait FileUploadController extends FrontendController with Authenticator with Le
        }
   }
 
-  def validationResults(): Action[AnyContent] = AuthorisedFor(ERSRegime, pageVisibility = GGConfidence).async {
+  def validationResults(): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
         val futureRequestObject = cacheUtil.fetch[RequestObject](CacheUtil.ersRequestObject)
@@ -129,7 +130,8 @@ trait FileUploadController extends FrontendController with Authenticator with Le
         }
   }
 
-  def handleValidationResponse(callbackData: UploadedSuccessfully, schemeInfo: SchemeInfo)(implicit authContext: AuthContext, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+  def handleValidationResponse(callbackData: UploadedSuccessfully, schemeInfo: SchemeInfo)
+                              (implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     val schemeRef = schemeInfo.schemeRef
     ersConnector.validateFileData(callbackData, schemeInfo).map { res =>
       logger.info(s"validationResults: Response from validator: ${res.status}, timestamp: ${System.currentTimeMillis()}.")
@@ -151,7 +153,7 @@ trait FileUploadController extends FrontendController with Authenticator with Le
     }
   }
 
-  def validationFailure() = AuthorisedFor(ERSRegime, pageVisibility = GGConfidence).async {
+  def validationFailure(): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
         logger.info("validationFailure: Validation Failure: " + (System.currentTimeMillis() / 1000))
@@ -167,17 +169,17 @@ trait FileUploadController extends FrontendController with Authenticator with Le
         }
   }
 
-  def failure() = AuthorisedFor(ERSRegime, pageVisibility = GGConfidence){
+  def failure(): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
         val errorCode = request.getQueryString("errorCode").getOrElse("Unknown")
         val errorMessage = request.getQueryString("errorMessage").getOrElse("Unknown")
         val errorRequestId = request.getQueryString("errorRequestId").getOrElse("Unknown")
         logger.error(s"Upscan Failure. errorCode: $errorCode, errorMessage: $errorMessage, errorRequestId: $errorRequestId")
-        getGlobalErrorPage
+        Future.successful(getGlobalErrorPage)
   }
 
-  def getGlobalErrorPage(implicit request: Request[_], messages: Messages) = Ok(views.html.global_error(
+  def getGlobalErrorPage(implicit request: Request[_], messages: Messages): Result = Ok(views.html.global_error(
     messages("ers.global_errors.title"),
     messages("ers.global_errors.heading"),
     messages("ers.global_errors.message"))(request, messages))
@@ -185,8 +187,8 @@ trait FileUploadController extends FrontendController with Authenticator with Le
 }
 
 object FileUploadController extends FileUploadController {
-  val authConnector = ERSFileValidatorAuthConnector
-  val sessionService = SessionService
+  val authConnector: PlayAuthConnector = ERSFileValidatorAuthConnector
+  val sessionService: SessionService = SessionService
   val ersConnector: ErsConnector = ErsConnector
   override val cacheUtil: CacheUtil = CacheUtil
 }

@@ -19,8 +19,8 @@ package services
 import java.io.ByteArrayOutputStream
 
 import akka.stream.Materializer
-import org.mockito.Matchers
-import org.mockito.Matchers._
+import org.mockito.ArgumentMatchers
+import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.mockito.internal.verification.VerificationModeFactory
 import org.scalatest.BeforeAndAfterEach
@@ -40,11 +40,11 @@ class ErsReceiptPdfBuilderServiceSpec extends UnitSpec with MockitoSugar with Be
   implicit lazy val messages: Messages = Messages(Lang("en"), app.injector.instanceOf[MessagesApi])
 
   def verifyBlankBlock(streamer: ErsContentsStreamer) {
-    verify(streamer, VerificationModeFactory.times(4)).drawText(Matchers.eq("": String), Matchers.eq(36.0F: Float))(Matchers.any())
+    verify(streamer, VerificationModeFactory.times(4)).drawText(ArgumentMatchers.eq("": String), ArgumentMatchers.eq(36.0F: Float))(ArgumentMatchers.any())
   }
 
   def verifyBlankLine(streamer: ErsContentsStreamer) {
-    verify(streamer, VerificationModeFactory.times(4)).drawText(Matchers.eq("": String), Matchers.eq(12.0F: Float))(Matchers.any())
+    verify(streamer, VerificationModeFactory.times(4)).drawText(ArgumentMatchers.eq("": String), ArgumentMatchers.eq(12.0F: Float))(ArgumentMatchers.any())
   }
 
   "ErsReceiptPdfBuilderService" should {
@@ -62,14 +62,14 @@ class ErsReceiptPdfBuilderServiceSpec extends UnitSpec with MockitoSugar with Be
 
       val expectedConfirmationMessage = s"Your ${ContentUtil.getSchemeAbbreviation("emi")} " +
         s"annual return has been submitted for tax year 2014 to 2015."
-      verify(streamer, VerificationModeFactory.times(1)).drawText(Matchers.eq(expectedConfirmationMessage: String), Matchers.eq(16.0F: Float))(Matchers.any())
-      verify(streamer, VerificationModeFactory.times(1)).drawText(Matchers.eq("Scheme name:": String), Matchers.eq(16.0F: Float))(Matchers.any())
-      verify(streamer, VerificationModeFactory.times(1)).drawText(Matchers.eq("My scheme": String), Matchers.eq(12.0F: Float))(Matchers.any())
-      verify(streamer, VerificationModeFactory.times(1)).drawText(Matchers.eq("Reference code:": String), Matchers.eq(16.0F: Float))(Matchers.any())
-      verify(streamer, VerificationModeFactory.times(1)).drawText(Matchers.eq("testbundle": String), Matchers.eq(12.0F: Float))(Matchers.any())
-      verify(streamer, VerificationModeFactory.times(1)).drawText(Matchers.eq("Date and time submitted:": String), Matchers.eq(16.0F: Float))(Matchers.any())
-      verify(streamer, VerificationModeFactory.times(1)).drawText(Matchers.eq("12 August 2016, 4:28PM": String), Matchers.any())(Matchers.any())
-      verify(streamer, VerificationModeFactory.times(4)).drawText(Matchers.eq("": String), Matchers.eq(36.0F: Float))(Matchers.any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(ArgumentMatchers.eq(expectedConfirmationMessage: String), ArgumentMatchers.eq(16.0F: Float))(ArgumentMatchers.any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(ArgumentMatchers.eq("Scheme name:": String), ArgumentMatchers.eq(16.0F: Float))(ArgumentMatchers.any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(ArgumentMatchers.eq("My scheme": String), ArgumentMatchers.eq(12.0F: Float))(ArgumentMatchers.any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(ArgumentMatchers.eq("Reference code:": String), ArgumentMatchers.eq(16.0F: Float))(ArgumentMatchers.any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(ArgumentMatchers.eq("testbundle": String), ArgumentMatchers.eq(12.0F: Float))(ArgumentMatchers.any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(ArgumentMatchers.eq("Date and time submitted:": String), ArgumentMatchers.eq(16.0F: Float))(ArgumentMatchers.any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(ArgumentMatchers.eq("12 August 2016, 4:28PM": String), ArgumentMatchers.any())(ArgumentMatchers.any())
+      verify(streamer, VerificationModeFactory.times(4)).drawText(ArgumentMatchers.eq("": String), ArgumentMatchers.eq(36.0F: Float))(ArgumentMatchers.any())
 
       verifyBlankBlock(streamer)
       verifyBlankLine(streamer)

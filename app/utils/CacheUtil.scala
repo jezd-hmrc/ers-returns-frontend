@@ -156,7 +156,7 @@ trait CacheUtil {
       }
     }
   }
-  
+
 
 
   @throws(classOf[NoSuchElementException])
@@ -175,7 +175,7 @@ trait CacheUtil {
       }
     }
   }
-  
+
   def getAltAmmendsData(schemeRef: String)(implicit hc: HeaderCarrier, ec: ExecutionContext, request: Request[AnyRef]): Future[(Option[AltAmendsActivity], Option[AlterationAmends])] = {
     fetchOption[AltAmendsActivity](CacheUtil.altAmendsActivity, schemeRef).flatMap {
       altamends =>

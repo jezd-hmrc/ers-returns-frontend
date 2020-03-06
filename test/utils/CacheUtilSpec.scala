@@ -21,7 +21,7 @@ import java.util.NoSuchElementException
 import models._
 import models.upscan.UploadedSuccessfully
 import org.joda.time.DateTime
-import org.mockito.Matchers._
+import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.mockito.MockitoSugar
@@ -101,16 +101,14 @@ class CacheUtilSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach w
       result shouldBe altAmends
     }
 
-    "throw NoSuchElementException if value is not found in cache" in {
-      when(
-        mockShortLivedCache.fetchAndGetEntry[JsValue](anyString(), anyString())(any(), any(), any())
-      ).thenReturn(
-        Future.failed(new NoSuchElementException)
-      )
-      intercept[NoSuchElementException] {
-        await(cacheUtil.fetch[AltAmends]("key"))
-      }
-    }
+		"throw NoSuchElementException if value is not found in cache" in {
+			when(mockShortLivedCache.fetchAndGetEntry[JsValue](anyString(), anyString())(any(), any(), any()))
+				.thenReturn(Future.successful(None))
+
+			intercept[NoSuchElementException] {
+				await(cacheUtil.fetch[AltAmends]("key"))
+			}
+		}
 
     "throw Exception if an exception occurs" in {
       when(

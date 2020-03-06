@@ -16,23 +16,17 @@
 
 package controllers
 
-import akka.stream.Materializer
-import connectors.ErsConnector
 import models._
-import org.joda.time.DateTime
-import org.mockito.Matchers.{eq => meq, _}
 import org.mockito.Mockito._
-import org.scalatest.mockito.MockitoSugar
-import org.scalatestplus.play.OneServerPerSuite
-import play.api.Application
+import org.mockito.ArgumentMatchers.{eq => meq, _}
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http.Status
 import play.api.i18n.{Lang, Messages, MessagesApi}
-import play.api.inject.Injector
-import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import play.api.mvc.Request
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import uk.gov.hmrc.auth.core.PlayAuthConnector
 import uk.gov.hmrc.http.cache.client.CacheMap
 import uk.gov.hmrc.play.test.UnitSpec
 import utils.Fixtures.ersRequestObject
@@ -40,57 +34,51 @@ import utils._
 
 import scala.concurrent.Future
 
-class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with OneServerPerSuite {
+class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with GuiceOneAppPerSuite with AuthHelper {
 
-  def injector: Injector = app.injector
-  def messagesApi: MessagesApi = injector.instanceOf[MessagesApi]
+  val messagesApi: MessagesApi = app.injector.instanceOf[MessagesApi]
   implicit val messages: Messages = messagesApi.preferred(Seq(Lang.get("en").get))
   implicit val requests: Request[_] = FakeRequest()
-
-  override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
-  implicit lazy val mat: Materializer = app.materializer
 
   "calling Trustee Details Page" should {
 
     val trusteeList = List(TrusteeDetails("Name", "1 The Street", None, None, None, Some("UK"), None))
+		val groupScheme = GroupSchemeInfo(Some(PageBuilder.OPTION_NO), Some(""))
 
     val failure: Future[Nothing] = Future.failed(new Exception)
 
-    def buildFakeTrusteePageController(groupSchemeActivityRes: Future[GroupSchemeInfo] = Future.successful(GroupSchemeInfo(Some(PageBuilder.OPTION_NO), Some(""))),
+    def buildFakeTrusteePageController(groupSchemeActivityRes: Future[GroupSchemeInfo] = Future.successful(groupScheme),
                                        trusteeDetailsRes: Future[TrusteeDetailsList] = Future.successful(TrusteeDetailsList(trusteeList)),
-                                       cacheRes: Future[CacheMap] = Future.successful(mock[CacheMap])) = new TrusteeController {
+                                       cacheRes: Future[CacheMap] = Future.successful(mock[CacheMap])): TrusteeController = new TrusteeController {
 
-      val schemeInfo = SchemeInfo("XA1100000000000", DateTime.now, "1", "2016", "CSOP 2015/16", "CSOP")
-      val rsc = ErsMetaData(schemeInfo, "ipRef", Some("aoRef"), "empRef", Some("agentRef"), Some("sapNumber"))
-      val ersSummary = ErsSummary("testbundle", "1", None, DateTime.now, rsc, None, None, None, None, None, None, None, None)
-
-      val mockErsConnector: ErsConnector = mock[ErsConnector]
       val mockCacheUtil: CacheUtil = mock[CacheUtil]
       override val cacheUtil: CacheUtil = mockCacheUtil
+			override val authConnector: PlayAuthConnector = mockAuthConnector
 
-      when(
-        mockCacheUtil.fetch[GroupSchemeInfo](refEq(CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER), anyString())(any(), any(), any())
-      ) thenReturn groupSchemeActivityRes
+			when(mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any())).thenReturn(Future.successful(ersRequestObject))
 
-      when(
-        mockCacheUtil.fetch[TrusteeDetailsList](refEq(CacheUtil.TRUSTEES_CACHE), anyString())(any(), any(), any())
-      ) thenReturn trusteeDetailsRes
+			when(mockCacheUtil.fetch[GroupSchemeInfo](matches(CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER), any())(any(), any(), any())
+			) thenReturn groupSchemeActivityRes
 
-      when(
-        mockCacheUtil.cache(refEq(CacheUtil.TRUSTEES_CACHE), anyString(), anyString())(any(), any(), any())
+      when(mockCacheUtil.fetch[TrusteeDetailsList](matches(CacheUtil.TRUSTEES_CACHE), any())(any(), any(), any())
+			) thenReturn trusteeDetailsRes
+
+      when(mockCacheUtil.cache(matches(CacheUtil.TRUSTEES_CACHE), any(), any())(any(), any(), any())
       ) thenReturn cacheRes
     }
 
     "give a redirect status (to company authentication frontend) on GET if user is not authenticated" in {
+			setUnauthorisedMocks()
       val controllerUnderTest = buildFakeTrusteePageController()
       val result = controllerUnderTest.trusteeDetailsPage(10000).apply(FakeRequest("GET", ""))
       status(result) shouldBe Status.SEE_OTHER
     }
 
     "give a status OK on GET if user is authenticated" in {
+			setAuthMocks()
       val controllerUnderTest = buildFakeTrusteePageController()
       val result = controllerUnderTest.trusteeDetailsPage(10000).apply(Fixtures.buildFakeRequestWithSessionIdCSOP("GET"))
-      status(result) shouldBe Status.SEE_OTHER
+      status(result) shouldBe Status.OK
     }
 
     "direct to ers errors page if fetching groupSchemeActivity throws exception" in {
@@ -105,15 +93,17 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
     }
 
     "give a redirect status (to company authentication frontend) on POST if user is not authenticated" in {
+			setUnauthorisedMocks()
       val controllerUnderTest = buildFakeTrusteePageController()
       val result = controllerUnderTest.trusteeDetailsSubmit(10000) apply (FakeRequest("GET", ""))
       status(result) shouldBe Status.SEE_OTHER
     }
 
     "give a status OK on POST if user is authenticated" in {
+			setAuthMocks()
       val controllerUnderTest = buildFakeTrusteePageController()
       val result = controllerUnderTest.trusteeDetailsSubmit(10000) apply (Fixtures.buildFakeRequestWithSessionIdCSOP("GET"))
-      status(result) shouldBe Status.SEE_OTHER
+      status(result) shouldBe Status.OK
     }
 
     "give a OK status and stay on the same page if form errors" in {
@@ -140,7 +130,7 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
       val request = Fixtures.buildFakeRequestWithSessionIdSIP("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
       val result = controllerUnderTest.showTrusteeDetailsSubmit(ersRequestObject, 10000)(Fixtures.buildFakeUser, request, hc)
       status(result) shouldBe Status.SEE_OTHER
-      result.header.headers("Location") shouldBe routes.TrusteeController.trusteeSummaryPage.toString
+      result.header.headers("Location") shouldBe routes.TrusteeController.trusteeSummaryPage().toString
     }
 
     "if no form errors with new trustee (index 10000) and fetch trustee details fails" in {
@@ -150,7 +140,7 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
       val request = Fixtures.buildFakeRequestWithSessionIdSIP("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
       val result = controllerUnderTest.showTrusteeDetailsSubmit(ersRequestObject, 10000)(Fixtures.buildFakeUser, request, hc)
       status(result) shouldBe Status.SEE_OTHER
-      result.header.headers("Location") shouldBe routes.TrusteeController.trusteeSummaryPage.toString
+      result.header.headers("Location") shouldBe routes.TrusteeController.trusteeSummaryPage().toString
     }
 
     "if no form errors and fetch trustee details success for not updating an existing trustee (index 1) " in {
@@ -160,7 +150,7 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
       val request = Fixtures.buildFakeRequestWithSessionIdSIP("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
       val result = controllerUnderTest.showTrusteeDetailsSubmit(ersRequestObject, 1)(Fixtures.buildFakeUser, request, hc)
       status(result) shouldBe Status.SEE_OTHER
-      result.header.headers.get("Location").get shouldBe routes.TrusteeController.trusteeSummaryPage.toString()
+      result.header.headers("Location") shouldBe routes.TrusteeController.trusteeSummaryPage().toString
     }
 
     "if no form errors and fetch trustee details success for updating a trustee (index 0) " in {
@@ -170,7 +160,7 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
       val request = Fixtures.buildFakeRequestWithSessionIdSIP("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
       val result = controllerUnderTest.showTrusteeDetailsSubmit(ersRequestObject, 0)(Fixtures.buildFakeUser, request, hc)
       status(result) shouldBe Status.SEE_OTHER
-      result.header.headers.get("Location").get shouldBe routes.TrusteeController.trusteeSummaryPage.toString()
+      result.header.headers("Location") shouldBe routes.TrusteeController.trusteeSummaryPage().toString
     }
 
   }
@@ -192,21 +182,17 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
     def buildFakeTrusteeController(
                                     trusteeDetailsRes: Future[TrusteeDetailsList] = Future.successful(TrusteeDetailsList(trusteeList)),
                                     cacheRes: Future[CacheMap] = Future.successful(mock[CacheMap]),
-                                    requestObjectRes: Future[RequestObject] = Future.successful(ersRequestObject)) = new TrusteeController {
+                                    requestObjectRes: Future[RequestObject] = Future.successful(ersRequestObject)): TrusteeController = new TrusteeController {
 
-      val schemeInfo = SchemeInfo("XA1100000000000", DateTime.now, "1", "2016", "CSOP 2015/16", "CSOP")
-      val rsc = ErsMetaData(schemeInfo, "ipRef", Some("aoRef"), "empRef", Some("agentRef"), Some("sapNumber"))
-      val ersSummary = ErsSummary("testbundle", "1", None, DateTime.now, rsc, None, None, None, None, None, None, None, None)
-
-      val mockErsConnector: ErsConnector = mock[ErsConnector]
       override val cacheUtil: CacheUtil = mock[CacheUtil]
+			override val authConnector: PlayAuthConnector = mockAuthConnector
 
-      when(
-        cacheUtil.fetch[TrusteeDetailsList](refEq(CacheUtil.TRUSTEES_CACHE), anyString())(any(), any(), any())
+			when(
+        cacheUtil.fetch[TrusteeDetailsList](refEq(CacheUtil.TRUSTEES_CACHE), any())(any(), any(), any())
       ) thenReturn trusteeDetailsRes
 
       when(
-        cacheUtil.cache(refEq(CacheUtil.TRUSTEES_CACHE), anyString(), anyString())(any(), any(), any())
+        cacheUtil.cache(refEq(CacheUtil.TRUSTEES_CACHE), any(), any())(any(), any(), any())
       ) thenReturn cacheRes
 
       when(
@@ -215,12 +201,14 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
     }
 
     "give a redirect status (to company authentication frontend) on GET if user is not authenticated" in {
+			setUnauthorisedMocks()
       val controllerUnderTest = buildFakeTrusteeController()
       val result = controllerUnderTest.deleteTrustee(10000).apply(FakeRequest("GET", ""))
       status(result) shouldBe Status.SEE_OTHER
     }
 
     "give a status OK on GET if user is authenticated" in {
+			setAuthMocks()
       val controllerUnderTest = buildFakeTrusteeController()
       val result = controllerUnderTest.deleteTrustee(10000).apply(Fixtures.buildFakeRequestWithSessionIdCSOP("GET"))
       status(result) shouldBe Status.SEE_OTHER
@@ -267,16 +255,13 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
                                     trusteeDetailsRes: Future[TrusteeDetailsList] = Future.successful(TrusteeDetailsList(trusteeList)),
                                     cacheRes: Future[CacheMap] = Future.successful(mock[CacheMap]),
                                     requestObjectRes: Future[RequestObject] = Future.successful(ersRequestObject)
-                                  ) = new TrusteeController {
+                                  ): TrusteeController = new TrusteeController {
 
-      val schemeInfo = SchemeInfo("XA1100000000000", DateTime.now, "1", "2016", "CSOP 2015/16", "CSOP")
-      val rsc = ErsMetaData(schemeInfo, "ipRef", Some("aoRef"), "empRef", Some("agentRef"), Some("sapNumber"))
-      val ersSummary = ErsSummary("testbundle", "1", None, DateTime.now, rsc, None, None, None, None, None, None, None, None)
-      val mockErsConnector: ErsConnector = mock[ErsConnector]
-      val mockCacheUtil: CacheUtil = mock[CacheUtil]
+			val mockCacheUtil: CacheUtil = mock[CacheUtil]
       override val cacheUtil: CacheUtil = mockCacheUtil
+			override val authConnector: PlayAuthConnector = mockAuthConnector
 
-      when(
+			when(
         mockCacheUtil.fetch[GroupSchemeInfo](refEq(CacheUtil.GROUP_SCHEME_CACHE_CONTROLLER), anyString())(any(), any(), any())
       ) thenReturn groupSchemeActivityRes
       when(
@@ -292,15 +277,17 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
     }
 
     "give a redirect status (to company authentication frontend) on GET if user is not authenticated" in {
+			setUnauthorisedMocks()
       val controllerUnderTest = buildFakeTrusteeController()
       val result = controllerUnderTest.editTrustee(10000).apply(FakeRequest("GET", ""))
       status(result) shouldBe Status.SEE_OTHER
     }
 
     "give a status OK on GET if user is authenticated" in {
+			setAuthMocks()
       val controllerUnderTest = buildFakeTrusteeController()
       val result = controllerUnderTest.editTrustee(10000).apply(Fixtures.buildFakeRequestWithSessionIdCSOP("GET"))
-      status(result) shouldBe Status.SEE_OTHER
+      status(result) shouldBe Status.OK
     }
 
     "direct to ers errors page if fetching group scheme activity fails" in {
@@ -334,9 +321,10 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
 
   "calling replace trustee" should {
 
-    val controllerUnderTest = new TrusteeController {
+    def controllerUnderTest: TrusteeController = new TrusteeController {
       override val cacheUtil: CacheUtil = mock[CacheUtil]
-    }
+			override val authConnector: PlayAuthConnector = mockAuthConnector
+		}
 
     "replace a trustee and keep the other trustees" when {
 
@@ -419,16 +407,13 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
                                     trusteeDetailsRes: Future[TrusteeDetailsList] = Future.successful(TrusteeDetailsList(trusteeList)),
                                     cacheRes: Future[CacheMap] = Future.successful(mock[CacheMap]),
                                     requestObjectRes: Future[RequestObject] = Future.successful(ersRequestObject)
-                                  ) = new TrusteeController {
+                                  ): TrusteeController = new TrusteeController {
 
-      val schemeInfo = SchemeInfo("XA1100000000000", DateTime.now, "1", "2016", "CSOP 2015/16", "CSOP")
-      val rsc = ErsMetaData(schemeInfo, "ipRef", Some("aoRef"), "empRef", Some("agentRef"), Some("sapNumber"))
-      val ersSummary = ErsSummary("testbundle", "1", None, DateTime.now, rsc, None, None, None, None, None, None, None, None)
-      val mockErsConnector: ErsConnector = mock[ErsConnector]
       val mockCacheUtil: CacheUtil = mock[CacheUtil]
       override val cacheUtil: CacheUtil = mockCacheUtil
+			override val authConnector: PlayAuthConnector = mockAuthConnector
 
-      when(
+			when(
         mockCacheUtil.fetch[TrusteeDetailsList](refEq(CacheUtil.TRUSTEES_CACHE), anyString())(any(), any(), any())
       ) thenReturn trusteeDetailsRes
 
@@ -442,15 +427,17 @@ class TrusteeControllerTest extends UnitSpec with ERSFakeApplicationConfig with 
     }
 
     "give a redirect status (to company authentication frontend) on GET if user is not authenticated" in {
+			setUnauthorisedMocks()
       val controllerUnderTest = buildFakeTrusteeController()
       val result = controllerUnderTest.trusteeSummaryPage().apply(FakeRequest("GET", ""))
       status(result) shouldBe Status.SEE_OTHER
     }
 
     "give a status OK on GET if user is authenticated" in {
+			setAuthMocks()
       val controllerUnderTest = buildFakeTrusteeController()
       val result = controllerUnderTest.trusteeSummaryPage().apply(Fixtures.buildFakeRequestWithSessionIdCSOP("GET"))
-      status(result) shouldBe Status.SEE_OTHER
+      status(result) shouldBe Status.OK
     }
 
     "direct to ers errors page if fetching trustee details list fails" in {
