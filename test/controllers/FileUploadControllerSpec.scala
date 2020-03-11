@@ -52,8 +52,11 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
   with MockitoSugar with ErsConstants with LegacyI18nSupport
   with ERSFakeApplicationConfig with UpscanData with AuthHelper {
 
+  val testOptString = Some("test")
+  val ersRequestObject = RequestObject(testOptString, testOptString, testOptString, Some("CSOP"), Some("CSOP"), testOptString, testOptString, testOptString, testOptString)
+
   "uploadFilePage" must {
-    when(mockCacheUtil.fetch[RequestObject](anyString())(any(), any(), any(), any()))
+    when(mockCacheUtil.fetch[RequestObject](any())(any(), any(), any(), any()))
       .thenReturn(Future.successful(ersRequestObject))
     "return OK" when {
       "Upscan form data is successfully returned and callback record is created in session cache" in {
@@ -101,7 +104,7 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
           .thenReturn(Future.successful(ersRequestObject))
         when(mockSessionService.getCallbackRecord(any[Request[_]], any[HeaderCarrier]))
           .thenReturn(Future.successful(Some(uploadedSuccessfully)))
-        when(mockCacheUtil.cache(meq(CacheUtil.FILE_NAME_CACHE), meq(uploadedSuccessfully.name), any[String])(any[HeaderCarrier], any(), any[Request[AnyRef]]))
+        when(mockCacheUtil.cache(meq(CacheUtil.FILE_NAME_CACHE), meq(uploadedSuccessfully.name), any())(any[HeaderCarrier], any(), any[Request[AnyRef]]))
           .thenReturn(Future.successful(mock[CacheMap]))
 
         setAuthMocks()
@@ -116,7 +119,7 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
       "caching file name fails" in {
         when(mockSessionService.getCallbackRecord(any[Request[_]], any[HeaderCarrier]))
           .thenReturn(Future.successful(Some(uploadedSuccessfully)))
-        when(mockCacheUtil.cache(meq(CacheUtil.FILE_NAME_CACHE), meq(uploadedSuccessfully.name), any[String])(any[HeaderCarrier], any(), any[Request[AnyRef]]))
+        when(mockCacheUtil.cache(meq(CacheUtil.FILE_NAME_CACHE), meq(uploadedSuccessfully.name), any())(any[HeaderCarrier], any(), any[Request[AnyRef]]))
           .thenReturn(Future.failed(new Exception))
 
         setAuthMocks()
@@ -219,10 +222,9 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
             status(result) must equal(OK)
             contentAsString(result) must include(messages("ers.global_errors.message"))
           }
-        }
       }
     }
-  //TODO spacing..
+  }
 
   "Validation failure" must {
     "be authorised" in {
@@ -243,14 +245,13 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
         when(mockCacheUtil.fetch[CheckFileType](refEq(CacheUtil.FILE_TYPE_CACHE), any[String]())(any(), any(), any()))
           .thenReturn(Future.successful(CheckFileType(Some("csv"))))
 				setAuthMocks()
-          validationFailure() { result =>
-            status(result) must be(OK)
-            contentAsString(result) must include(messages("file_upload_errors.title"))
-          }
+        validationFailure() { result =>
+          status(result) must be(OK)
+          contentAsString(result) must include(messages("file_upload_errors.title"))
         }
       }
     }
-  //TODO spacing
+  }
 
   def failure(request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest())(handler: Future[Result] => Any): Unit = {
     handler(TestFileUploadController.failure().apply(request))
@@ -259,8 +260,6 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
   def validationFailure(request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest())(handler: Future[Result] => Any): Unit = {
     handler(TestFileUploadController.validationFailure().apply(request))
   }
-  val testOptString = Some("test")
-  val ersRequestObject = RequestObject(testOptString, testOptString, testOptString, Some("CSOP"), Some("CSOP"), testOptString, testOptString, testOptString, testOptString)
   val schemeInfo: SchemeInfo = SchemeInfo(testOptString.get, DateTime.now, testOptString.get, testOptString.get, testOptString.get, testOptString.get)
   val validErsMetaData: ErsMetaData = ErsMetaData(schemeInfo, "ipRef", Some("aoRef"), "empRef", Some("agentRef"), Some("sapNumber"))
 
