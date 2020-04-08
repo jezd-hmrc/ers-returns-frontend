@@ -1,5 +1,6 @@
 import play.routes.compiler.StaticRoutesGenerator
 import play.sbt.routes.RoutesKeys.{routesGenerator, routesImport}
+import play.sbt.PlayImport.PlayKeys
 import play.twirl.sbt.Import.TwirlKeys
 import sbt.Keys._
 import sbt.Tests.{Group, SubProcess}
@@ -60,6 +61,7 @@ trait MicroService {
     .settings(inConfig(TemplateItTest)(Defaults.itSettings): _*)
     .settings(integrationTestSettings())
     .settings(majorVersion := 1)
+    .settings(PlayKeys.playDefaultPort := 9290)
 }
 
 private object TestPhases {
