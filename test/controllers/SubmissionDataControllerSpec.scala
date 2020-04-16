@@ -96,7 +96,7 @@ class SubmissionDataControllerSpec extends UnitSpec with ERSFakeApplicationConfi
 			override val authConnector: PlayAuthConnector = mockAuthConnector
 			override def createSchemeInfoFromURL(request: Request[Any]): Option[JsObject] = obj
 
-      override val cacheUtil: CacheUtil = CacheUtil //TODO
+      override val cacheUtil: CacheUtil = CacheUtil
     }
 
     "returns NOT_FOUND if not all parameters are given" in {

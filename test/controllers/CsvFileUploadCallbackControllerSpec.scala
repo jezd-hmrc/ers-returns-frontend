@@ -24,24 +24,22 @@ import config.{ApplicationConfig, ApplicationConfigImpl}
 import models.upscan._
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{eq => meq, _}
-import org.scalatest.BeforeAndAfterEach
 import org.mockito.Mockito._
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
-import play.api.{Application, Configuration}
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{Json, _}
+import play.api.libs.json._
 import play.api.mvc.Request
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import play.api.{Application, Configuration}
 import uk.gov.hmrc.http.cache.client.CacheMap
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.test.UnitSpec
 import utils.{CacheUtil, ERSFakeApplicationConfig, UpscanData}
 
 import scala.concurrent.Future
-import scala.concurrent.duration.{Duration, FiniteDuration}
-import scala.util.Try
 
 class CsvFileUploadCallbackControllerSpec extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with OneAppPerSuite with BeforeAndAfterEach with UpscanData {
 

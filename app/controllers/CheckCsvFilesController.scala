@@ -67,16 +67,14 @@ trait CheckCsvFilesController extends ERSReturnBaseController with Authenticator
 
   def validateCsvFilesPageSelected()(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     RsFormMappings.csvFileCheckForm.bindFromRequest.fold(
-      _ => {
-        reloadWithError()
-      },
-      formData => {
+      _ =>
+        reloadWithError(),
+      formData =>
         performCsvFilesPageSelected(formData)
-      }
     )
   }
 
-  def performCsvFilesPageSelected(formData: CsvFilesList)(implicit request: Request[AnyRef], hc: HeaderCarrier) = {
+  def performCsvFilesPageSelected(formData: CsvFilesList)(implicit request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     val csvFilesCallbackList: UpscanCsvFilesList = createCacheData(formData.files)
     if(csvFilesCallbackList.ids.isEmpty) {
       reloadWithError()

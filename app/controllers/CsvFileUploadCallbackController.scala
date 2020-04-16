@@ -40,7 +40,7 @@ trait CsvFileUploadCallbackController extends FrontendController with ErsConstan
       request.body.validate[UpscanCallback].fold (
         invalid = errors => {
           logger.error(s"Failed to validate UpscanCallback json with errors: $errors")
-          Future.successful(BadRequest(""))
+          Future.successful(BadRequest)
         },
         valid = callback => {
           val uploadStatus: UploadStatus = callback match {
@@ -52,7 +52,7 @@ trait CsvFileUploadCallbackController extends FrontendController with ErsConstan
           }
           logger.info(s"Updating CSV callback for upload id: ${uploadId.value} to ${uploadStatus.getClass.getSimpleName}")
           cacheUtil.cache(s"${CacheUtil.CHECK_CSV_FILES}-${uploadId.value}", uploadStatus, scRef).map {
-            _ => Ok("")
+            _ => Ok
           } recover {
             case NonFatal(e) =>
               logger.error(s"Failed to update cache after Upscan callback for UploadID: ${uploadId.value}, ScRef: $scRef", e)

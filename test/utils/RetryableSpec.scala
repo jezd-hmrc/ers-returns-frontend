@@ -21,6 +21,7 @@ import config.{ApplicationConfig, ApplicationConfigImpl}
 import org.mockito.Mockito.{times, verify, when}
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.Logger
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.Future
@@ -37,6 +38,7 @@ class RetryableSpec extends UnitSpec with MockitoSugar with GuiceOneAppPerSuite 
       def f: Future[Boolean]
     }
     val retryMock: RetryTestUtil = mock[RetryTestUtil]
+    override val logger: Logger = Logger("testLogger")
   }
 
   "withRetry" should {

@@ -35,6 +35,8 @@ object SchemeOrganiserController extends SchemeOrganiserController {
 
 trait SchemeOrganiserController extends ERSReturnBaseController with Authenticator with LegacyI18nSupport {
   val cacheUtil: CacheUtil
+  
+  private val logger = Logger(this.getClass)
 
   def schemeOrganiserPage() = authorisedForAsync() {
     implicit user =>
@@ -45,7 +47,7 @@ trait SchemeOrganiserController extends ERSReturnBaseController with Authenticat
   }
 
   def showSchemeOrganiserPage(requestObject: RequestObject)(implicit authContext: ERSAuthData, request: Request[AnyContent], hc: HeaderCarrier): Future[Result] = {
-    Logger.warn(s"SchemeOrganiserController: showSchemeOrganiserPage:  schemeRef: ${requestObject.getSchemeReference}.")
+    logger.warn(s"SchemeOrganiserController: showSchemeOrganiserPage:  schemeRef: ${requestObject.getSchemeReference}.")
 
     cacheUtil.fetch[ReportableEvents](CacheUtil.reportableEvents, requestObject.getSchemeReference).flatMap { reportableEvent =>
       cacheUtil.fetchOption[CheckFileType](CacheUtil.FILE_TYPE_CACHE, requestObject.getSchemeReference).flatMap { fileType =>
@@ -68,7 +70,7 @@ trait SchemeOrganiserController extends ERSReturnBaseController with Authenticat
       }
     } recover {
       case e: Exception => {
-        Logger.error(s"Get reportableEvent.isNilReturn failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
+        logger.error(s"Get reportableEvent.isNilReturn failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
         getGlobalErrorPage
       }
     }
@@ -93,13 +95,13 @@ trait SchemeOrganiserController extends ERSReturnBaseController with Authenticat
       },
       successful => {
 
-        Logger.warn(s"SchemeOrganiserController: showSchemeOrganiserSubmit:  schemeRef: ${requestObject.getSchemeReference}.")
+        logger.warn(s"SchemeOrganiserController: showSchemeOrganiserSubmit:  schemeRef: ${requestObject.getSchemeReference}.")
 
         cacheUtil.cache(CacheUtil.SCHEME_ORGANISER_CACHE, successful, requestObject.getSchemeReference).map {
           _ => Redirect(routes.GroupSchemeController.groupSchemePage)
         } recover {
           case e: Exception =>
-            Logger.error(s"Save scheme organiser details failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
+            logger.error(s"Save scheme organiser details failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
             getGlobalErrorPage
         }
       }

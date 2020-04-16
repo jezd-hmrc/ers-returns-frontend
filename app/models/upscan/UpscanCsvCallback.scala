@@ -43,11 +43,11 @@ object UpscanCsvFilesCallbackList {
 
 case class UpscanCsvFilesList(ids: List[UpscanIds]) {
   def updateToInProgress(uploadId: UploadId): UpscanCsvFilesList = {
-    val exists = ids.exists(id => id.uploadId == uploadId && id.uploadStatus == NotStarted)
-    if(exists) {
+    val notStartedIdExists = ids.exists(id => id.uploadId == uploadId && id.uploadStatus == NotStarted)
+    if(notStartedIdExists) {
       val newIds = ids.map {
-        case UpscanIds(id, fileId, NotStarted) if id == uploadId =>
-          UpscanIds(id, fileId, InProgress)
+        case ids@UpscanIds(`uploadId`, _, NotStarted) =>
+          ids.copy(uploadStatus = InProgress)
         case other => other
       }
       UpscanCsvFilesList(ids = newIds)

@@ -37,18 +37,17 @@ trait SessionService extends SessionCacheWiring {
     sessionCache.cache[UploadStatus](CALLBACK_DATA_KEY, NotStarted)
   }
 
-  def updateCallbackRecord(sessionId: String, uploadStatus: UploadStatus)(implicit request: Request[_], hc: HeaderCarrier): Future[Any] = {
+  def updateCallbackRecord(sessionId: String, uploadStatus: UploadStatus)(implicit request: Request[_], hc: HeaderCarrier): Future[Any] =
     sessionCache.cache(sessionCache.defaultSource, sessionId, CALLBACK_DATA_KEY, uploadStatus)
-  }
 
-  def getCallbackRecord(implicit request: Request[_], hc: HeaderCarrier): Future[Option[UploadStatus]] = {
+  def getCallbackRecord(implicit request: Request[_], hc: HeaderCarrier): Future[Option[UploadStatus]] =
     sessionCache.fetchAndGetEntry[UploadStatus](CALLBACK_DATA_KEY)
-  }
 
-  def getSuccessfulCallbackRecord(implicit request: Request[_], hc: HeaderCarrier): Future[Option[UploadedSuccessfully]] = {
-    getCallbackRecord.map(_.flatMap {
-      case upload: UploadedSuccessfully => Some(upload)
-      case _ => None
-    })
-  }
+  def getSuccessfulCallbackRecord(implicit request: Request[_], hc: HeaderCarrier): Future[Option[UploadedSuccessfully]] =
+    getCallbackRecord.map {
+      _.flatMap {
+        case upload: UploadedSuccessfully => Some(upload)
+        case _ => None
+      }
+    }
 }

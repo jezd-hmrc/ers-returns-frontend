@@ -38,15 +38,15 @@
 @ers_main(title = pageTitle.toString, scripts) {
 
     @reference(requestObject.getPageTitle)
-    <p class="font-xsmall"><a href="@routes.CheckCsvFilesController.checkCsvFilesPage" class="link-back">@Html(Messages("ers.back"))</a></p>
+    <p class="font-xsmall"><a href="@routes.CheckCsvFilesController.checkCsvFilesPage" class="link-back">@messages("ers.back")</a></p>
     @header(uploadFileHeader)
 
     <div id="errors" class="validation-summary visibility" role="group" aria-labelledby="error-summary-heading" tabindex="-1">
       <h1 class="heading-medium error-summary-heading" id="error-summary-heading">
-        @Html(Messages("validation.summary.heading"))
+        @messages("validation.summary.heading")
       </h1>
       <ul class="error-summary-list">
-        <li class="validation-summary-message"><a href="#file-uploader" data-focuses="file-uploader">@Html(Messages("csv_file_upload.summary_error"))</a></li>
+        <li class="validation-summary-message"><a href="#file-uploader" data-focuses="file-uploader">@messages("csv_file_upload.summary_error")</a></li>
       </ul>
     </div>
 

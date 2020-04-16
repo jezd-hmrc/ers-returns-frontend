@@ -60,9 +60,7 @@ object UpscanCallback {
 
   implicit val reads: Reads[UpscanCallback] = new Reads[UpscanCallback] {
     override def reads(json: JsValue): JsResult[UpscanCallback] = json \ "fileStatus" match {
-      case JsDefined(JsString("READY")) =>
-        Logger.info("READY")
-        implicitly[Reads[UpscanReadyCallback]].reads(json)
+      case JsDefined(JsString("READY")) => implicitly[Reads[UpscanReadyCallback]].reads(json)
       case JsDefined(JsString("FAILED")) => implicitly[Reads[UpscanFailedCallback]].reads(json)
       case JsDefined(value) => JsError(s"Invalid type distriminator: $value")
       case JsUndefined() => JsError("Missing type distriminator")

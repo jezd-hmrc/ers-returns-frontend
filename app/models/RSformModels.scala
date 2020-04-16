@@ -18,7 +18,7 @@ package models
 
 import org.joda.time.DateTime
 import play.api.i18n.Messages
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OFormat}
 import play.api.mvc.Request
 import utils.{DateUtils, PageBuilder}
 
@@ -185,5 +185,5 @@ case class RequestObject(
 }
 
 object RequestObject {
-  implicit val formatRequestObject = Json.format[RequestObject]
+  implicit val formatRequestObject: OFormat[RequestObject] = Json.format[RequestObject]
 }

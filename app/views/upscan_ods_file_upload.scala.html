@@ -28,12 +28,12 @@
 @ers_main(title = messages("ers.upload_ods_file.page_title"), scripts) {
 
 	@reference(requestObject.getPageTitle)
-	<p class="font-xsmall"><a href="@routes.CheckFileTypeController.checkFileTypePage" class="link-back">@Html(messages("ers.back"))</a></p>
+	<p class="font-xsmall"><a href="@routes.CheckFileTypeController.checkFileTypePage" class="link-back">@messages("ers.back")</a></p>
 	@header(messages("file_upload.title"))
 
 	<div id="errors" class="validation-summary visibility" role="group" aria-labelledby="error-summary-heading" tabindex="-1">
 		<h1 class="heading-medium error-summary-heading" id="error-summary-heading">
-			@Html(messages("validation.summary.heading"))
+			@messages("validation.summary.heading")
 		</h1>
 		<ul class="error-summary-list">
 			<li class="validation-summary-message"><a href="#fileToUpload" data-focuses="fileToUpload">@messages("csv_file_upload.summary_error")</a></li>
@@ -43,7 +43,7 @@
 		<p>@messages("file_upload.delay")</p>
 	</div>
 	<label for="fileToUpload" class="visuallyhidden">
-		<span>@Html(messages("file_upload.title"))</span>
+		<span>@messages("file_upload.title")</span>
 	</label>
   @upscan_file_upload_form(".ods", upscanInitiateResponse.formFields, upscanInitiateResponse.postTarget)
 }

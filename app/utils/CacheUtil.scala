@@ -96,18 +96,16 @@ trait CacheUtil {
 
   def shortLivedCache: ShortLivedCache
 
-  def cache[T](key:String, body:T)(implicit hc:HeaderCarrier, ec:ExecutionContext, formats: json.Format[T], request: Request[AnyRef]) = {
+  def cache[T](key:String, body:T)(implicit hc:HeaderCarrier, ec:ExecutionContext, formats: json.Format[T], request: Request[AnyRef]) =
     shortLivedCache.cache[T](getCacheId, key, body)
-  }
 
   def cache[T](key: String, body: T, cacheId: String)(implicit hc: HeaderCarrier, formats: json.Format[T], request: Request[AnyRef]) = {
     Logger.info(s"cache saving key:$key, cacheId:$cacheId")
     shortLivedCache.cache[T](cacheId, key, body)
   }
 
-  def remove(cacheId: String)(implicit hc: HeaderCarrier, executionContext: ExecutionContext): Future[HttpResponse] = {
+  def remove(cacheId: String)(implicit hc: HeaderCarrier, executionContext: ExecutionContext): Future[HttpResponse] =
     shortLivedCache.remove(cacheId)
-  }
 
   @throws(classOf[NoSuchElementException])
   def fetch[T](key:String)(implicit hc:HeaderCarrier, ec:ExecutionContext, formats: json.Format[T], request: Request[AnyRef]): Future[T] = {
@@ -237,13 +235,12 @@ trait CacheUtil {
     }
   }
 
-  def getStatus(tRows: Option[Int]): Some[String] = {
+  def getStatus(tRows: Option[Int]): Some[String] =
     if (tRows.isDefined && tRows.get > ApplicationConfig.sentViaSchedulerNoOfRowsLimit) {
       Some(largeFileStatus)
     } else {
       Some(savedStatus)
     }
-  }
 
   def getNoOfRows(nilReturn:String)(implicit hc: HeaderCarrier, ec: ExecutionContext, request: Request[AnyRef]): Future[Option[Int]] = {
     if (isNilReturn(nilReturn: String)) {

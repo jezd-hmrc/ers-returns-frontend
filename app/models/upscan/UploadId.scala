@@ -30,5 +30,5 @@ object UploadId {
     stringBinder.transform(UploadId(_), _.value)
 
   implicit def readsUploadId: Reads[UploadId] = Reads.StringReads.map(UploadId(_))
-  implicit def writesUploadId: Writes[UploadId] = Writes[UploadId](x => JsString(x.value))
+  implicit def writesUploadId: Writes[UploadId] = Writes[UploadId](id => JsString(id.value))
 }

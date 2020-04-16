@@ -38,7 +38,7 @@ trait FileUploadCallbackController extends FrontendController with ErsConstants 
     request.body.validate[UpscanCallback].fold (
       invalid = errors => {
         logger.error(s"Failed to validate UpscanCallback json with errors: $errors")
-        Future.successful(BadRequest(""))
+        Future.successful(BadRequest)
       },
       valid = callback => {
         val uploadStatus = callback match {
@@ -49,7 +49,7 @@ trait FileUploadCallbackController extends FrontendController with ErsConstants 
             Failed
         }
         logger.info(s"Updating callback for session: $sessionId to ${uploadStatus.getClass.getSimpleName}")
-        sessionService.updateCallbackRecord(sessionId, uploadStatus)(request, headerCarrier).map(_ => Ok("")) recover {
+        sessionService.updateCallbackRecord(sessionId, uploadStatus)(request, headerCarrier).map(_ => Ok) recover {
           case e: Throwable =>
             logger.error(s"Failed to upadte callback record for session: $sessionId, timestamp: ${System.currentTimeMillis()}.", e)
             InternalServerError("Exception occurred when attempting to update callback data")

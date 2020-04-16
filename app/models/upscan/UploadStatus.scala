@@ -27,7 +27,7 @@ case class UploadedSuccessfully(name: String, downloadUrl: String, noOfRows: Opt
 
 object UploadStatus {
   implicit val uploadedSuccessfullyFormat: OFormat[UploadedSuccessfully] = Json.format[UploadedSuccessfully]
-  implicit val read: Reads[UploadStatus] = new Reads[UploadStatus] {
+  implicit val readsUploadStatus: Reads[UploadStatus] = new Reads[UploadStatus] {
     override def reads(json: JsValue): JsResult[UploadStatus] = {
       val jsObject = json.asInstanceOf[JsObject]
       jsObject.value.get("_type") match {
@@ -41,9 +41,9 @@ object UploadStatus {
     }
   }
 
-  implicit val write: Writes[UploadStatus] = new Writes[UploadStatus] {
-    override def writes(p: UploadStatus): JsValue = {
-      p match {
+  implicit val writesUploadStatus: Writes[UploadStatus] = new Writes[UploadStatus] {
+    override def writes(status: UploadStatus): JsValue = {
+      status match {
         case NotStarted => JsObject(Map("_type" -> JsString("NotStarted")))
         case InProgress => JsObject(Map("_type" -> JsString("InProgress")))
         case Failed => JsObject(Map("_type" -> JsString("Failed")))

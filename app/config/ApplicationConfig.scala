@@ -68,7 +68,7 @@ class ApplicationConfigImpl @Inject()(configuration: Configuration) extends Appl
 
   override protected def mode: Mode = Play.current.mode
   override protected def runModeConfiguration: Configuration = configuration
-  override def appNameConfiguration: Configuration = runModeConfiguration
+  override def appNameConfiguration: Configuration = configuration
 
   private def loadConfig(key: String) = configuration.getString(key).getOrElse(throw new Exception(s"Missing key: $key"))
 
@@ -102,7 +102,7 @@ class ApplicationConfigImpl @Inject()(configuration: Configuration) extends Appl
 
   override val odsSuccessRetryAmount: Int = runModeConfiguration.getInt("retry.ods-success-cache.complete-upload.amount").getOrElse(1)
   override val odsValidationRetryAmount: Int = runModeConfiguration.getInt("retry.ods-success-cache.validation.amount").getOrElse(1)
-  override val retryDelay: FiniteDuration = (runModeConfiguration.getMilliseconds("retry.delay").get) milliseconds
+  override val retryDelay: FiniteDuration = runModeConfiguration.getMilliseconds("retry.delay").get milliseconds
 }
 
 object ApplicationConfig extends ApplicationConfigImpl(Play.current.configuration)

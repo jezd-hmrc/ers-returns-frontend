@@ -30,7 +30,7 @@ trait ERSFakeApplicationConfig {
     "govuk-tax.Test.login-callback.url" -> "test",
     "govuk-tax.Test.services.contact-frontend.host" -> "test",
     "govuk-tax.Test.services.contact-frontend.port" -> "test",
-    "metrics.enabled" -> "false",
+    "metrics.enabled" -> "true",
     "auditing.enabled" -> false,
     "microservice.metrics.graphite.enabled" -> false,
     "microservice.services.upscan.redirect-base" -> "http://localhost:9000"

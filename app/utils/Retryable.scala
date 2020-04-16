@@ -27,6 +27,7 @@ import scala.concurrent.duration.FiniteDuration
 
 trait Retryable {
   val appConfig: ApplicationConfig
+  val logger: Logger
   case class LoopException[A](retryNumber: Int, finalFutureData: Option[A])
     extends Exception(s"Failed to meet predicate after retrying ${retryNumber} times.")
 
@@ -35,7 +36,7 @@ trait Retryable {
       val delay: FiniteDuration = appConfig.retryDelay
       val scheduler: Scheduler = actorSystem.getScheduler
       def loop(count: Int = 0, previous: Option[A] = None): Future[A] = {
-        Logger.info(s"Retrying call x$count")
+        logger.info(s"Retrying call x$count")
         if(count < maxTimes){
           f.flatMap {
             data =>

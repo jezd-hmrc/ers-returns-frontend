@@ -38,7 +38,7 @@ import scala.concurrent.Future
 
 trait FileUploadController extends FrontendController with Authenticator with LegacyI18nSupport with Retryable {
 
-  private val logger = Logger(this.getClass)
+  override val logger: Logger = Logger(this.getClass)
 
   val sessionService: SessionService
   val cacheUtil: CacheUtil
@@ -51,9 +51,11 @@ trait FileUploadController extends FrontendController with Authenticator with Le
   def uploadFilePage(): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
       implicit request =>
+        val requestObjectFuture = cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
+        val upscanFormFuture = upscanService.getUpscanFormDataOds()
         (for {
-          requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
-          response <- upscanService.getUpscanFormDataOds()
+          requestObject <- requestObjectFuture
+          response <- upscanFormFuture
           _ <- sessionService.createCallbackRecord
         } yield {
           Ok(upscan_ods_file_upload(requestObject, response))
