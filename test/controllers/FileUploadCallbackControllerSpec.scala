@@ -40,7 +40,7 @@ class FileUploadCallbackControllerSpec extends PlaySpec with MockitoSugar with E
   override implicit lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val mat: Materializer = app.materializer
 
-  lazy val mockSessionService: SessionService = mock[SessionService]
+  val mockSessionService: SessionService = mock[SessionService]
 
   object TestFileUploadCallbackController extends FileUploadCallbackController {
     lazy val sessionService: SessionService = mockSessionService
