@@ -67,7 +67,7 @@
     	}
     	$("#file-uploader button").attr("disabled",true);
     	$(".validation-summary").show()
-	    $("#fileToUpload").parent("Div").before("<p id='error-summary' class='field-error clear' tabindex'-1' role='alert' aria-labelledby='error-heading'>"+msg+"</p>")
+	    $("#fileToUpload").parent("Div").before("<p id='error-summary' class='field-error clear' tabindex='-1' role='alert'>"+msg+"</p>")
 	    $(".validation-summary-message a").html(msg)
 	    $("#uploadForm").addClass("error");
 	    $("#errors").focus();
