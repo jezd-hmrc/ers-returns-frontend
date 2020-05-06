@@ -99,4 +99,11 @@ trait UpscanData {
       UpscanIds(UploadId("ID1"), "file2", NotStarted)
     )
   )
+
+  val multipleInPrgoressUpscanCsvFilesList = UpscanCsvFilesList(
+    ids = List(
+      UpscanIds(testUploadId, "file1", InProgress),
+      UpscanIds(UploadId("ID1"), "file2", InProgress)
+    )
+  )
 }

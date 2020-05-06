@@ -35,15 +35,16 @@ import utils._
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
-trait CsvFileUploadController extends FrontendController with Authenticator {
+trait CsvFileUploadController extends FrontendController with Authenticator with Retryable {
 
-  private val logger = Logger(this.getClass)
+  val logger = Logger(this.getClass)
 
   val sessionService: SessionService
   val cacheUtil: CacheUtil
   val ersConnector: ErsConnector
   val appConfig: ApplicationConfig
   val upscanService: UpscanService = current.injector.instanceOf[UpscanService]
+  val allCsvFilesCacheRetryAmount: Int
   implicit val actorSystem: ActorSystem = current.actorSystem
 
   def uploadFilePage(): Action[AnyContent] = authorisedForAsync() {
@@ -131,15 +132,18 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
   def extractCsvCallbackData(schemeInfo: SchemeInfo)(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     cacheUtil.fetch[UpscanCsvFilesList](CacheUtil.CSV_FILES_UPLOAD, schemeInfo.schemeRef).flatMap {
       data =>
-        val uploadStatuses = Future.sequence(data.ids.map {
-          case UpscanIds(uploadId, fileId, _) =>
-            cacheUtil.fetch[UploadStatus](s"${CacheUtil.CHECK_CSV_FILES}-${uploadId.value}", schemeInfo.schemeRef).map {
-              UpscanCsvFilesCallback(uploadId, fileId, _)
+        cacheUtil.fetchAll(schemeInfo.schemeRef).map {
+          cacheMap =>
+            data.ids.foldLeft(Option(List.empty[UpscanCsvFilesCallback])) {
+              case(Some(upscanCallbackList), UpscanIds(uploadId, fileId, _)) =>
+                cacheMap.getEntry[UploadStatus](s"${CacheUtil.CHECK_CSV_FILES}-${uploadId.value}").map {
+                  UpscanCsvFilesCallback(uploadId, fileId, _):: upscanCallbackList
+                }
+              case(_, _) => None
             }
-        })
-        uploadStatuses.flatMap {
+        }.withRetry(allCsvFilesCacheRetryAmount)(_.isDefined).flatMap {
           files =>
-            val csvFilesCallbackList: UpscanCsvFilesCallbackList = UpscanCsvFilesCallbackList(files)
+            val csvFilesCallbackList: UpscanCsvFilesCallbackList = UpscanCsvFilesCallbackList(files.get)
             cacheUtil.cache(CacheUtil.CHECK_CSV_FILES, csvFilesCallbackList, schemeInfo.schemeRef).flatMap { _ =>
               if (csvFilesCallbackList.files.nonEmpty && csvFilesCallbackList.areAllFilesComplete()) {
                 if(csvFilesCallbackList.areAllFilesSuccessful()) {
@@ -156,6 +160,10 @@ trait CsvFileUploadController extends FrontendController with Authenticator {
                 Future.successful(getGlobalErrorPage)
               }
             }
+        } recover {
+          case e: LoopException[_] =>
+            logger.error(s"Could not fetch all files from cache map. UploadIds: ${data.ids.map(_.uploadId).mkString}")
+            getGlobalErrorPage
         }
     } recover {
       case e: Exception =>
@@ -231,4 +239,5 @@ object CsvFileUploadController extends CsvFileUploadController {
   val ersConnector: ErsConnector = ErsConnector
   val appConfig: ApplicationConfig = ApplicationConfig
   override val cacheUtil: CacheUtil = CacheUtil
+  override val allCsvFilesCacheRetryAmount: Int = appConfig.allCsvFilesCacheRetryAmount
 }

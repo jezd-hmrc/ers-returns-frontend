@@ -55,6 +55,7 @@ trait ApplicationConfig extends AppName {
 
   val odsSuccessRetryAmount: Int
   val odsValidationRetryAmount: Int
+  val allCsvFilesCacheRetryAmount: Int
   val retryDelay: FiniteDuration
 }
 
@@ -102,6 +103,7 @@ class ApplicationConfigImpl @Inject()(configuration: Configuration) extends Appl
 
   override val odsSuccessRetryAmount: Int = runModeConfiguration.getInt("retry.ods-success-cache.complete-upload.amount").getOrElse(1)
   override val odsValidationRetryAmount: Int = runModeConfiguration.getInt("retry.ods-success-cache.validation.amount").getOrElse(1)
+  override val allCsvFilesCacheRetryAmount: Int = runModeConfiguration.getInt("retry.csv-success-cache.all-files-complete.amount").getOrElse(1)
   override val retryDelay: FiniteDuration = runModeConfiguration.getMilliseconds("retry.delay").get milliseconds
 }
 

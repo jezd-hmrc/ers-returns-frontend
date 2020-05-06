@@ -32,6 +32,7 @@ import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
 import play.api.i18n.{Lang, Messages, MessagesApi}
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.{Json, Writes}
 import play.api.mvc.{Request, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -220,6 +221,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
       override val sessionService = mock[SessionService]
       override val ersConnector: ErsConnector = mock[ErsConnector]
       override val cacheUtil: CacheUtil = mockCacheUtil
+      override val allCsvFilesCacheRetryAmount: Int = 1
     }
 
     "return Ok if fetching CheckFileType from cache is successful" in {
@@ -285,6 +287,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
       override val cacheUtil: CacheUtil = mockCacheUtil
 
       override def processValidationResults()(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Ok)
+      override val allCsvFilesCacheRetryAmount: Int = 1
     }
 
     "redirect for unauthorised users to login page" in {
@@ -314,6 +317,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
       override val cacheUtil: CacheUtil = mockCacheUtil
 
       override def removePresubmissionData(schemeInfo: SchemeInfo)(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Ok)
+      override val allCsvFilesCacheRetryAmount: Int = 1
     }
 
     "return result of removePresubmissionData if fetching from the cache is successful" in {
@@ -378,6 +382,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
       override val cacheUtil: CacheUtil = mockCacheUtil
 
       override def extractCsvCallbackData(schemeInfo: SchemeInfo)(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future(Redirect(""))
+      override val allCsvFilesCacheRetryAmount: Int = 1
     }
 
     "return the result of extractCsvCallbackData if deleting presubmission data is successful" in {
@@ -420,7 +425,8 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
   }
 
   "calling extractCsvCallbackData" should {
-    lazy val csvFileUploadController: CsvFileUploadController = new CsvFileUploadController {
+    def csvFileUploadControllerWithRetry(retryTimes: Int): CsvFileUploadController = new CsvFileUploadController {
+      override val allCsvFilesCacheRetryAmount: Int = retryTimes
       val authConnector = mockAuthConnector
       val appConfig: ApplicationConfig = ApplicationConfig
       override val sessionService = mockSessionService
@@ -431,6 +437,8 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
                               (implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = Future.successful(Ok("Validated"))
     }
 
+    lazy val csvFileUploadController = csvFileUploadControllerWithRetry(1)
+
     "return global error page" when {
       "fetching data from cache util fails" in {
         when(mockCacheUtil.fetch[UpscanCsvFilesCallbackList](anyString(), anyString())(any(), any(), any()))
@@ -438,15 +446,87 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
 
         contentAsString(await(csvFileUploadController.extractCsvCallbackData(Fixtures.EMISchemeInfo)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))) shouldBe contentAsString(csvFileUploadController.getGlobalErrorPage)
       }
+
+      "data is missing from the cache map" in {
+        when(
+          mockCacheUtil.fetch[UpscanCsvFilesList](meq(CacheUtil.CSV_FILES_UPLOAD), anyString())(any(), any(), any())
+        ).thenReturn(Future.successful(multipleInPrgoressUpscanCsvFilesList))
+        when(
+          mockCacheUtil.fetchAll(anyString())(any(), any())
+        ).thenReturn(CacheMap("id",
+          data = Map(
+            s"${CacheUtil.CHECK_CSV_FILES}-${testUploadId.value}" ->
+              Json.toJson(uploadedSuccessfully)(implicitly[Writes[UploadStatus]])
+          )))
+        when(
+          mockCacheUtil.cache(any(), any(), any())(any(), any(), any())
+        ).thenReturn(Future.successful(CacheMap("", Map())))
+        val result = await(csvFileUploadController.extractCsvCallbackData(Fixtures.EMISchemeInfo)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+        status(result) shouldBe OK
+        contentAsString(result) shouldBe contentAsString(csvFileUploadController.getGlobalErrorPage)
+      }
     }
 
-    "return the result of validateCsv if fetching from cache is successful" in {
+    "call the cache multiple times when the data does not exist the first time" in {
+      reset(mockCacheUtil)
+      when(
+        mockCacheUtil.fetch[UpscanCsvFilesList](meq(CacheUtil.CSV_FILES_UPLOAD), anyString())(any(), any(), any())
+      ).thenReturn(Future.successful(multipleInPrgoressUpscanCsvFilesList))
+      when(
+        mockCacheUtil.fetchAll(anyString())(any(), any())
+      )thenReturn(
+        CacheMap("id",
+          data = Map(
+            s"${CacheUtil.CHECK_CSV_FILES}-${testUploadId.value}" ->
+              Json.toJson(uploadedSuccessfully)(implicitly[Writes[UploadStatus]]))),
+        CacheMap("id",
+          data = Map(
+            s"${CacheUtil.CHECK_CSV_FILES}-${testUploadId.value}" ->
+              Json.toJson(uploadedSuccessfully)(implicitly[Writes[UploadStatus]]),
+            s"${CacheUtil.CHECK_CSV_FILES}-ID1" ->
+              Json.toJson(uploadedSuccessfully)(implicitly[Writes[UploadStatus]])))
+      )
+      when(
+        mockCacheUtil.cache(any(), any(), any())(any(), any(), any())
+      ).thenReturn(Future.successful(CacheMap("", Map())))
+      val result = await(csvFileUploadControllerWithRetry(3).extractCsvCallbackData(Fixtures.EMISchemeInfo)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+      verify(mockCacheUtil, times(2)).fetchAll(any())(any(), any())
+    }
+
+    "return the result of validateCsv if fetching from cache is successful for one file" in {
+      reset(mockCacheUtil)
       when(
         mockCacheUtil.fetch[UpscanCsvFilesList](meq(CacheUtil.CSV_FILES_UPLOAD), anyString())(any(), any(), any())
       ).thenReturn(Future.successful(inProgressUpscanCsvFilesList))
       when(
-        mockCacheUtil.fetch[UploadStatus](meq(s"${CacheUtil.CHECK_CSV_FILES}-${testUploadId.value}"), anyString())(any(), any(), any())
-      ).thenReturn(uploadedSuccessfully)
+        mockCacheUtil.fetchAll(anyString())(any(), any())
+      ).thenReturn(CacheMap("id",
+        data = Map(
+          s"${CacheUtil.CHECK_CSV_FILES}-${testUploadId.value}" ->
+            Json.toJson(uploadedSuccessfully)(implicitly[Writes[UploadStatus]])
+        )))
+      when(
+        mockCacheUtil.cache(any(), any(), any())(any(), any(), any())
+      ).thenReturn(Future.successful(CacheMap("", Map())))
+      val result = await(csvFileUploadControllerWithRetry(3).extractCsvCallbackData(Fixtures.EMISchemeInfo)(Fixtures.buildFakeUser, Fixtures.buildFakeRequestWithSessionIdCSOP("GET"), hc))
+      status(result) shouldBe OK
+      contentAsString(result) shouldBe "Validated"
+      verify(mockCacheUtil, times(1)).fetchAll(any())(any(), any())
+    }
+
+    "return the result of validateCsv if fetching from cache is successful for multiple files" in {
+      when(
+        mockCacheUtil.fetch[UpscanCsvFilesList](meq(CacheUtil.CSV_FILES_UPLOAD), anyString())(any(), any(), any())
+      ).thenReturn(Future.successful(multipleInPrgoressUpscanCsvFilesList))
+      when(
+        mockCacheUtil.fetchAll(anyString())(any(), any())
+      ).thenReturn(CacheMap("id",
+        data = Map(
+          s"${CacheUtil.CHECK_CSV_FILES}-${testUploadId.value}" ->
+            Json.toJson(uploadedSuccessfully)(implicitly[Writes[UploadStatus]]),
+          s"${CacheUtil.CHECK_CSV_FILES}-ID1" ->
+            Json.toJson(uploadedSuccessfully)(implicitly[Writes[UploadStatus]])
+        )))
       when(
         mockCacheUtil.cache(any(), any(), any())(any(), any(), any())
       ).thenReturn(Future.successful(CacheMap("", Map())))
@@ -488,6 +568,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
       override val ersConnector: ErsConnector = mockErsConnector
       val mockCacheUtil: CacheUtil = mock[CacheUtil]
       override val cacheUtil: CacheUtil = mockCacheUtil
+      override val allCsvFilesCacheRetryAmount: Int = 1
     }
 
     "redirect to schemeOrganiserPage if validating is successful" in {
@@ -557,6 +638,7 @@ class CsvFileUploadControllerSpec extends UnitSpec with OneAppPerSuite with ERSF
     override val cacheUtil: CacheUtil = mockCacheUtil
     override val upscanService: UpscanService = mockUpscanService
     override val appConfig: ApplicationConfig = ApplicationConfig
+    override val allCsvFilesCacheRetryAmount: Int = 1
   }
 
 }
