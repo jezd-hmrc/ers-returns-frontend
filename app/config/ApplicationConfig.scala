@@ -23,7 +23,7 @@ import play.Logger
 import play.api.Mode.Mode
 import play.api.i18n.Lang
 import play.api.mvc.Call
-import play.api.{Configuration, Play}
+import play.api.{Configuration, Environment, Play}
 import uk.gov.hmrc.play.config.{AppName, ServicesConfig}
 
 import scala.concurrent.duration._
@@ -60,14 +60,14 @@ trait ApplicationConfig extends AppName {
 }
 
 @Singleton
-class ApplicationConfigImpl @Inject()(configuration: Configuration) extends ApplicationConfig with ServicesConfig {
+class ApplicationConfigImpl @Inject()(configuration: Configuration, environment: Environment) extends ApplicationConfig with ServicesConfig {
 
   val contactHost = baseUrl("contact-frontend")
   private lazy val _reportAProblemPartialUrl = s"$contactHost/contact/problem_reports?secure=false"
 
   override def reportAProblemPartialUrl: String = _reportAProblemPartialUrl
 
-  override protected def mode: Mode = Play.current.mode
+  override protected def mode: Mode = environment.mode
   override protected def runModeConfiguration: Configuration = configuration
   override def appNameConfiguration: Configuration = configuration
 
@@ -107,5 +107,5 @@ class ApplicationConfigImpl @Inject()(configuration: Configuration) extends Appl
   override val retryDelay: FiniteDuration = runModeConfiguration.getMilliseconds("retry.delay").get milliseconds
 }
 
-object ApplicationConfig extends ApplicationConfigImpl(Play.current.configuration)
+object ApplicationConfig extends ApplicationConfigImpl(Play.current.configuration, Environment.simple(mode = Play.current.mode))
 
