@@ -33,7 +33,7 @@ import play.api.libs.json._
 import play.api.mvc.Request
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import play.api.{Application, Configuration}
+import play.api.{Application, Configuration, Environment}
 import uk.gov.hmrc.http.cache.client.CacheMap
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.test.UnitSpec
@@ -44,6 +44,7 @@ import scala.concurrent.Future
 class CsvFileUploadCallbackControllerSpec extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with OneAppPerSuite with BeforeAndAfterEach with UpscanData {
 
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
+  lazy val environment: Environment = app.injector.instanceOf[Environment]
   implicit lazy val materializer: Materializer = app.materializer
   implicit val request: Request[_] = FakeRequest()
 
@@ -57,7 +58,7 @@ class CsvFileUploadCallbackControllerSpec extends UnitSpec with ERSFakeApplicati
   lazy val csvFileUploadCallbackController: CsvFileUploadCallbackController = new CsvFileUploadCallbackController {
     lazy val authConnector: AuthConnector = mockAuthConnector
     override val cacheUtil: CacheUtil = mockCacheUtil
-    override val appConfig: ApplicationConfig = new ApplicationConfigImpl(app.injector.instanceOf[Configuration]){
+    override val appConfig: ApplicationConfig = new ApplicationConfigImpl(app.injector.instanceOf[Configuration], environment){
       import scala.concurrent.duration._
       override val retryDelay: FiniteDuration = 1 millisecond
     }
