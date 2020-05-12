@@ -57,7 +57,6 @@ trait ConfirmationPageController extends ERSReturnBaseController with Authentica
 
   def showConfirmationPage()(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
-      if (request.session.get(screenSchemeInfo).isEmpty) Logger.error(s"Session doesn't contain scheme info: ${request.session}")
       val schemeRef: String = requestObject.getSchemeReference
       val sessionBundleRef: String = request.session.get(BUNDLE_REF).getOrElse("")
       val sessionDateTimeSubmitted: String = request.session.get(DATE_TIME_SUBMITTED).getOrElse("")
@@ -91,7 +90,6 @@ trait ConfirmationPageController extends ERSReturnBaseController with Authentica
           Logger.info(s"Preventing resubmission of confirmation page, timestamp: ${System.currentTimeMillis()}.")
 
           Future(Ok(views.html.confirmation(requestObject, sessionDateTimeSubmitted, sessionBundleRef, all.schemeInfo.taxYear, url)(request, context, implicitly)))
-
         }
       }
     } recoverWith {

@@ -21,7 +21,6 @@ ers.no = No
 ers.eoy = annual
 ers.nil = nil
 ers.invalidCharacters = Remove invalid characters
-ers.uploaded = - UPLOADED
 ers.error.title = Unauthorised
 
 ers.scheme.CSOP = CSOP
@@ -39,11 +38,8 @@ ers.start.page_title = Submit your annual return – Employment Related Securiti
 ers.reportable_events.page_title = Reportable events – Employment Related Securities – GOV.UK
 ers.choose_file_type.page_title = Choose file type – Employment Related Securities – GOV.UK
 ers.choose_csv_files.page_title = Choose the .csv files – Employment Related Securities – GOV.UK
-ers.upload_csv_file.page_title = Upload your file – Employment Related Securities – GOV.UK
-ers.upload_first_csv_file.page_title = Upload your first file – Employment Related Securities – GOV.UK
-ers.upload_next_csv_file.page_title = Upload your next file – Employment Related Securities – GOV.UK
+
 ers.upload_ods_file.page_title = Upload the .ods file – Employment Related Securities – GOV.UK
-ers.if_there_are_no_errors.page_title = If there are no errors – Employment Related Securities – GOV.UK
 ers.title.postfix = – Employment Related Securities – GOV.UK
 
 ers.reference.info = Scheme information you have selected
@@ -431,13 +427,13 @@ ers_signed_out.link = Sign back in to your HMRC Online services account
 file_upload.title = Upload your ODS file
 file_upload.contact_us = Contact us on our feedback page
 file_upload.size_warning.link.before = If your file is larger than 10MB, you can’t use this service. Email
-file_upload.size_warning.link.after = and we’ll help you with your submission.
 file_upload.file_size = if your .ods file is larger than 10MB.
 file_upload.csop.info = Choose the {0} file you want to upload as part of your Company Share Option Plan annual return.
 file_upload.emi.info = Choose the {0} file you want to upload as part of your Enterprise Management Incentives annual return.
 file_upload.other.info = Choose the {0} file you want to upload as part of your Other annual return.
 file_upload.sip.info = Choose the {0} file you want to upload as part of your Share Incentive Plan annual return.
 file_upload.saye.info = Choose the {0} file you want to upload as part of your Save As You Earn annual return.
+file_upload.delay = Your file may take a few minutes to upload. You will have to wait until it has uploaded before you continue.
 
 file_upload_errors.title = Errors have been found
 file_upload_errors.para1 = Fix the errors before you use this service again or
@@ -455,17 +451,10 @@ file_upload_errors.other.guidance = <a href = "https://www.gov.uk/government/pub
 
 ers_upload_successful.page_title = Successful upload
 
-csv_file_upload.file_title = Upload your CSV file
-csv_file_upload.first_file_title = Upload your first CSV file
-csv_file_upload.next_file_title = Upload your next CSV file
-CSV_file_upload.size_warning.link.before = If your file is larger than 100MB, you can’t use this service. Email
-CSV_file_upload.size_warning.link.after = and we’ll help you with your submission.
-
+csv_file_upload.upload_your_file_header = Upload your ‘{0}’ file
+csv_file_upload.upload_your_file = Upload the file {0}
 csv_file_upload.contact_us = Contact us on our feedback page
 csv_file_upload.file_size = if any of your files are larger than 100MB.
-csv_file_upload.file_to_upload_title = This is the file you said you needed to upload:
-csv_file_upload.files_to_upload_title = These are the files you said you needed to upload:
-csv_file_upload.file_to_upload_title_still = Files you still need to upload
 csv_file_upload.you_have_uploaded = You have uploaded:
 csv_file_upload.summary_error = Choose a different file to upload
 
@@ -545,17 +534,17 @@ ers_check_csv_file.other.file1.description = Other option events
 ers_check_csv_file.other.file1.file_name = Other_Options_V3.csv
 ers_check_csv_file.other.file2.description = Acquisition of securities
 ers_check_csv_file.other.file2.file_name = Other_Acquisition_V3.csv
-ers_check_csv_file.other.file3.description = Restricted securities post acquisition events
+ers_check_csv_file.other.file3.description = Restricted securities post-acquisition events
 ers_check_csv_file.other.file3.file_name = Other_RestrictedSecurities_V3.csv
-ers_check_csv_file.other.file4.description = Receipt of other benefits from securities post acquisition
+ers_check_csv_file.other.file4.description = Receipt of other benefits from securities post-acquisition
 ers_check_csv_file.other.file4.file_name = Other_OtherBenefits_V3.csv
 ers_check_csv_file.other.file5.description = Convertible securities post-acquisition
 ers_check_csv_file.other.file5.file_name = Other_Convertible_V3.csv
 ers_check_csv_file.other.file6.description = Discharge of notional loans post-acquisition
 ers_check_csv_file.other.file6.file_name = Other_Notional_V3.csv
-ers_check_csv_file.other.file7.description = Artificial enhancement of market value. Value of securities post acquisition
+ers_check_csv_file.other.file7.description = Artificial enhancement of market value. Value of securities post-acquisition
 ers_check_csv_file.other.file7.file_name = Other_Enhancement_V3.csv
-ers_check_csv_file.other.file8.description = Securities sold for more than market value post acquisition
+ers_check_csv_file.other.file8.description = Securities sold for more than market value post-acquisition
 ers_check_csv_file.other.file8.file_name = Other_Sold_V3.csv
 
 ers_check_file.title = Choose and check your spreadsheet

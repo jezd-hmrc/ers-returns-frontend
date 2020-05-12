@@ -20,7 +20,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 trait ERSFakeApplicationConfig {
   implicit val hc = HeaderCarrier()
-  val config = Map("play.crypto.secret" -> "test",
+  val config: Map[String, Any] = Map("play.crypto.secret" -> "test",
     "govuk-tax.Test.login-callback.url" -> "test",
     "govuk-tax.Test.assets.url" -> "test",
     "govuk-tax.Test.assets.version" -> "version",
@@ -30,5 +30,9 @@ trait ERSFakeApplicationConfig {
     "govuk-tax.Test.login-callback.url" -> "test",
     "govuk-tax.Test.services.contact-frontend.host" -> "test",
     "govuk-tax.Test.services.contact-frontend.port" -> "test",
-    "metrics.enabled" -> "false")
+    "metrics.enabled" -> "true",
+    "auditing.enabled" -> false,
+    "microservice.metrics.graphite.enabled" -> false,
+    "microservice.services.upscan.redirect-base" -> "http://localhost:9000"
+  )
 }

@@ -16,34 +16,31 @@
 
 package config
 
-import play.api.Play._
-import uk.gov.hmrc.play.config.ServicesConfig
+import com.google.inject.{ImplementedBy, Inject}
+import controllers.routes
+import javax.inject.Singleton
 import play.Logger
 import play.api.Mode.Mode
-import play.api.{Configuration, Play}
 import play.api.i18n.Lang
 import play.api.mvc.Call
+import play.api.{Configuration, Play}
+import uk.gov.hmrc.play.config.{AppName, ServicesConfig}
 
+import scala.concurrent.duration._
 import scala.util.Try
-import controllers.routes
-import uk.gov.hmrc.play.partials.CachedStaticHtmlPartialRetriever
 
-trait ApplicationConfig {
+@ImplementedBy(classOf[ApplicationConfigImpl])
+trait ApplicationConfig extends AppName {
 
   val assetsPrefix: String
   val analyticsToken: Option[String]
   val analyticsHost: String
-  val uploadCollection: String
   val validatorUrl: String
 
-  val platformHostUrl: String
-  val successPageUrl: String
-  val failurePageUrl: String
-  val callbackPageUrl: String
+  val upscanProtocol: String
+  val upscanInitiateHost: String
+  val upscanRedirectBase: String
 
-  val successCsvPageUrl: String
-  val failureCsvPageUrl: String
-  val callbackCsvPageUrl: String
   val enableRetrieveSubmissionData: Boolean
   val sentViaSchedulerNoOfRowsLimit: Int
   val languageTranslationEnabled: Boolean
@@ -55,9 +52,15 @@ trait ApplicationConfig {
   def routeToSwitchLanguage: String => Call
 
   def reportAProblemPartialUrl: String
+
+  val odsSuccessRetryAmount: Int
+  val odsValidationRetryAmount: Int
+  val allCsvFilesCacheRetryAmount: Int
+  val retryDelay: FiniteDuration
 }
 
-class ApplicationConfigImpl extends ApplicationConfig with ServicesConfig {
+@Singleton
+class ApplicationConfigImpl @Inject()(configuration: Configuration) extends ApplicationConfig with ServicesConfig {
 
   val contactHost = baseUrl("contact-frontend")
   private lazy val _reportAProblemPartialUrl = s"$contactHost/contact/problem_reports?secure=false"
@@ -65,27 +68,20 @@ class ApplicationConfigImpl extends ApplicationConfig with ServicesConfig {
   override def reportAProblemPartialUrl: String = _reportAProblemPartialUrl
 
   override protected def mode: Mode = Play.current.mode
-  override protected def runModeConfiguration: Configuration = Play.current.configuration
+  override protected def runModeConfiguration: Configuration = configuration
+  override def appNameConfiguration: Configuration = configuration
 
   private def loadConfig(key: String) = configuration.getString(key).getOrElse(throw new Exception(s"Missing key: $key"))
-
-  private val contactFormServiceIdentifier = "ERS"
 
   override lazy val assetsPrefix: String = loadConfig("assets.url") + loadConfig("assets.version")
   override lazy val analyticsToken: Option[String] = configuration.getString("govuk-tax.google-analytics.token")
   override lazy val analyticsHost: String = configuration.getString("govuk-tax.google-analytics.host").getOrElse("service.gov.uk")
-  override lazy val uploadCollection: String = loadConfig("settings.upload-collection")
 
   override lazy val validatorUrl: String = baseUrl("ers-file-validator") + "/ers/:empRef/" + loadConfig("microservice.services.ers-file-validator.url")
 
-  private val frontendHost = loadConfig("platform.frontend.host")
-  override lazy val platformHostUrl = Try{baseUrl("ers-returns-frontend")}.getOrElse("")
-  override lazy val successPageUrl: String = frontendHost + loadConfig("microservice.services.ers-returns-frontend.success-page")
-  override lazy val failurePageUrl: String = frontendHost + loadConfig("microservice.services.ers-returns-frontend.failure-page")
-  override lazy val callbackPageUrl: String = platformHostUrl + loadConfig("microservice.services.ers-returns-frontend.callback-page")
-  override lazy val successCsvPageUrl: String = frontendHost + loadConfig("microservice.services.ers-returns-frontend.csv-success-page")
-  override lazy val failureCsvPageUrl: String = frontendHost + loadConfig("microservice.services.ers-returns-frontend.csv-failure-page")
-  override lazy val callbackCsvPageUrl: String = platformHostUrl + loadConfig("microservice.services.ers-returns-frontend.csv-callback-page")
+  override val upscanProtocol: String = configuration.getString("microservice.services.upscan.protocol").getOrElse("http").toLowerCase()
+  override val upscanInitiateHost: String = baseUrl("upscan")
+  override val upscanRedirectBase: String = configuration.getString("microservice.services.upscan.redirect-base").get
 
   override lazy val urBannerToggle:Boolean = loadConfig("urBanner.toggle").toBoolean
   override lazy val urBannerLink: String = loadConfig("urBanner.link")
@@ -104,7 +100,12 @@ class ApplicationConfigImpl extends ApplicationConfig with ServicesConfig {
     "english" -> Lang("en"),
     "cymraeg" -> Lang("cy"))
   def routeToSwitchLanguage = (lang: String) => routes.LanguageSwitchController.switchToLanguage(lang)
+
+  override val odsSuccessRetryAmount: Int = runModeConfiguration.getInt("retry.ods-success-cache.complete-upload.amount").getOrElse(1)
+  override val odsValidationRetryAmount: Int = runModeConfiguration.getInt("retry.ods-success-cache.validation.amount").getOrElse(1)
+  override val allCsvFilesCacheRetryAmount: Int = runModeConfiguration.getInt("retry.csv-success-cache.all-files-complete.amount").getOrElse(1)
+  override val retryDelay: FiniteDuration = runModeConfiguration.getMilliseconds("retry.delay").get milliseconds
 }
 
-object ApplicationConfig extends ApplicationConfigImpl
+object ApplicationConfig extends ApplicationConfigImpl(Play.current.configuration)
 

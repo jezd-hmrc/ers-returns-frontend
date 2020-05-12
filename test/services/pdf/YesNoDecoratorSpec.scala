@@ -45,8 +45,8 @@ class YesNoDecoratorSpec extends UnitSpec with MockitoSugar with ERSFakeApplicat
 
       decorator.decorate(streamer)
 
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.ArgumentMatchers.eq("title": String), org.mockito.ArgumentMatchers.eq(1.0F: Float))(ArgumentMatchers.any())
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.ArgumentMatchers.eq("Yes": String), org.mockito.ArgumentMatchers.eq(2.0F: Float))(ArgumentMatchers.any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(ArgumentMatchers.eq("title": String), ArgumentMatchers.eq(1.0F: Float))(ArgumentMatchers.any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(ArgumentMatchers.eq("Yes": String), ArgumentMatchers.eq(2.0F: Float))(ArgumentMatchers.any())
     }
 
     "show No if there is no nil return" in {
@@ -55,8 +55,8 @@ class YesNoDecoratorSpec extends UnitSpec with MockitoSugar with ERSFakeApplicat
 
       decorator.decorate(streamer)
 
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.ArgumentMatchers.eq("title": String), org.mockito.ArgumentMatchers.eq(1.0F: Float))(ArgumentMatchers.any())
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.ArgumentMatchers.eq("No": String), org.mockito.ArgumentMatchers.eq(2.0F: Float))(ArgumentMatchers.any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(ArgumentMatchers.eq("title": String), ArgumentMatchers.eq(1.0F: Float))(ArgumentMatchers.any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(ArgumentMatchers.eq("No": String), ArgumentMatchers.eq(2.0F: Float))(ArgumentMatchers.any())
     }
 
     "show section divider after the block is rendered" in {
@@ -65,8 +65,8 @@ class YesNoDecoratorSpec extends UnitSpec with MockitoSugar with ERSFakeApplicat
 
       decorator.decorate(streamer)
 
-      verify(streamer, VerificationModeFactory.times(1)).drawText(org.mockito.ArgumentMatchers.eq("": String), org.mockito.ArgumentMatchers.eq(3.0F: Float))(ArgumentMatchers.any())
-      verify(streamer, VerificationModeFactory.times(2)).drawText(org.mockito.ArgumentMatchers.eq("": String), org.mockito.ArgumentMatchers.eq(4.0F: Float))(ArgumentMatchers.any())
+      verify(streamer, VerificationModeFactory.times(1)).drawText(ArgumentMatchers.eq("": String), ArgumentMatchers.eq(3.0F: Float))(ArgumentMatchers.any())
+      verify(streamer, VerificationModeFactory.times(2)).drawText(ArgumentMatchers.eq("": String), ArgumentMatchers.eq(4.0F: Float))(ArgumentMatchers.any())
       verify(streamer, VerificationModeFactory.times(1)).drawLine()
     }
    }

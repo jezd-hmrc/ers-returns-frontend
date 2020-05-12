@@ -16,83 +16,111 @@
 
 package controllers
 
+import java.net.URL
+import java.time.Instant
+
 import akka.stream.Materializer
-import models.CallbackData
-import org.mockito.ArgumentMatchers._
+import config.{ApplicationConfig, ApplicationConfigImpl}
+import models.upscan._
+import org.mockito.ArgumentCaptor
+import org.mockito.ArgumentMatchers.{eq => meq, _}
 import org.mockito.Mockito._
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
-import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json._
 import play.api.mvc.Request
+import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import play.api.test.{FakeHeaders, FakeRequest}
-import services.SessionService
+import play.api.{Application, Configuration}
+import uk.gov.hmrc.http.cache.client.CacheMap
 import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import uk.gov.hmrc.play.test.UnitSpec
-import utils.{ERSFakeApplicationConfig, Fixtures}
+import utils.{CacheUtil, ERSFakeApplicationConfig, UpscanData}
 
 import scala.concurrent.Future
 
-class CsvFileUploadCallbackControllerSpec extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with OneAppPerSuite {
+class CsvFileUploadCallbackControllerSpec extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with OneAppPerSuite with BeforeAndAfterEach with UpscanData {
 
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val materializer: Materializer = app.materializer
   implicit val request: Request[_] = FakeRequest()
 
-  lazy val metaData: JsObject = Json.obj("surname" -> Fixtures.surname, "firstForename" -> Fixtures.firstName)
+  val mockAuthConnector: AuthConnector = mock[AuthConnector]
+  val mockCacheUtil: CacheUtil = mock[CacheUtil]
 
-  lazy val mockAuthConnector: AuthConnector = mock[AuthConnector]
-
-  lazy val mockSessionService: SessionService = mock[SessionService]
-
-  lazy val fakeHeaders: FakeHeaders = FakeHeaders(Seq("Content-type" -> "application/json"))
+  def request(body: JsValue): FakeRequest[JsValue] = FakeRequest().withBody(body)
+  val scRef = "scRef"
+  val url: URL = new URL("http://localhost:9000/myUrl")
 
   lazy val csvFileUploadCallbackController: CsvFileUploadCallbackController = new CsvFileUploadCallbackController {
     lazy val authConnector: AuthConnector = mockAuthConnector
-    override lazy val sessionService: SessionService = mockSessionService
+    override val cacheUtil: CacheUtil = mockCacheUtil
+    override val appConfig: ApplicationConfig = new ApplicationConfigImpl(app.injector.instanceOf[Configuration]){
+      import scala.concurrent.duration._
+      override val retryDelay: FiniteDuration = 1 millisecond
+    }
   }
 
-  lazy val callbackData1 = CallbackData(collection = "collection",
-    id = "someid",
-    length = 1000L,
-    name = Some("John"),
-    contentType = Some("content-type"),
-    customMetadata = Some(metaData),
-    sessionId = Some("testId"),
-    noOfRows = None)
+  override def beforeEach(): Unit = {
+    reset(mockCacheUtil)
+    super.beforeEach()
+  }
 
-  "calling callback" should {
-
-    "return OK if attachments return valid callback data and storing callback data is successful" in {
-      reset(mockSessionService)
-      when(mockSessionService.storeCallbackData(any[CallbackData]())(any(), any()))
-        .thenReturn(Future.successful(Some(callbackData1)))
-      val fakeRequest = FakeRequest(method = "POST", uri = "", headers = fakeHeaders, body = Json.toJson(callbackData1))
-      val result = await(csvFileUploadCallbackController.callback()(fakeRequest))
-      status(result) shouldBe OK
+  "callback" should {
+    val uploadId: UploadId = UploadId("ID")
+    "update upload status to Uploaded Successfully" when {
+      "callback is UpscanReadyCallback" in {
+        val callbackCaptor = ArgumentCaptor.forClass(classOf[UploadStatus])
+        val body = UpscanReadyCallback(Reference("Reference"), url, UploadDetails(Instant.now(), "checkSum", "fileMimeType", "fileName"))
+        val jsonBody = Json.toJson(body)
+        when(mockCacheUtil.cache(meq(s"${CacheUtil.CHECK_CSV_FILES}-${uploadId.value}"), callbackCaptor.capture, meq(scRef))(any(), any(), any()))
+          .thenReturn(Future.successful(mock[CacheMap]))
+        val result = csvFileUploadCallbackController.callback(uploadId, scRef)(request(jsonBody))
+        status(result) shouldBe OK
+        callbackCaptor.getValue.isInstanceOf[UploadedSuccessfully] shouldBe true
+        verify(mockCacheUtil, times(1))
+          .cache(meq(s"${CacheUtil.CHECK_CSV_FILES}-${uploadId.value}"), meq(callbackCaptor.getValue), meq(scRef))(any(), any(), any())
+      }
     }
 
-    "return INTERNAL_SERVER_ERROR if attachments return invalid callback data and storing callback data is successful" in {
-      reset(mockSessionService)
-      when(mockSessionService.storeCallbackData(any[CallbackData]())(any(), any()))
-        .thenReturn(Future.successful(None))
-      val fakeRequest = FakeRequest(method = "POST", uri = "", headers = fakeHeaders, body = Json.toJson(callbackData1))
-      val result = await(csvFileUploadCallbackController.callback()(fakeRequest))
-      status(result) shouldBe INTERNAL_SERVER_ERROR
-      bodyOf(result) shouldBe "Exception"
+    "update upload status to Failed" when {
+      "callback is UpscanFailedCallback and upload is InProgress" in {
+        val callbackCaptor = ArgumentCaptor.forClass(classOf[UploadStatus])
+        val body = UpscanFailedCallback(Reference("ref"), ErrorDetails("failed", "message"))
+        val jsonBody = Json.toJson(body)
+        when(mockCacheUtil.cache(meq(s"${CacheUtil.CHECK_CSV_FILES}-${uploadId.value}"), callbackCaptor.capture, meq(scRef))(any(), any(), any()))
+          .thenReturn(Future.successful(mock[CacheMap]))
+        val result = csvFileUploadCallbackController.callback(uploadId, scRef)(request(jsonBody))
+        status(result) shouldBe OK
+        callbackCaptor.getValue shouldBe Failed
+        verify(mockCacheUtil, times(1))
+          .cache(meq(s"${CacheUtil.CHECK_CSV_FILES}-${uploadId.value}"), meq(callbackCaptor.getValue), meq(scRef))(any(), any(), any())
+      }
     }
 
-    "return INTERNAL_SERVER_ERROR if storing callback data fails" in {
-      val callbackData2 = callbackData1.copy(name = Some(Fixtures.firstName))
-      reset(mockSessionService)
-      when(mockSessionService.storeCallbackData(any[CallbackData]())(any(), any()))
-        .thenReturn(Future.failed(new RuntimeException))
-      val fakeRequest = FakeRequest(method = "POST", uri = "", headers = fakeHeaders, body = Json.toJson(callbackData2))
-      val result = await(csvFileUploadCallbackController.callback()(fakeRequest))
-      status(result) shouldBe INTERNAL_SERVER_ERROR
-      bodyOf(result) shouldBe "Exception occurred when attempting to store data"
+    "return InternalServerError" when {
+      "updating the cache fails" in {
+        val body = UpscanFailedCallback(Reference("ref"), ErrorDetails("failed", "message"))
+        val jsonBody = Json.toJson(body)
+        when(mockCacheUtil.cache(meq(s"${CacheUtil.CHECK_CSV_FILES}-${uploadId.value}"), any[UploadStatus], meq(scRef))(any(), any(), any()))
+          .thenReturn(Future.failed(new Exception("Test exception")))
+
+        val result = await(csvFileUploadCallbackController.callback(uploadId, scRef)(request(jsonBody)))
+        status(result) shouldBe INTERNAL_SERVER_ERROR
+
+        verify(mockCacheUtil, times(1))
+          .cache(meq(s"${CacheUtil.CHECK_CSV_FILES}-${uploadId.value}"), any[UploadStatus], meq(scRef))(any(), any(), any())
+      }
+
+      "callback data is not in the correct format" in {
+        val jsonBody = Json.parse("""{"key":"value"}""")
+        val result = await(csvFileUploadCallbackController.callback(uploadId, scRef)(request(jsonBody)))
+        status(result) shouldBe BAD_REQUEST
+        verify(mockCacheUtil, never())
+          .cache(any(), any(), meq(scRef))(any(), any(), any())
+      }
     }
   }
 }

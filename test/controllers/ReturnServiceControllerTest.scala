@@ -35,20 +35,21 @@ import play.api.i18n.Messages
 import play.api.i18n.Messages.Implicits._
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json
-import play.api.libs.json.{JsString, Json}
+import play.api.libs.json.JsString
 import play.api.mvc.Request
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, Helpers}
 import services.SessionService
 import uk.gov.hmrc.auth.core.PlayAuthConnector
 import uk.gov.hmrc.http.cache.client.{CacheMap, ShortLivedCache}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpPost, HttpResponse}
 import uk.gov.hmrc.play.test.UnitSpec
+import utils.Fixtures.ersRequestObject
+import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures}
 import utils.ContentUtil._
 import utils.{AuthHelper, CacheUtil, ERSFakeApplicationConfig, Fixtures}
 
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpPost, HttpResponse}
-import utils.Fixtures.ersRequestObject
 
 
 class ReturnServiceControllerTest extends UnitSpec with ERSFakeApplicationConfig with AuthHelper with OneAppPerSuite {

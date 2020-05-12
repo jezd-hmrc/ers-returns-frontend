@@ -1,0 +1,63 @@
+@*
+ * Copyright 2020 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *@
+
+@import utils.PageBuilder._
+@import views.html.templates._
+@import views.html.includes.upscan_file_upload_form
+
+@(requestObject: RequestObject, upscanInitiateResponse: UpscanInitiateResponse, fileId: String)(implicit request: Request[AnyRef], context: config.ErsContext, messages: Messages)
+@schemeId = @{requestObject.getSchemeId}
+
+@scripts = {
+    <script src='@routes.AssetsController.at("javascripts/ers_csv_scripts.js")'> </script>
+}
+
+@uploadFileHeader = @{
+  messages("csv_file_upload.upload_your_file_header",
+    messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,fileId+".description"))
+  )
+}
+
+@pageTitle = @{
+  uploadFileHeader + " " + messages("ers.title.postfix").toString
+}
+
+@ers_main(title = pageTitle.toString, scripts) {
+
+    @reference(requestObject.getPageTitle)
+    <p class="font-xsmall"><a href="@routes.CheckCsvFilesController.checkCsvFilesPage" class="link-back">@messages("ers.back")</a></p>
+    @header(uploadFileHeader)
+
+    <div id="errors" class="validation-summary visibility" role="group" aria-labelledby="error-summary-heading" tabindex="-1">
+      <h1 class="heading-medium error-summary-heading" id="error-summary-heading">
+        @messages("validation.summary.heading")
+      </h1>
+      <ul class="error-summary-list">
+        <li class="validation-summary-message"><a href="#file-uploader" data-focuses="file-uploader">@messages("csv_file_upload.summary_error")</a></li>
+      </ul>
+    </div>
+
+
+
+    <div class="panel-indent">
+      <p>@messages("file_upload.delay")</p>
+    </div>
+
+    <label class="form-label" id="fileName" for="fileToUpload" data-file-name="@messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,fileId+".file_name"))">
+      @messages("csv_file_upload.upload_your_file", messages(getPageElement(schemeId,PAGE_CHECK_CSV_FILE,fileId+".file_name")))
+    </label>
+    @upscan_file_upload_form(".csv", upscanInitiateResponse.formFields, upscanInitiateResponse.postTarget)
+}

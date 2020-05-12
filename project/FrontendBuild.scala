@@ -53,24 +53,11 @@ private object AppDependencies {
         "org.pegdown" % "pegdown" % pegdownVersion % scope,
         "org.jsoup" % "jsoup" % jsoupVersion % scope,
         "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
-        "org.mockito" % "mockito-core" % "3.1.0" % scope
+        "org.mockito" % "mockito-core" % "3.1.0" % scope,
+        "com.github.tomakehurst" % "wiremock-standalone" % "2.25.1" % scope
       )
     }.test
   }
 
-  object IntegrationTest {
-    def apply(): Seq[ModuleID] = new TestDependencies {
-      override lazy val scope: String = "it"
-      override lazy val test = Seq(
-        "org.scalatest" %% "scalatest" % scalatestVersion % scope,
-        "org.scalatestplus.play" %% "scalatestplus-play" % scalatestPlusPlayVersion % scope,
-        "org.pegdown" % "pegdown" % pegdownVersion % scope,
-        "org.jsoup" % "jsoup" % jsoupVersion % scope,
-        "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
-        "uk.gov.hmrc" %% "hmrctest" % hmrcTestVersion % scope
-      )
-    }.test
-  }
-
-  def apply(): Seq[ModuleID] = compile ++ Test() ++ IntegrationTest()
+  def apply(): Seq[ModuleID] = compile ++ Test()
 }

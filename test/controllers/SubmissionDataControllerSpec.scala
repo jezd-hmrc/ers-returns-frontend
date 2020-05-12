@@ -31,7 +31,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import uk.gov.hmrc.auth.core.PlayAuthConnector
 import uk.gov.hmrc.play.test.UnitSpec
-import utils.{AuthHelper, ERSFakeApplicationConfig, Fixtures}
+import utils.{AuthHelper, CacheUtil, ERSFakeApplicationConfig, Fixtures}
 
 import scala.concurrent.Future
 import uk.gov.hmrc.http.HttpResponse
@@ -47,7 +47,7 @@ class SubmissionDataControllerSpec extends UnitSpec with ERSFakeApplicationConfi
     lazy val submissionDataController: SubmissionDataController = new SubmissionDataController {
       override val ersConnector: ErsConnector = mock[ErsConnector]
 			override val authConnector: PlayAuthConnector = mockAuthConnector
-
+      override val cacheUtil: CacheUtil = CacheUtil
     }
 
     "return correct json if all parameters are given in request" in {
@@ -77,6 +77,7 @@ class SubmissionDataControllerSpec extends UnitSpec with ERSFakeApplicationConfi
     lazy val submissionDataController: SubmissionDataController = new SubmissionDataController {
       override val ersConnector: ErsConnector = mock[ErsConnector]
 			override val authConnector: PlayAuthConnector = mockAuthConnector
+      override val cacheUtil: CacheUtil = CacheUtil
     }
 
     "redirect to login page if user is not authenticated" in {
@@ -94,7 +95,9 @@ class SubmissionDataControllerSpec extends UnitSpec with ERSFakeApplicationConfi
 			override val ersConnector: ErsConnector = mockErsConnector
 			override val authConnector: PlayAuthConnector = mockAuthConnector
 			override def createSchemeInfoFromURL(request: Request[Any]): Option[JsObject] = obj
-		}
+
+      override val cacheUtil: CacheUtil = CacheUtil
+    }
 
     "returns NOT_FOUND if not all parameters are given" in {
       lazy val submissionDataController: SubmissionDataController = new Setup()

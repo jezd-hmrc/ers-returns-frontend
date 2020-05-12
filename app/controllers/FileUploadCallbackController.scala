@@ -16,51 +16,49 @@
 
 package controllers
 
-import config.ERSFileValidatorAuthConnector
-import models.CallbackData
-import play.api.libs.json.JsValue
+import models.upscan._
+import play.api.Logger
+import play.api.libs.json.{JsResult, JsValue}
 import play.api.mvc.Action
-import play.api.{Configuration, Logger, Play}
 import services.SessionService
-import uk.gov.hmrc.play.frontend.auth.Actions
-import uk.gov.hmrc.play.frontend.controller.FrontendController
-import utils.CacheUtil
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.logging.SessionId
+import uk.gov.hmrc.play.frontend.controller.FrontendController
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 trait FileUploadCallbackController extends FrontendController with ErsConstants {
 
-  val cacheUtil: CacheUtil
-  val currentConfig: Configuration
   val sessionService: SessionService
+  private val logger = Logger(this.getClass)
 
-  def callback(): Action[JsValue] = Action.async(parse.json) {
-    implicit request => {
-
-      Logger.info("Attachments Callback: " + (System.currentTimeMillis() / 1000))
-
-      val callbackData: CallbackData = request.body.as[CallbackData]
-
-      val headerCarrier = callbackData.sessionId match {
-        case Some(sid) => hc.copy(sessionId = Some(SessionId((sid))))
-        case _ => hc
+  def callback(sessionId: String): Action[JsValue] = Action.async(parse.json) { implicit request =>
+    implicit val headerCarrier: HeaderCarrier = hc.copy(sessionId = Some(SessionId(sessionId)))
+    request.body.validate[UpscanCallback].fold (
+      invalid = errors => {
+        logger.error(s"Failed to validate UpscanCallback json with errors: $errors")
+        Future.successful(BadRequest)
+      },
+      valid = callback => {
+        val uploadStatus = callback match {
+          case callback: UpscanReadyCallback =>
+            UploadedSuccessfully(callback.uploadDetails.fileName, callback.downloadUrl.toExternalForm)
+          case UpscanFailedCallback(_, details) =>
+            logger.warn(s"Callback for session id: $sessionId failed. Reason: ${details.failureReason}. Message: ${details.message}")
+            Failed
+        }
+        logger.info(s"Updating callback for session: $sessionId to ${uploadStatus.getClass.getSimpleName}")
+        sessionService.updateCallbackRecord(sessionId, uploadStatus)(request, headerCarrier).map(_ => Ok) recover {
+          case e: Throwable =>
+            logger.error(s"Failed to upadte callback record for session: $sessionId, timestamp: ${System.currentTimeMillis()}.", e)
+            InternalServerError("Exception occurred when attempting to update callback data")
+        }
       }
-
-      sessionService.storeCallbackData(callbackData)(request, headerCarrier).map {
-        case callback: Option[CallbackData] if callback.isDefined => Ok("")
-        case _ => Logger.error(s"storeCallbackData failed with Exception , timestamp: ${System.currentTimeMillis()}.")
-          InternalServerError("Exception ")
-      }.recover {
-        case e: Throwable => Logger.error(s"storeCallbackData failed with Exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
-          InternalServerError("Exception occurred when attempting to store data")
-      }
-    }
+    )
   }
 }
 
 object FileUploadCallbackController extends FileUploadCallbackController {
-  val authConnector = ERSFileValidatorAuthConnector
-  val currentConfig: Configuration = Play.current.configuration
   val sessionService = SessionService
-
-  override val cacheUtil: CacheUtil = CacheUtil
 }

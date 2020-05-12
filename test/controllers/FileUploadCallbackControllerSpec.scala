@@ -17,100 +17,88 @@
 package controllers
 
 import akka.stream.Materializer
-import models.{CallbackData, ErsMetaData, SchemeInfo}
-import org.joda.time.DateTime
-import org.mockito.ArgumentMatchers
+import models.upscan._
+import org.mockito.ArgumentCaptor
+import org.mockito.ArgumentMatchers.{eq => meq, _}
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.{OneAppPerSuite, PlaySpec}
+import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json._
 import play.api.mvc.Request
+import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import play.api.test.{FakeHeaders, FakeRequest}
-import play.api.{Application, Configuration}
 import services.SessionService
-import uk.gov.hmrc.http.cache.client.CacheMap
-import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
-import utils.{CacheUtil, ERSFakeApplicationConfig, Fixtures}
+import uk.gov.hmrc.http.HeaderCarrier
+import utils.{ERSFakeApplicationConfig, UpscanData}
 
 import scala.concurrent.Future
-import uk.gov.hmrc.http.HeaderCarrier
 
-class FileUploadCallbackControllerSpec extends PlaySpec with MockitoSugar with ERSFakeApplicationConfig with OneAppPerSuite {
+class FileUploadCallbackControllerSpec extends PlaySpec with MockitoSugar with ERSFakeApplicationConfig with OneAppPerSuite with UpscanData {
 
   override implicit lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val mat: Materializer = app.materializer
 
-  lazy val mockAuthConnector = mock[AuthConnector]
-  lazy val mockCurrentConfig = mock[Configuration]
-  lazy val mockSessionService = mock[SessionService]
-  lazy val mockCacheUtil = mock[CacheUtil]
+  val mockSessionService: SessionService = mock[SessionService]
 
   object TestFileUploadCallbackController extends FileUploadCallbackController {
-    lazy val authConnector = mockAuthConnector
-    lazy val currentConfig = mockCurrentConfig
-    lazy val sessionService = mockSessionService
-    lazy val cacheUtil = mockCacheUtil
+    lazy val sessionService: SessionService = mockSessionService
   }
-
-  lazy val metaData: JsObject = Json.obj(
-    "surname" -> Fixtures.surname,
-    "firstForename" -> Fixtures.firstName
-  )
-
-  lazy val callbackData = CallbackData(collection = "collection", id = "someid", length = 1000L, name = Some(Fixtures.firstName), contentType = Some("content-type"), customMetadata = Some(metaData), sessionId = Some("testId"), noOfRows = None)
-
-  lazy val fakeHeaders: FakeHeaders = FakeHeaders(Seq("Content-type" -> "application/json"))
-  lazy val fakeRequest: FakeRequest[JsValue] = FakeRequest(method = "POST", uri = "", headers = fakeHeaders, body = Json.toJson(callbackData))
-
-  lazy val sr = "XA1100000000000"
-  lazy val schemeInfo = SchemeInfo("XA1100000000000", DateTime.now, "1", "2016", "EMI", "EMI")
-  lazy val rsc: ErsMetaData = new ErsMetaData(schemeInfo, "ipRef", Some("aoRef"), "empRef", Some("agentRef"), Some("sapNumber"))
 
   "callback" must {
-    "successfully store and validates callback data" in {
+    val sessionId = "sessionId"
 
-      when(mockSessionService.storeCallbackData(ArgumentMatchers.any[CallbackData]())(ArgumentMatchers.any[Request[_]](), ArgumentMatchers.any[HeaderCarrier]())).thenReturn(Future.successful(Some(callbackData)))
-      when(mockCacheUtil.fetch[ErsMetaData](ArgumentMatchers.any[String](), ArgumentMatchers.any[String]())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(rsc))
-      when(mockCacheUtil.cache(ArgumentMatchers.anyString(), ArgumentMatchers.any(), ArgumentMatchers.anyString())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(mock[CacheMap]))
-      val result = TestFileUploadCallbackController.callback().apply(fakeRequest)
+    "update callback" when {
+      "Upload status is UpscanReadyCallback" in {
+        val uploadStatusCaptor: ArgumentCaptor[UploadStatus] = ArgumentCaptor.forClass(classOf[UploadStatus])
+        val request = FakeRequest(controllers.routes.FileUploadCallbackController.callback(sessionId))
+          .withBody(Json.toJson(readyCallback))
 
-      status(result) must be(OK)
+        when(mockSessionService.updateCallbackRecord(meq(sessionId), uploadStatusCaptor.capture())(any[Request[_]], any[HeaderCarrier]))
+          .thenReturn(Future.successful(()))
+
+        val result = TestFileUploadCallbackController.callback(sessionId)(request)
+
+        status(result) mustBe OK
+        uploadStatusCaptor.getValue mustBe UploadedSuccessfully(uploadDetails.fileName, readyCallback.downloadUrl.toExternalForm)
+        verify(mockSessionService).updateCallbackRecord(meq(sessionId), any[UploadedSuccessfully])(any[Request[_]], any[HeaderCarrier])
+      }
+
+      "Upload status is failed" in {
+        val uploadStatusCaptor: ArgumentCaptor[UploadStatus] = ArgumentCaptor.forClass(classOf[UploadStatus])
+        val request = FakeRequest(controllers.routes.FileUploadCallbackController.callback(sessionId))
+          .withBody(Json.toJson(failedCallback))
+
+        when(mockSessionService.updateCallbackRecord(meq(sessionId), uploadStatusCaptor.capture())(any[Request[_]], any[HeaderCarrier]))
+          .thenReturn(Future.successful(()))
+
+        val result = TestFileUploadCallbackController.callback(sessionId)(request)
+        status(result) mustBe OK
+        uploadStatusCaptor.getValue mustBe Failed
+        verify(mockSessionService).updateCallbackRecord(meq(sessionId), meq(Failed))(any[Request[_]], any[HeaderCarrier])
+      }
     }
 
-    "successfully store and validates callback data when callbackData doesn't have session id" in {
-      val callbackData = CallbackData(collection = "collection", id = "someid", length = 1000L, name = Some(Fixtures.firstName), contentType = Some("content-type"),
-        customMetadata = None, sessionId = None, noOfRows = None)
+    "return Internal Server Error" when {
+      "an exception occurs updating callback record" in {
+        val request = FakeRequest(controllers.routes.FileUploadCallbackController.callback(sessionId))
+          .withBody(Json.toJson(failedCallback))
 
-      val fakeRequest = FakeRequest(method = "POST", uri = "", headers = fakeHeaders, body = Json.toJson(callbackData))
-      when(mockSessionService.storeCallbackData(ArgumentMatchers.any[CallbackData]())(ArgumentMatchers.any[Request[_]](), ArgumentMatchers.any[HeaderCarrier]())).thenReturn(Future.successful(Some(callbackData)))
-      when(mockCacheUtil.fetch[ErsMetaData](ArgumentMatchers.any[String](), ArgumentMatchers.any[String]())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(rsc))
-      when(mockCacheUtil.cache(ArgumentMatchers.anyString(), ArgumentMatchers.any(), ArgumentMatchers.anyString())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())).thenReturn(Future.successful(mock[CacheMap]))
-      val result = TestFileUploadCallbackController.callback().apply(fakeRequest)
-
-      status(result) must be(OK)
-
+        when(mockSessionService.updateCallbackRecord(meq(sessionId), any[UploadStatus])(any[Request[_]], any[HeaderCarrier]))
+          .thenReturn(Future.failed(new Exception("Mock Session Service Exception")))
+        val result = TestFileUploadCallbackController.callback(sessionId)(request)
+        status(result) mustBe INTERNAL_SERVER_ERROR
+      }
     }
 
-    "fail storing data with missing session id" in {
-      val callbackData = CallbackData(collection = "collection", id = "someid", length = 1000L, name = Some(Fixtures.firstName), contentType = Some("content-type"),
-        customMetadata = None, sessionId = Some("testId"), noOfRows = None)
+    "throw an exception" when {
+      "callback data cannot be parsed" in {
+        val request = FakeRequest(controllers.routes.FileUploadCallbackController.callback(sessionId))
+          .withBody(Json.parse("""{"unexpectedKey": "unexpectedValue"}"""))
 
-      val fakeRequest = FakeRequest(method = "POST", uri = "", headers = fakeHeaders, body = Json.toJson(callbackData))
-      when(mockSessionService.storeCallbackData(ArgumentMatchers.any[CallbackData]())(ArgumentMatchers.any[Request[_]](), ArgumentMatchers.any[HeaderCarrier]())).thenReturn(Future.successful(None))
-      val result = TestFileUploadCallbackController.callback().apply(fakeRequest)
-      status(result) must be(INTERNAL_SERVER_ERROR)
-
-    }
-
-    "fail storing data when an exception occurs" in {
-      val fakeRequest = FakeRequest(method = "POST", uri = "", headers = fakeHeaders, body = Json.toJson(callbackData))
-      when(mockSessionService.storeCallbackData(ArgumentMatchers.any[CallbackData]())(ArgumentMatchers.any[Request[_]](), ArgumentMatchers.any[HeaderCarrier]())).thenReturn(Future.failed(new RuntimeException))
-      val result = TestFileUploadCallbackController.callback().apply(fakeRequest)
-      status(result) must be(INTERNAL_SERVER_ERROR)
-
+        status(TestFileUploadCallbackController.callback(sessionId)(request)) mustBe BAD_REQUEST
+      }
     }
   }
-
 }

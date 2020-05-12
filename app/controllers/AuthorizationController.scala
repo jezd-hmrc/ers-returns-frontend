@@ -16,17 +16,17 @@
 
 package controllers
 
-import uk.gov.hmrc.play.frontend.controller.{FrontendController, UnauthorisedAction}
-
-import scala.concurrent.Future
-import uk.gov.hmrc.play.frontend.auth.Actions
-import utils.ExternalUrls
 import play.api.Play.current
-import play.api.i18n.Messages
 import play.api.i18n.Messages.Implicits._
 import play.api.mvc.{Action, AnyContent}
+import uk.gov.hmrc.play.frontend.controller.UnauthorisedAction
+import utils.{CacheUtil, ExternalUrls}
+
+import scala.concurrent.Future
 // $COVERAGE-OFF$
-object AuthorizationController extends AuthorizationController
+object AuthorizationController extends AuthorizationController {
+  override val cacheUtil: CacheUtil = CacheUtil
+}
 
 trait AuthorizationController extends ERSReturnBaseController with Authenticator {
 

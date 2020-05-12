@@ -20,17 +20,20 @@ import java.util.concurrent.TimeUnit
 
 import config.ApplicationConfig
 import models._
+import models.upscan.{InProgress, UpscanReadyCallback}
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json
 import play.api.libs.json.JsValue
-import play.api.mvc.Request
+import play.api.mvc.{Request, Result}
 import services.SessionService
 import uk.gov.hmrc.http.cache.client.{CacheMap, ShortLivedCache}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+
+import scala.util.control.NonFatal
 
 object CacheUtil extends CacheUtil {
   def shortLivedCache = config.ShortLivedCache
@@ -62,6 +65,7 @@ trait CacheUtil {
   val altAmendsActivity: String = "alt-activity"
 
   val CHECK_CSV_FILES: String = "check-csv-files"
+  val CSV_FILES_UPLOAD: String = "csv-files-upload"
 
   val FILE_NAME_CACHE: String = "file-name"
 
@@ -92,14 +96,16 @@ trait CacheUtil {
 
   def shortLivedCache: ShortLivedCache
 
-  def cache[T](key:String, body:T)(implicit hc:HeaderCarrier, ec:ExecutionContext, formats: json.Format[T], request: Request[AnyRef]) = {
+  def cache[T](key:String, body:T)(implicit hc:HeaderCarrier, ec:ExecutionContext, formats: json.Format[T], request: Request[AnyRef]) =
     shortLivedCache.cache[T](getCacheId, key, body)
-  }
 
   def cache[T](key: String, body: T, cacheId: String)(implicit hc: HeaderCarrier, formats: json.Format[T], request: Request[AnyRef]) = {
     Logger.info(s"cache saving key:$key, cacheId:$cacheId")
     shortLivedCache.cache[T](cacheId, key, body)
   }
+
+  def remove(cacheId: String)(implicit hc: HeaderCarrier, executionContext: ExecutionContext): Future[HttpResponse] =
+    shortLivedCache.remove(cacheId)
 
   @throws(classOf[NoSuchElementException])
   def fetch[T](key:String)(implicit hc:HeaderCarrier, ec:ExecutionContext, formats: json.Format[T], request: Request[AnyRef]): Future[T] = {
@@ -140,10 +146,10 @@ trait CacheUtil {
       res
     } recover {
       case e: NoSuchElementException => {
-        throw new NoSuchElementException
+        throw e
       }
-      case _: Throwable => {
-        Logger.error(s"fetchOption with 2 params failed to get key $key for $cacheId with exception, timestamp: ${System.currentTimeMillis()}.")
+      case e: Throwable => {
+        Logger.error(s"fetchOption with 2 params failed to get key $key for $cacheId, timestamp: ${System.currentTimeMillis()}.", e)
         throw new Exception
       }
     }
@@ -222,23 +228,25 @@ trait CacheUtil {
           }
         }
       }
-    }.recover { case e: NoSuchElementException =>
-      Logger.error(s"CacheUtil: Get all data from cache failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
-      throw new Exception
+    }.recover {
+      case e: NoSuchElementException =>
+        Logger.error(s"CacheUtil: Get all data from cache failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.", e)
+        throw new Exception
     }
   }
 
-  def getStatus(tRows:Option[Int]): Some[String] = {
-    (tRows.isDefined && (tRows.get > ApplicationConfig.sentViaSchedulerNoOfRowsLimit)) match {
-    case true => Some(largeFileStatus)
-    case _ => Some(savedStatus)
-  }}
+  def getStatus(tRows: Option[Int]): Some[String] =
+    if (tRows.isDefined && tRows.get > ApplicationConfig.sentViaSchedulerNoOfRowsLimit) {
+      Some(largeFileStatus)
+    } else {
+      Some(savedStatus)
+    }
 
   def getNoOfRows(nilReturn:String)(implicit hc: HeaderCarrier, ec: ExecutionContext, request: Request[AnyRef]): Future[Option[Int]] = {
     if (isNilReturn(nilReturn: String)) {
-      Future(None)
+      Future.successful(None)
     } else {
-      sessionService.retrieveCallbackData().map(res => res.get.noOfRows)
+      sessionService.getSuccessfulCallbackRecord.map(res => res.flatMap(_.noOfRows))
     }
   }
 

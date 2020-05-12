@@ -18,7 +18,7 @@
 
 	function isValidCSVFile (filename) {
 		var matchCount = 0
-		$(".files").each(function(index){
+		$("#fileName").each(function(index){
 			if ($(this)[0].getAttribute("data-file-name") == filename) {matchCount++;}
 		});
 		if (matchCount > 0) {
@@ -67,43 +67,36 @@
     	}
     	$("#file-uploader button").attr("disabled",true);
     	$(".validation-summary").show()
-	    $("#file-uploader").before("<p id='error-summary' class='field-error clear' tabindex'-1' role='alert' aria-labelledby='error-heading'>"+msg+"</p>")
+	    $("#fileToUpload").parent("Div").before("<p id='error-summary' class='field-error clear' tabindex='-1' role='alert'>"+msg+"</p>")
 	    $(".validation-summary-message a").html(msg)
 	    $("#uploadForm").addClass("error");
 	    $("#errors").focus();
 	}
 
 	function validateFile(fileName, fileSize, e) {
-		// Check file name
-		if (validFileName(fileName)) {
-			// check file name length
-				// Check file extn
-				if (getFileNameExtension(fileName) == "csv") {
-					if (csvFileSizeOK(fileSize)) {
-						if (isValidCSVFile(fileName)) {
-							// file ok
-							return true;
-						} else {
-							var filesListMsg = GOVUK.getLocalisedContent("ers.file.upload.wrong.file");
-							showCSVErrorMsg(e, filesListMsg);
-					    	errors++;
-							return false;
-						}
-					} else {
-						showCSVErrorMsg(e, GOVUK.getLocalisedContent("ers.file.upload.csv.file.large"));
-						errors++;
-						return false;
-					}
-				} else {
-					showCSVErrorMsg(e, GOVUK.getLocalisedContent("ers.file.upload.csv.wrong.type"));
-					errors++;
-					return false;
-				}
-		} else {
-			showCSVErrorMsg(e, GOVUK.getLocalisedContent("ers.file.upload.csv.choose.other"));
-			errors++;
-			return false;
-		}
+        // check file name length
+        // Check file extn
+        if (getFileNameExtension(fileName) == "csv") {
+            if (csvFileSizeOK(fileSize)) {
+                if (isValidCSVFile(fileName)) {
+                    // file ok
+                    return true;
+                } else {
+                    var filesListMsg = GOVUK.getLocalisedContent("ers.file.upload.wrong.file");
+                    showCSVErrorMsg(e, filesListMsg);
+                    errors++;
+                    return false;
+                }
+            } else {
+                showCSVErrorMsg(e, GOVUK.getLocalisedContent("ers.file.upload.csv.file.large"));
+                errors++;
+                return false;
+            }
+        } else {
+            showCSVErrorMsg(e, GOVUK.getLocalisedContent("ers.file.upload.csv.wrong.type"));
+            errors++;
+            return false;
+        }
 	}
 
 	$("#fileToUpload").change(function(e){

@@ -19,6 +19,7 @@ package utils
 import java.util.NoSuchElementException
 
 import models._
+import models.upscan.UploadedSuccessfully
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
@@ -485,13 +486,9 @@ class CacheUtilSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach w
   "cacheUtil" should {
     val cacheUtil: CacheUtil = new CacheUtil {
       override def shortLivedCache: ShortLivedCache = mockShortLivedCache
-
-      val postData = CallbackData(id = "theid", collection = "thecollection", length = 1000L, name = Some("thefilename"), contentType = None, sessionId = Some("testId"), customMetadata
-        = None, noOfRows = Some(1000))
       override val sessionService: SessionService = mockSessionCache
-      when(sessionService.retrieveCallbackData()(any(), any())).thenReturn(Future.successful(Some
-      (postData)))
-
+      when(sessionService.getSuccessfulCallbackRecord(any(), any()))
+        .thenReturn(Some(UploadedSuccessfully("name", "downloadUrl", Some(1000))))
     }
     "check Nil Return " in {
       cacheUtil.isNilReturn("2") shouldBe true

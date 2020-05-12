@@ -17,14 +17,12 @@
 package services
 
 import config.SessionCacheWiring
-import models.CallbackData
-import play.api.Logger
-import play.api.libs.json.{Json, Reads}
+import models.upscan.{NotStarted, UploadStatus, UploadedSuccessfully}
 import play.api.mvc.Request
+import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import uk.gov.hmrc.http.HeaderCarrier
 
 object SessionService extends SessionService
 
@@ -35,34 +33,21 @@ trait SessionService extends SessionCacheWiring {
 
   val SCENARIO_KEY = "scenario"
 
-  def retrieveCallbackData()(implicit request: Request[_], hc: HeaderCarrier): Future[Option[CallbackData]] = {
-
-    implicit val callbackDataReads: Reads[CallbackData] = Json.format[CallbackData]
-
-    sessionCache.fetchAndGetEntry(CALLBACK_DATA_KEY)(hc, callbackDataReads, global)
-
+  def createCallbackRecord(implicit request: Request[_], hc: HeaderCarrier): Future[Any] = {
+    sessionCache.cache[UploadStatus](CALLBACK_DATA_KEY, NotStarted)
   }
 
-  def storeCallbackData(postData: CallbackData)(implicit request: Request[_], hc: HeaderCarrier): Future[Option[CallbackData]] = {
+  def updateCallbackRecord(sessionId: String, uploadStatus: UploadStatus)(implicit request: Request[_], hc: HeaderCarrier): Future[Any] =
+    sessionCache.cache(sessionCache.defaultSource, sessionId, CALLBACK_DATA_KEY, uploadStatus)
 
-    val cacheMap = sessionCache.cache[CallbackData](CALLBACK_DATA_KEY, postData)
+  def getCallbackRecord(implicit request: Request[_], hc: HeaderCarrier): Future[Option[UploadStatus]] =
+    sessionCache.fetchAndGetEntry[UploadStatus](CALLBACK_DATA_KEY)
 
-    cacheMap.map(cacheMap =>
-      Some(postData)
-    ).recover { case e =>
-      Logger.error("Failed to store attachments post data: " + e)
-      None
+  def getSuccessfulCallbackRecord(implicit request: Request[_], hc: HeaderCarrier): Future[Option[UploadedSuccessfully]] =
+    getCallbackRecord.map {
+      _.flatMap {
+        case upload: UploadedSuccessfully => Some(upload)
+        case _ => None
+      }
     }
-  }
-
-  def storeString(dataPair:(String,String))(implicit request: Request[_], hc: HeaderCarrier): Future[Option[String]] = {
-    val cacheMap = sessionCache.cache[String](dataPair._1, dataPair._2)
-
-    cacheMap.map(cacheMap =>
-      Some(dataPair._2)
-    ).recover { case e =>
-      Logger.error("Failed to store attachments post data: " + e)
-      None
-    }
-  }
 }

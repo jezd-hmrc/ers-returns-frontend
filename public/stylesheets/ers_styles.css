@@ -246,10 +246,18 @@ article .help-notice {
 #input-file-name, .input-csv-file-name {border:1px solid #BFC1C3; padding:0; background:none; float:left;}
 
 .input-csv-file-name-heading {float:left; clear:both; margin-bottom:2px; margin-top:0px;}
- #fileToUpload, .input-csv-file-name { float:left; min-width:450px; max-width:450px; clear:both;}
- #file-uploader button {float:left; margin-left:10px;}
+#fileToUpload, .input-csv-file-name { float:left; min-width:450px; max-width:450px; clear:both;}
+#file-uploader button {
+    float:left;
+}
 
-.fileAlert {border-left: 4px solid #df3034; padding-left:14px; margin-left: -1em;}
+#fileToUpload {
+    border: 0px;
+    padding-left: 0px;
+}
+.fileAlert {
+    border: 4px solid #b10e1e;
+}
 
 #check-file-button, .spinner {margin: 1em 0 1em 0;}
 
@@ -371,6 +379,9 @@ article #html-error-report table td, article #html-error-report table th {border
 .summary-declaration-text-align {vertical-align:top; padding-left:5px;}
 .summary-declaration-section-text-align {vertical-align:top;}
 
+#file-uploader {
+    padding: 0;
+}
 
 table th, table td {
     font-size: 19px;

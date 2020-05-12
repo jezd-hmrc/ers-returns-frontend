@@ -40,13 +40,13 @@ import uk.gov.hmrc.domain.EmpRef
 import uk.gov.hmrc.http.cache.client.{CacheMap, ShortLivedCache}
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 import uk.gov.hmrc.play.test.UnitSpec
-import utils.{AuthHelper, CacheUtil, ERSFakeApplicationConfig, Fixtures, PageBuilder}
+import utils.{AuthHelper, CacheUtil, ERSFakeApplicationConfig, Fixtures, PageBuilder, UpscanData}
 
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpPost, HttpResponse}
 import utils.Fixtures.ersRequestObject
 
-class SummaryDeclarationControllerTest extends UnitSpec with ERSFakeApplicationConfig with AuthHelper with OneAppPerSuite {
+class SummaryDeclarationControllerTest extends UnitSpec with ERSFakeApplicationConfig with MockitoSugar with AuthHelper with OneAppPerSuite with UpscanData {
 
   override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
   implicit lazy val mat: Materializer = app.materializer
@@ -154,9 +154,7 @@ class SummaryDeclarationControllerTest extends UnitSpec with ERSFakeApplicationC
         val reportableEvents: ReportableEvents = new ReportableEvents(Some(PageBuilder.OPTION_YES))
         val fileTypeCSV: CheckFileType = new CheckFileType(Some(PageBuilder.OPTION_CSV))
         val fileTypeODS: CheckFileType = new CheckFileType(Some(PageBuilder.OPTION_ODS))
-        val callbackData: CallbackData = new CallbackData("", "", 0, None, None, None, None, None)
-        val csvFilesCallBack = new CsvFilesCallback("file0", Some(callbackData))
-        val csvFilesCallbackList: CsvFilesCallbackList = new CsvFilesCallbackList(List(csvFilesCallBack))
+        val csvFilesCallbackList = incompleteCsvList
         val trustees: TrusteeDetails = new TrusteeDetails("T Name", "T Add 1", None, None, None, None, None)
         val trusteesList: TrusteeDetailsList = new TrusteeDetailsList(List(trustees))
         val fileNameODS: String = "test.osd"
@@ -327,5 +325,4 @@ class SummaryDeclarationControllerTest extends UnitSpec with ERSFakeApplicationC
       status(result) shouldBe Status.OK
     }
   }
-
 }

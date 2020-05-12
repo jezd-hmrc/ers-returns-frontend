@@ -18,10 +18,10 @@ package connectors
 
 import akka.stream.Materializer
 import metrics.Metrics
-import models.{CallbackData, ERSAuthData, SchemeInfo, ValidatorData}
+import models.{ERSAuthData, SchemeInfo, ValidatorData}
 import org.joda.time.DateTime
-import org.mockito.ArgumentMatchers
-import org.mockito.Mockito._
+import org.mockito.{ArgumentCaptor, ArgumentMatchers}
+import org.mockito.Mockito.{reset => mreset, _}
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.Application
@@ -30,114 +30,196 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import uk.gov.hmrc.domain.EmpRef
-import uk.gov.hmrc.play.frontend.auth.AuthContext
+import uk.gov.hmrc.http.{HttpGet, HttpPost, HttpResponse}
 import uk.gov.hmrc.play.test.UnitSpec
-import utils.{AuthHelper, ERSFakeApplicationConfig, Fixtures}
+import utils.{AuthHelper, ERSFakeApplicationConfig, UpscanData, WireMockHelper}
+import com.github.tomakehurst.wiremock.client.WireMock._
 
 import scala.concurrent.Future
-import uk.gov.hmrc.http.{HttpGet, HttpPost, HttpResponse}
 
-class ERSConnectorSpec extends UnitSpec with MockitoSugar with OneAppPerSuite with ERSFakeApplicationConfig with AuthHelper {
+class ERSConnectorSpec extends UnitSpec with MockitoSugar with OneAppPerSuite with ERSFakeApplicationConfig with AuthHelper with WireMockHelper with UpscanData {
 
-  override lazy val app: Application = new GuiceApplicationBuilder().configure(config).build()
+  lazy val newConfig: Map[String, Any] = config + ("microservice.services.ers-file-validator.port" -> server.port())
+  override lazy val app: Application = new GuiceApplicationBuilder().configure(newConfig).build()
   implicit lazy val mat: Materializer = app.materializer
 
   implicit lazy val authContext: ERSAuthData = defaultErsAuthData
   implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
 
+  lazy val connector: ErsConnector = ErsConnector
+
 
   lazy val schemeInfo = SchemeInfo("XA1100000000000", DateTime.now, "1", "2016", "EMI", "EMI")
 
-  "calling sendData" should {
+  lazy val mockHttp = mock[HttpPost]
+  lazy val mockMetrics: Metrics = mock[Metrics]
 
-    lazy val mockHttp = mock[HttpPost]
-    lazy val mockMetrics: Metrics = mock[Metrics]
+  lazy val ersConnector: ErsConnector = new ErsConnector {
+    override lazy val metrics: Metrics = mockMetrics
 
-    lazy val schemeInfo1 = SchemeInfo("XA1100000000000", DateTime.now, "1", "2016", "QQQ", "QQQ")
+    override def httpPost: HttpPost = mockHttp
 
-    lazy val callbackData = CallbackData(
-      collection = "collection",
-      id = "someid",
-      length = 1000L,
-      name = Some(Fixtures.firstName),
-      contentType = Some("content-type"),
-      sessionId = Some("testId"),
-      customMetadata = Some(Json.obj("sessionId" -> "testId")), noOfRows = None)
+    override def httpGet: HttpGet = mock[HttpGet]
 
-    lazy val ersConnectorUnderTest: ErsConnector = new ErsConnector {
+    override def ersUrl = "ers-returns"
 
-      override lazy val metrics: Metrics = mockMetrics
+    override def validatorUrl = "ers-file-validator"
+  }
 
-      override def httpPost: HttpPost = mockHttp
+  lazy val data: JsObject = Json.obj(
+    "schemeRef" -> "XA1100000000000",
+    "confTime" -> "2016-08-05T11:14:43"
+  )
 
-      override def httpGet: HttpGet = mock[HttpGet]
-
-      override def ersUrl = "ers-returns"
-
-      override def validatorUrl = "ers-file-validator"
-		}
-
-    "successful validation" in {
-      reset(mockHttp)
-      when(
-        mockHttp.POST[ValidatorData, HttpResponse](ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())
-      ).thenReturn(
-        Future.successful(HttpResponse(OK))
-      )
-
-      val result = await(ersConnectorUnderTest.validateFileData(callbackData, schemeInfo))
-      result.status shouldBe OK
+  "validateFileData" should {
+    "call file validator using empref from auth context" in {
+      mreset(mockHttp)
+      val stringCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
+      when(mockHttp.POST[ValidatorData, HttpResponse](stringCaptor.capture(), ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any()))
+        .thenReturn(Future.successful(HttpResponse(200)))
+      val result = await(ersConnector.validateFileData(uploadedSuccessfully, schemeInfo))
+      result.status shouldBe 200
+      stringCaptor.getValue should include("123%2FABCDE")
     }
 
-    "validation fails" in {
-      reset(mockHttp)
-      when(
-        mockHttp.POST[ValidatorData, HttpResponse](ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())
-      ).thenReturn(
-        Future.successful(HttpResponse(INTERNAL_SERVER_ERROR))
-      )
+    "return the response from file-validator" when {
+      "response code is 200" in {
+        server.stubFor(post(urlPathMatching("/(.*)/process-file"))
+          .willReturn(
+            aResponse()
+              .withStatus(200)
+          )
+        )
 
-      val result = await(ersConnectorUnderTest.validateFileData(callbackData, schemeInfo))
-      result.status shouldBe INTERNAL_SERVER_ERROR
+        val result = await(connector.validateFileData(uploadedSuccessfully, schemeInfo))
+        result.status shouldBe 200
+      }
+
+      "response code is 202" in {
+        server.stubFor(post(urlPathMatching("/(.*)/process-file"))
+          .willReturn(
+            aResponse()
+              .withStatus(202)
+          )
+        )
+
+        val result = await(connector.validateFileData(uploadedSuccessfully, schemeInfo))
+        result.status shouldBe 202
+      }
     }
 
-    "validator throw Exception" in {
-      reset(mockHttp)
-      doThrow(
-        new RuntimeException
-      ).when(mockHttp).POST[ValidatorData, HttpResponse](ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())
+    "return blank Bad Request" when {
+      "file-validator returns 4xx" in {
+        server.stubFor(post(urlPathMatching("/(.*)/process-file"))
+          .willReturn(
+            aResponse()
+              .withStatus(401)
+          )
+        )
 
-      intercept[Exception] {
-        ersConnectorUnderTest.validateFileData(callbackData, schemeInfo1)
+        val result = await(connector.validateFileData(uploadedSuccessfully, schemeInfo))
+        result.status shouldBe 400
+      }
+
+      "file-validator returns 5xx" in {
+        server.stubFor(post(urlPathMatching("/(.*)/process-file"))
+          .willReturn(
+            aResponse()
+              .withStatus(501)
+          )
+        )
+
+        val result = await(connector.validateFileData(uploadedSuccessfully, schemeInfo))
+        result.status shouldBe 400
+      }
+
+      "validator throw Exception" in {
+        mreset(mockHttp)
+        when(mockHttp.POST[ValidatorData, HttpResponse](ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any()))
+          .thenReturn(Future.failed(new Exception("Test exception")))
+        val result = await(ersConnector.validateFileData(uploadedSuccessfully, schemeInfo))
+        result.status shouldBe 400
       }
     }
   }
 
-  "calling retrieveSubmissionData" should {
-
-    lazy val mockHttp = mock[HttpPost]
-    lazy val mockMetrics: Metrics = mock[Metrics]
-
-    lazy val ersConnector: ErsConnector = new ErsConnector {
-      override lazy val metrics: Metrics = mockMetrics
-
-      override def httpPost: HttpPost = mockHttp
-
-      override def httpGet: HttpGet = mock[HttpGet]
-
-      override def ersUrl = "ers-returns"
-
-      override def validatorUrl = "ers-file-validator"
+  "validateCsvFileData" should {
+    "call file validator using empref from auth context" in {
+      mreset(mockHttp)
+      val stringCaptor: ArgumentCaptor[String] = ArgumentCaptor.forClass(classOf[String])
+      when(mockHttp.POST[ValidatorData, HttpResponse](stringCaptor.capture(), ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any()))
+        .thenReturn(Future.successful(HttpResponse(200)))
+      val result = await(ersConnector.validateFileData(uploadedSuccessfully, schemeInfo))
+      result.status shouldBe 200
+      stringCaptor.getValue should include("123%2FABCDE")
     }
 
-    lazy val data: JsObject = Json.obj(
-      "schemeRef" -> "XA1100000000000",
-      "confTime" -> "2016-08-05T11:14:43"
-    )
+    "return the response from file-validator" when {
+      "response code is 200" in {
+        server.stubFor(post(urlPathMatching("/(.*)/process-csv-file"))
+          .willReturn(
+            aResponse()
+              .withStatus(200)
+          )
+        )
+
+        val result = await(connector.validateCsvFileData(List(uploadedSuccessfully), schemeInfo))
+        result.status shouldBe 200
+      }
+
+      "response code is 202" in {
+        server.stubFor(post(urlPathMatching("/(.*)/process-csv-file"))
+          .willReturn(
+            aResponse()
+              .withStatus(202)
+          )
+        )
+
+        val result = await(connector.validateCsvFileData(List(uploadedSuccessfully), schemeInfo))
+        result.status shouldBe 202
+      }
+    }
+
+    "return blank Bad Request" when {
+      "file-validator returns 4xx" in {
+        server.stubFor(post(urlPathMatching("/(.*)/process-csv-file"))
+          .willReturn(
+            aResponse()
+              .withStatus(401)
+          )
+        )
+
+        val result = await(connector.validateCsvFileData(List(uploadedSuccessfully), schemeInfo))
+        result.status shouldBe 400
+      }
+
+      "file-validator returns 5xx" in {
+        server.stubFor(post(urlPathMatching("/(.*)/process-csv-file"))
+          .willReturn(
+            aResponse()
+              .withStatus(501)
+          )
+        )
+
+        val result = await(connector.validateCsvFileData(List(uploadedSuccessfully), schemeInfo))
+        result.status shouldBe 400
+      }
+
+      "validator throw Exception" in {
+        mreset(mockHttp)
+        when(mockHttp.POST[ValidatorData, HttpResponse](ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any()))
+          .thenReturn(Future.failed(new Exception("Test exception")))
+        val result = await(ersConnector.validateCsvFileData(List(uploadedSuccessfully), schemeInfo))
+        result.status shouldBe 400
+      }
+    }
+  }
+
+
+  "calling retrieveSubmissionData" should {
 
     "successful retrieving" in {
-      reset(mockHttp)
+      mreset(mockHttp)
       when(
         mockHttp.POST[SchemeInfo, HttpResponse](ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())
       ).thenReturn(
@@ -149,7 +231,7 @@ class ERSConnectorSpec extends UnitSpec with MockitoSugar with OneAppPerSuite wi
     }
 
     "failed retrieving" in {
-      reset(mockHttp)
+      mreset(mockHttp)
       when(
         mockHttp.POST[SchemeInfo, HttpResponse](ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())
       ).thenReturn(
@@ -161,7 +243,7 @@ class ERSConnectorSpec extends UnitSpec with MockitoSugar with OneAppPerSuite wi
     }
 
     "throws exception" in {
-      reset(mockHttp)
+      mreset(mockHttp)
       when(
         mockHttp.POST[SchemeInfo, HttpResponse](ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())(ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any(), ArgumentMatchers.any())
       ).thenReturn(

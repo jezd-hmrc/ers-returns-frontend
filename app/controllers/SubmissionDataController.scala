@@ -29,9 +29,11 @@ import uk.gov.hmrc.play.frontend.auth.AuthContext
 
 import scala.concurrent.Future
 import uk.gov.hmrc.http.HeaderCarrier
+import utils.CacheUtil
 
 object SubmissionDataController extends SubmissionDataController {
   override val ersConnector: ErsConnector = ErsConnector
+  override val cacheUtil: CacheUtil = CacheUtil
 }
 
 trait SubmissionDataController extends ERSReturnBaseController with Authenticator {

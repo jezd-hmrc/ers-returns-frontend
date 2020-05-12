@@ -18,7 +18,7 @@ package models
 
 import org.joda.time.DateTime
 import play.api.i18n.Messages
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OFormat}
 import play.api.mvc.Request
 import utils.{DateUtils, PageBuilder}
 
@@ -115,7 +115,7 @@ case class RequestObject(
                           hmac: Option[String]
                           ) {
 
-  def toSchemeInfo: SchemeInfo =
+  private def toSchemeInfo: SchemeInfo =
     SchemeInfo(
       getSchemeReference,
       DateTime.now,
@@ -180,18 +180,10 @@ case class RequestObject(
   }
 
   private def getNVPair(paramName: String, value: Option[String]): String = {
-
-    try {
-      val tempValue = value.get
-      (paramName + "=" + value.get + ";")
-    } catch {
-      case ne: java.util.NoSuchElementException => {
-        ""
-      }
-    }
+    value.map(paramName + "=" + _ + ";").getOrElse("")
   }
 }
 
 object RequestObject {
-  implicit val format = Json.format[RequestObject]
+  implicit val formatRequestObject: OFormat[RequestObject] = Json.format[RequestObject]
 }

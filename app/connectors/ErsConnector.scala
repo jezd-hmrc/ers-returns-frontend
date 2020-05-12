@@ -21,17 +21,18 @@ import java.util.concurrent.TimeUnit
 import config.{WSHttp, WSHttpWithCustomTimeOut}
 import metrics.Metrics
 import models._
+import models.upscan.UploadedSuccessfully
 import play.api.Mode.Mode
-import play.api.{Configuration, Logger, Play}
 import play.api.libs.json.{JsObject, JsValue}
 import play.api.mvc.Request
+import play.api.{Configuration, Logger, Play}
 import uk.gov.hmrc.domain.EmpRef
+import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpPost, HttpResponse}
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import uk.gov.hmrc.http.{HeaderCarrier, HttpGet, HttpPost, HttpResponse}
 
 
 object ErsConnector extends ErsConnector with ServicesConfig {
@@ -47,7 +48,6 @@ object ErsConnector extends ErsConnector with ServicesConfig {
 }
 
 trait ErsConnector {
-
   lazy val metrics: Metrics = Metrics
 
   def ersUrl: String
@@ -101,38 +101,29 @@ trait ErsConnector {
     httpPost.POST(url, allData)
   }
 
-
-  def validateFileData(callbackData: CallbackData, schemeInfo: SchemeInfo)
-											(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[HttpResponse] = {
+  def validateFileData(callbackData: UploadedSuccessfully, schemeInfo: SchemeInfo)(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[HttpResponse] = {
     val empref: String = authContext.empRef.encodedValue
     val url: String = s"${validatorUrl}/ers/${empref}/process-file"
     val startTime = System.currentTimeMillis()
-    Logger.info("validateFileData: Call to Validator: " + (System.currentTimeMillis() / 1000))
+    Logger.debug("validateFileData: Call to Validator: " + (System.currentTimeMillis() / 1000))
     httpPost.POST(url, ValidatorData(callbackData, schemeInfo)).map { res =>
       metrics.ersConnector(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS)
       res
     }.recover {
-      case e: Exception => {
+      case e: Exception =>
         Logger.error(s"validateFileData: Validate file data failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
         metrics.ersConnector(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS)
         HttpResponse(400)
-      }
     }
   }
 
-  def validateCsvFileData(callbackData: List[CallbackData], schemeInfo: SchemeInfo)
-												 (implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[HttpResponse] = {
+  def validateCsvFileData(callbackData: List[UploadedSuccessfully], schemeInfo: SchemeInfo)
+                         (implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[HttpResponse] = {
     val empref: String = authContext.empRef.encodedValue
     val url: String = s"${validatorUrl}/ers/${empref}/process-csv-file"
-    val startTime = System.currentTimeMillis()
-    Logger.info("validateFileData: Call to Validator: " + (System.currentTimeMillis() / 1000))
-    httpPost.POST(url, CsvValidatorData(callbackData, schemeInfo)).map { res =>
-      metrics.ersConnector(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS)
-      res
-    }.recover {
+    httpPost.POST(url, CsvValidatorData(callbackData, schemeInfo)) recover {
       case e: Exception => {
         Logger.error(s"validateCsvFileData: Validate file data failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
-        metrics.ersConnector(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS)
         HttpResponse(400)
       }
     }
@@ -163,6 +154,4 @@ trait ErsConnector {
     val url: String = s"${ersUrl}/ers/${empref}/retrieve-submission-data"
     httpPost.POST(url, data)
   }
-
-
 }

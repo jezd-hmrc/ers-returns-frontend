@@ -31,7 +31,7 @@ import scala.concurrent.Future
 
 
 trait Authenticator extends AuthFunctionality with ErsConstants {
-	private val cacheUtil: CacheUtil = CacheUtil
+	val cacheUtil: CacheUtil
 	private type AsyncUserRequest = ERSAuthData => Request[AnyContent] => Future[Result]
 	private type UserRequest = ERSAuthData => Request[AnyContent] => Result
 

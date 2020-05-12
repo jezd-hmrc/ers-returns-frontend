@@ -17,6 +17,7 @@
 package controllers
 
 import models._
+import models.upscan.{NotStarted, UploadId, UpscanCsvFilesCallback, UpscanCsvFilesCallbackList, UpscanCsvFilesList, UpscanIds}
 import play.api.Logger
 import play.api.Play.current
 import play.api.i18n.Messages
@@ -25,6 +26,7 @@ import play.api.mvc.{Action, AnyContent, Request, Result}
 import uk.gov.hmrc.play.frontend.auth.AuthContext
 import utils.{CacheUtil, PageBuilder}
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -36,6 +38,7 @@ object CheckCsvFilesController extends CheckCsvFilesController {
 trait CheckCsvFilesController extends ERSReturnBaseController with Authenticator {
   val cacheUtil: CacheUtil
   val pageBuilder: PageBuilder
+  private val logger = Logger(this.getClass)
 
   def checkCsvFilesPage(): Action[AnyContent] = authorisedForAsync() {
     implicit user =>
@@ -44,40 +47,15 @@ trait CheckCsvFilesController extends ERSReturnBaseController with Authenticator
   }
 
   def showCheckCsvFilesPage()(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-
+    val requestObjectFuture = cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
+    cacheUtil.remove(CacheUtil.CSV_FILES_UPLOAD)
     (for {
-      requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
-      cacheData     <- cacheUtil.fetchOption[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES, requestObject.getSchemeReference).recover{
-        case _: NoSuchElementException => None
-      }
+      requestObject <- requestObjectFuture
     } yield {
-
       val csvFilesList: List[CsvFiles] = PageBuilder.getCsvFilesList(requestObject.getSchemeType)
-
-      cacheData match {
-
-        case Some(data) =>
-          val mergeWithSelected: List[CsvFiles] = mergeCsvFilesListWithCsvFilesCallback(csvFilesList, data)
-
-          Ok(views.html.check_csv_file(requestObject, CsvFilesList(mergeWithSelected)))
-
-        case None =>
-          Ok(views.html.check_csv_file(requestObject, CsvFilesList(csvFilesList)))
-      }
-    })
-    .recover {
+      Ok(views.html.check_csv_file(requestObject, CsvFilesList(csvFilesList)))
+    }) recover {
       case _: Throwable => getGlobalErrorPage
-    }
-  }
-
-  def mergeCsvFilesListWithCsvFilesCallback(csvFilesList: List[CsvFiles], cacheData: CsvFilesCallbackList): List[CsvFiles] = {
-    for (file <- csvFilesList) yield {
-      if (cacheData.files.exists(_.fileId == file.fileId)) {
-        CsvFiles(file.fileId, Some(PageBuilder.OPTION_YES))
-      }
-      else {
-        file
-      }
     }
   }
 
@@ -89,42 +67,36 @@ trait CheckCsvFilesController extends ERSReturnBaseController with Authenticator
 
   def validateCsvFilesPageSelected()(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     RsFormMappings.csvFileCheckForm.bindFromRequest.fold(
-      formWithErrors => {
-        reloadWithError()
-      },
-      formData => {
+      _ =>
+        reloadWithError(),
+      formData =>
         performCsvFilesPageSelected(formData)
-      }
     )
   }
 
-  def performCsvFilesPageSelected(formData: CsvFilesList)(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-
-    val csvFilesCallbackList: List[CsvFilesCallback] = createCacheData(formData.files)
-    if (csvFilesCallbackList.length == 0) {
+  def performCsvFilesPageSelected(formData: CsvFilesList)(implicit request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
+    val csvFilesCallbackList: UpscanCsvFilesList = createCacheData(formData.files)
+    if(csvFilesCallbackList.ids.isEmpty) {
       reloadWithError()
-    }
-    else {
-
+    } else {
       (for{
         requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
-        _             <- cacheUtil.cache(CacheUtil.CHECK_CSV_FILES, CsvFilesCallbackList(csvFilesCallbackList), requestObject.getSchemeReference)
+        _             <- cacheUtil.cache(CacheUtil.CSV_FILES_UPLOAD, csvFilesCallbackList, requestObject.getSchemeReference)
       } yield {
-
         Redirect(routes.CsvFileUploadController.uploadFilePage())
       }).recover {
-        case e: Throwable => {
-          Logger.error(s"checkCsvFilesPageSelected: Save data to cache failed with exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
+        case e: Throwable =>
+          logger.error(s"performCsvFilesPageSelected: Save data to cache failed with exception ${e.getMessage}.", e)
           getGlobalErrorPage
-        }
       }
     }
   }
 
-  def createCacheData(csvFilesList: List[CsvFiles]): List[CsvFilesCallback] = {
-    for (fileData <- csvFilesList if fileData.isSelected.getOrElse("") == PageBuilder.OPTION_YES) yield {
-      CsvFilesCallback(fileData.fileId, None)
+  def createCacheData(csvFilesList: List[CsvFiles]): UpscanCsvFilesList = {
+    val ids = for(fileData <- csvFilesList if fileData.isSelected.contains(PageBuilder.OPTION_YES)) yield {
+      UpscanIds(UploadId.generate, fileData.fileId, NotStarted)
     }
+    UpscanCsvFilesList(ids)
   }
 
   def reloadWithError()(implicit messages: Messages): Future[Result] = {

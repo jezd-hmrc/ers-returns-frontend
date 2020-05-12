@@ -16,8 +16,9 @@
 
 package controllers
 
-import connectors.{AttachmentsConnector, ErsConnector}
+import connectors.ErsConnector
 import models._
+import models.upscan.{UploadedSuccessfully, UpscanCsvFilesCallback, UpscanCsvFilesCallbackList}
 import play.api.Play.current
 import play.api.i18n.Messages
 import play.api.i18n.Messages.Implicits._
@@ -59,8 +60,18 @@ trait PdfGenerationController extends ERSReturnBaseController with Authenticator
           if (all.getEntry[ReportableEvents](CacheUtil.reportableEvents).get.isNilReturn.get == PageBuilder.OPTION_UPLOAD_SPREEDSHEET) {
             val fileType = all.getEntry[CheckFileType](CacheUtil.FILE_TYPE_CACHE).get.checkFileType.get
             if (fileType == PageBuilder.OPTION_CSV) {
-              val csvFilesCallback: List[CsvFilesCallback] = all.getEntry[CsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES).get.files
-              for (file <- csvFilesCallback if file.callbackData.isDefined) {
+              val csvCallback = all.getEntry[UpscanCsvFilesCallbackList](CacheUtil.CHECK_CSV_FILES).getOrElse (
+                throw new Exception(s"Cache data missing for key: ${CacheUtil.CHECK_CSV_FILES} in CacheMap")
+              )
+              val csvFilesCallback: List[UpscanCsvFilesCallback] = if(csvCallback.areAllFilesSuccessful()) {
+                csvCallback.files.collect{
+                  case successfulFile@UpscanCsvFilesCallback(_, _, _: UploadedSuccessfully) => successfulFile
+                }
+              } else {
+                throw new Exception("Not all files have been complete")
+              }
+              
+              for (file <- csvFilesCallback) {
                 filesUploaded += PageBuilder.getPageElement(requestObject.getSchemeId, PageBuilder.PAGE_CHECK_CSV_FILE, file.fileId + ".file_name")
               }
             } else {
@@ -91,7 +102,6 @@ trait PdfGenerationController extends ERSReturnBaseController with Authenticator
 }
 
 object PdfGenerationController extends PdfGenerationController {
-  val attachmentsConnector = AttachmentsConnector
   val currentConfig: Configuration = Play.current.configuration
   val sessionService = SessionService
   val ersConnector: ErsConnector = ErsConnector
