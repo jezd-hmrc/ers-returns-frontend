@@ -162,7 +162,7 @@ trait GroupSchemeController extends ERSReturnBaseController with Authenticator w
       Ok(views.html.group(requestObject, groupSchemeInfo.groupScheme, RsFormMappings.groupForm.fill(RS_groupScheme(groupSchemeInfo.groupScheme))))
     } recover {
       case e: Exception =>
-        Logger.error(s"Fetching GroupSchemeInfo from the cache failed: ${e.getMessage}")
+        Logger.warn(s"Fetching GroupSchemeInfo from the cache failed: $e")
         val form = RS_groupScheme(Some(""))
         Ok(views.html.group(requestObject, Some(PageBuilder.DEFAULT), RsFormMappings.groupForm.fill(form)))
     }
