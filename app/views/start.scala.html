@@ -25,7 +25,7 @@
 
 	@reference(requestObject.getPageTitle)
 
-	@header(messages("ers_start.page_title", requestObject.getSchemeName))
+	@header(messages("ers_start.page_title", requestObject.getSchemeNameForDisplay))
 
 	<p class="font-medium">@Html(getPageElement(schemeId, PAGE_START, "intro_para"))</p>
 

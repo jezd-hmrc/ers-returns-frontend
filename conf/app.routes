@@ -71,4 +71,4 @@ GET 		/confirmation/:bundle 		                    controllers.PdfGenerationContr
 
 GET         /retrieve-submission-data                       controllers.SubmissionDataController.retrieveSubmissionData()
 
-GET        /language/:lang                                  @controllers.LanguageSwitchController.switchToLanguage(lang: String)
+GET         /language/:lang                                 @controllers.LanguageSwitchController.switchToLanguage(lang: String)

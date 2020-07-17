@@ -390,10 +390,9 @@ ers_summary_declaration.file_names = File names
 
 ers_summary_declaration.section = Section
 ers_summary_declaration.your_answers = Your answers
-ers_summary_declaration.title = Your annual return is nearly complete
-ers_summary_declaration.info = Check the information you’ve provided before you submit your return.
+ers_summary_declaration.title = Check the information you provided before submitting your return
 ers_summary_declaration.button = Accept and submit
-ers_summary_declaration.alert = The company secretary, or the person acting as the company secretary, agrees that the information submitted is correct and complete.
+ers_summary_declaration.alert = The person acting as the company secretary must agree that the information submitted is correct and complete.
 ers_summary_declaration.csop.organiser = Scheme organiser details
 ers_summary_declaration.saye.organiser = Scheme organiser
 ers_summary_declaration.emi.organiser = Employer company details
