@@ -35,14 +35,13 @@
 
 	<h2 class="heading-medium">@Html(messages("ers_start.sub_title"))</h2>
 
-	<div class="panel-indent">
+	<div class="panel panel-border-wide">
 		<p>@Html(messages("ers_start.help"))</p>
 	</div>
 
-
 	<p>@Html(messages("ers_start.you_need"))</p>
 
-	<ul class='list-bullet space'>
+	<ul class='list list-bullet'>
 		<li>@Html(getPageElement(schemeId, PAGE_START, "bullet_1"))</li>
 		<li>@Html(getPageElement(schemeId, PAGE_START, "bullet_2"))</li>
 		@if(schemeId == SCHEME_CSOP || schemeId == SCHEME_SAYE || schemeId == SCHEME_SIP || schemeId == SCHEME_OTHER) {
@@ -55,7 +54,7 @@
 
 	<p>@Html(messages("ers_start.cant_use"))</p>
 
-	<ul class='list-bullet space'>
+	<ul class='list list-bullet'>
 		<li>@Html(messages("ers_start.cant_use_bullet_1"))</li>
 		<li>@Html(messages("ers_start.cant_use_bullet_2"))</li>
 	</ul>

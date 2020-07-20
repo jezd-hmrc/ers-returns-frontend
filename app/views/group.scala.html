@@ -26,27 +26,32 @@
 
 	@reference(requestObject.getPageTitle)
 	<p class="font-xsmall"><a href="@routes.SchemeOrganiserController.schemeOrganiserPage()" class="link-back">@Html(Messages("ers.back"))</a></p>
-	@header(getPageElement(schemeId, PAGE_GROUP_ACTIVITY, "question"))
+
 	@uk.gov.hmrc.play.views.html.helpers.form(action = routes.GroupSchemeController.groupSchemeSelected(schemeId)) {
 		@error_overview(groupSchemeForm, Some(getPageElement(schemeId, PAGE_GROUP_ACTIVITY, "err.message")))
 		<fieldset class="inline">
-			<div class="form-group @if(groupSchemeForm.hasErrors) {error}">
+			<div class="form-group @if(groupSchemeForm.hasErrors) {form-group-error}">
 				<legend id="groupSchemeLbl">
-					<span class="visuallyhidden">@Html(getPageElement(schemeId, PAGE_GROUP_ACTIVITY, "question"))</span>
-					@if(groupSchemeForm.hasErrors){<span class="error-message">@Html(getPageElement(schemeId, PAGE_GROUP_ACTIVITY, "err.message"))</span>}
+					@header(getPageElement(schemeId, PAGE_GROUP_ACTIVITY, "question"))
 				</legend>
 				<div class="form-hint">
 					<p>@Html(getPageElement(schemeId, PAGE_GROUP_ACTIVITY, "intro_para"))</p>
 				</div>
-				<div class="form-field">
-					<label for="yes" class="block-label @(if(groupScheme == OPTION_YES) "selected")">
+				@if(groupSchemeForm.hasErrors){<span class="error-message">@Html(getPageElement(schemeId, PAGE_GROUP_ACTIVITY, "err.message"))</span>}
+				<div class="form-group">
+					<div class="multiple-choice">
 						<input id="yes" type="radio" name="groupScheme" value="1" @(if(groupScheme.get == OPTION_YES) "checked" else "")>
-						@Html(Messages("ers_group_scheme.yes"))<br>
-					</label>
-					<label for="no" class="block-label @(if(groupScheme == OPTION_NO) "selected")">
+						<label for="yes" class="block-label @(if(groupScheme == OPTION_YES) "selected")">
+							@Html(Messages("ers_group_scheme.yes"))
+						</label>
+					</div>
+					<div class="multiple-choice">
 						<input id="no" type="radio" name="groupScheme" value="2" @(if(groupScheme.get == OPTION_NO) "checked" else "")>
-						@Html(Messages("ers_group_scheme.no"))<br>
-					</label>
+						<label for="no" class="block-label @(if(groupScheme == OPTION_NO) "selected")">
+							@Html(Messages("ers_group_scheme.no"))<br>
+						</label>
+					</div>
+
 				</div>
 			</div>
 		</fieldset>

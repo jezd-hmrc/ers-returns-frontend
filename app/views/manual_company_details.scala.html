@@ -29,87 +29,93 @@
 
 	@reference(requestObject.getPageTitle)
 	<p class="font-xsmall"><a href="@routes.GroupSchemeController.groupSchemePage" class="link-back">@Html(Messages("ers.back"))</a></p>
+	@error_overview(companyDetails)
 	@header(getPageElement(schemeId, PAGE_MANUAL_COMPANY_DETAILS, "title"))
 	@helpers.form(action = routes.GroupSchemeController.manualCompanyDetailsSubmit(index)) {
-	@error_overview(companyDetails)
-	<div class="form-group">
-		<fieldset class="inline">
-			<legend class="form-label">@Html(getPageElement(schemeId, PAGE_MANUAL_COMPANY_DETAILS, "question"))</legend>
-			<label class="block-label @if(companyDetails(companyDetailsFields.country).value == Some(DEFAULT_COUNTRY) || companyDetails(companyDetailsFields.country).value == None) {selected}" for="uk-radio-button">
-				<input id="uk-radio-button" name="radio-inline-group" value="1" type="radio" @if(companyDetails(companyDetailsFields.country).value == Some(DEFAULT_COUNTRY) || companyDetails(companyDetailsFields.country).value == None) {checked="checked"}>@Messages("ers_manual_company_details.uk")
-			</label>
-			<label class="block-label @if(companyDetails(companyDetailsFields.country).value != Some(DEFAULT_COUNTRY) && companyDetails(companyDetailsFields.country).value != None) {selected}" for="overseas-radio-button">
-				<input id="overseas-radio-button" name="radio-inline-group" value="2" type="radio" @if(companyDetails(companyDetailsFields.country).value != Some(DEFAULT_COUNTRY) && companyDetails(companyDetailsFields.country).value != None) {checked="checked"}>@Messages("ers_manual_company_details.overseas")
-			</label>
-		</fieldset>
-	</div>
-	<div class="form-group">
-		<div class='form-group @if(companyDetails.errors(companyDetailsFields.companyName)) { error }'>
+		<div class="form-group">
+			<fieldset class="inline">
+				<legend class="form-label">@Html(getPageElement(schemeId, PAGE_MANUAL_COMPANY_DETAILS, "question"))</legend>
+				<div class="multiple-choice">
+					<input id="uk-radio-button" name="radio-inline-group" value="1" type="radio" @if(companyDetails(companyDetailsFields.country).value == Some(DEFAULT_COUNTRY) || companyDetails(companyDetailsFields.country).value == None) {checked="checked"}>
+					<label class="@if(companyDetails(companyDetailsFields.country).value == Some(DEFAULT_COUNTRY) || companyDetails(companyDetailsFields.country).value == None) {selected}" for="uk-radio-button">
+						@Messages("ers_manual_company_details.uk")
+					</label>
+				</div>
+				<div class="multiple-choice">
+					<input id="overseas-radio-button" name="radio-inline-group" value="2" type="radio" @if(companyDetails(companyDetailsFields.country).value != Some(DEFAULT_COUNTRY) && companyDetails(companyDetailsFields.country).value != None) {checked="checked"}>
+					<label class="@if(companyDetails(companyDetailsFields.country).value != Some(DEFAULT_COUNTRY) && companyDetails(companyDetailsFields.country).value != None) {selected}" for="overseas-radio-button">
+						@Messages("ers_manual_company_details.overseas")
+					</label>
+				</div>
+			</fieldset>
+		</div>
+		<div class='form-group @if(companyDetails.errors(companyDetailsFields.companyName)) { form-group-error }'>
 			<label for="companyName" class="form-label" id="companyNameLbl">
 				<span>@Messages("ers_manual_company_details.company_name")</span>
 				@if(companyDetails.errors(companyDetailsFields.companyName)) {<span class="error-message">@companyDetails.errors(companyDetailsFields.companyName).head.message</span>}
 			</label>
 			<input id="companyName" type="text" class="form-control" name="companyName" value="@companyDetails(companyDetailsFields.companyName).value">
 		</div>
-	</div>
-	<div class='form-group @if(companyDetails.errors(companyDetailsFields.addressLine1)) { error }'>
-		<label for="addressLine1" id="addressLine1Lbl" class="form-label">
-			<span>@Messages("ers_manual_company_details.address")</span>
-			<span class="visuallyhidden">@Messages("ers_manual_company_details.addressLine1")</span>
-			@if(companyDetails.errors(companyDetailsFields.addressLine1)) {<span class="error-message">@companyDetails.errors(companyDetailsFields.addressLine1).head.message</span>}
-		</label>
-		<input id="addressLine1" type="text" class="form-control address-line" name="addressLine1" value="@companyDetails(companyDetailsFields.addressLine1).value">
-	</div>
-	<div class='form-group @if(companyDetails.errors(companyDetailsFields.addressLine2)) { error }'>
-		<label for="addressLine2" class="form-label" id="addressLine2Lbl">
-			<span class="visuallyhidden">@Messages("ers_manual_company_details.addressLine2")</span>
-			@if(companyDetails.errors(companyDetailsFields.addressLine2)) {<span class="error-message">@companyDetails.errors(companyDetailsFields.addressLine2).head.message</span>}
-		</label>
-		<input id="addressLine2" type="text" class="form-control address-line" name="addressLine2" value="@companyDetails(companyDetailsFields.addressLine2).value">
-	</div>
-	<div class='form-group @if(companyDetails.errors(companyDetailsFields.addressLine3)) { error }'>
-		<label for="addressLine3" class="form-label" id="addressLine3Lbl">
-			<span class="visuallyhidden">@Messages("ers_manual_company_details.addressLine3")</span>
-			@if(companyDetails.errors(companyDetailsFields.addressLine3)) {<span class="error-message">@companyDetails.errors(companyDetailsFields.addressLine3).head.message</span>}
-		</label>
-		<input id="addressLine3" type="text" class="form-control address-line" name="addressLine3" value="@companyDetails(companyDetailsFields.addressLine3).value">
-	</div>
-	<div class='form-group @if(companyDetails.errors(companyDetailsFields.addressLine4)) { error }'>
-		<label for="addressLine4" class="form-label" id="addressLine4Lbl">
-			<span class="visuallyhidden">@Messages("ers_manual_company_details.addressLine4")</span>
-			@if(companyDetails.errors(companyDetailsFields.addressLine4)) {<span class="error-message">@companyDetails.errors(companyDetailsFields.addressLine4).head.message</span>}
-		</label>
-		<input id="addressLine4" type="text" class="form-control address-line" name="addressLine4" value="@companyDetails(companyDetailsFields.addressLine4).value">
-	</div>
-	<div class="form-group country-group">
-		<label for="country" class="form-label" id="countryLbl">
-			<span>@Messages("ers_manual_company_details.country")</span>
-		</label>
-		@views.html.includes.countries(companyDetails(companyDetailsFields.country).value)
-	</div>
-	<div class="form-group postcode-group @if(companyDetails.errors(companyDetailsFields.postcode)) {error}" >
-		<label for="postcode" class="form-label" id="postcodeLbl">
-			<span>@Messages("ers_manual_company_details.postcode")</span><br/>
-			@if(companyDetails.errors(companyDetailsFields.postcode)) {<span class="error-message">@companyDetails.errors(companyDetailsFields.postcode).head.message</span>}
-		</label>
-		<input id="postcode" type="text" class="form-control" name="postcode" value="@companyDetails(companyDetailsFields.postcode).value">
-	</div>
-	<div class="form-group company-reg-group @if(companyDetails.errors(companyDetailsFields.companyReg)) {error}">
-		<label for="companyReg" class="form-label" id="companyRegLbl">
-			<span>@Messages("ers_manual_company_details.company_reg_number")</span>
-			<span class="form-hint">@Messages("ers_manual_company_details.company_reg_number.hint")</span>
-			@if(companyDetails.errors(companyDetailsFields.companyReg)) {<span class="error-message">@companyDetails.errors(companyDetailsFields.companyReg).head.message</span>}
-		</label>
-		<input id="companyReg" type="text" class="form-control" name="companyReg" value="@companyDetails(companyDetailsFields.companyReg).value">
-	</div>
-	<div class="form-group corporation-ref-group @if(companyDetails.errors(companyDetailsFields.corporationRef)) {error}">
-		<label for="corporationRef" class="form-label" id="corporationRefLbl">
-			<span>@Messages("ers_manual_company_details.corporation_tax_ref")</span>
-			<span class="form-hint text">@Messages("ers_manual_company_details.corporation_tax_ref.hint")</span>
-			@if(companyDetails.errors(companyDetailsFields.corporationRef)) {<span class="error-message">@companyDetails.errors(companyDetailsFields.corporationRef).head.message</span>}
-		</label>
-		<input id="corporationRef" type="text" class="form-control" name="corporationRef" value="@companyDetails(companyDetailsFields.corporationRef).value">
-	</div>
+		<div class="form-group">
+			<div class='form-group @if(companyDetails.errors(companyDetailsFields.addressLine1)) { form-group-error }'>
+				<label for="addressLine1" id="addressLine1Lbl" class="form-label">
+					<span>@Messages("ers_manual_company_details.address")</span>
+					<span class="visuallyhidden">@Messages("ers_manual_company_details.addressLine1")</span>
+					@if(companyDetails.errors(companyDetailsFields.addressLine1)) {<span class="error-message">@companyDetails.errors(companyDetailsFields.addressLine1).head.message</span>}
+				</label>
+				<input id="addressLine1" type="text" class="form-control address-line" name="addressLine1" value="@companyDetails(companyDetailsFields.addressLine1).value">
+			</div>
+			<div class='form-group @if(companyDetails.errors(companyDetailsFields.addressLine2)) { form-group-error }'>
+				<label for="addressLine2" class="form-label" id="addressLine2Lbl">
+					<span class="visuallyhidden">@Messages("ers_manual_company_details.addressLine2")</span>
+					@if(companyDetails.errors(companyDetailsFields.addressLine2)) {<span class="error-message">@companyDetails.errors(companyDetailsFields.addressLine2).head.message</span>}
+				</label>
+				<input id="addressLine2" type="text" class="form-control address-line" name="addressLine2" value="@companyDetails(companyDetailsFields.addressLine2).value">
+			</div>
+			<div class='form-group @if(companyDetails.errors(companyDetailsFields.addressLine3)) { form-group-error }'>
+				<label for="addressLine3" class="form-label" id="addressLine3Lbl">
+					<span class="visuallyhidden">@Messages("ers_manual_company_details.addressLine3")</span>
+					@if(companyDetails.errors(companyDetailsFields.addressLine3)) {<span class="error-message">@companyDetails.errors(companyDetailsFields.addressLine3).head.message</span>}
+				</label>
+				<input id="addressLine3" type="text" class="form-control address-line" name="addressLine3" value="@companyDetails(companyDetailsFields.addressLine3).value">
+			</div>
+			<div class='form-group @if(companyDetails.errors(companyDetailsFields.addressLine4)) { form-group-error }'>
+				<label for="addressLine4" class="form-label" id="addressLine4Lbl">
+					<span class="visuallyhidden">@Messages("ers_manual_company_details.addressLine4")</span>
+					@if(companyDetails.errors(companyDetailsFields.addressLine4)) {<span class="error-message">@companyDetails.errors(companyDetailsFields.addressLine4).head.message</span>}
+				</label>
+				<input id="addressLine4" type="text" class="form-control address-line" name="addressLine4" value="@companyDetails(companyDetailsFields.addressLine4).value">
+			</div>
+		</div>
+		<div class="form-group country-group">
+			<label for="country" class="form-label" id="countryLbl">
+				<span>@Messages("ers_manual_company_details.country")</span>
+			</label>
+			@views.html.includes.countries(companyDetails(companyDetailsFields.country).value)
+		</div>
+		<div class="form-group postcode-group @if(companyDetails.errors(companyDetailsFields.postcode)) {form-group-error}" >
+			<label for="postcode" class="form-label" id="postcodeLbl">
+				<span>@Messages("ers_manual_company_details.postcode")</span><br/>
+				@if(companyDetails.errors(companyDetailsFields.postcode)) {<span class="error-message">@companyDetails.errors(companyDetailsFields.postcode).head.message</span>}
+			</label>
+			<input id="postcode" type="text" class="form-control" name="postcode" value="@companyDetails(companyDetailsFields.postcode).value">
+		</div>
+		<div class="form-group company-reg-group @if(companyDetails.errors(companyDetailsFields.companyReg)) {form-group-error}">
+			<label for="companyReg" class="form-label" id="companyRegLbl">
+				<span>@Messages("ers_manual_company_details.company_reg_number")</span>
+				<span class="form-hint">@Messages("ers_manual_company_details.company_reg_number.hint")</span>
+				@if(companyDetails.errors(companyDetailsFields.companyReg)) {<span class="error-message">@companyDetails.errors(companyDetailsFields.companyReg).head.message</span>}
+			</label>
+			<input id="companyReg" type="text" class="form-control" name="companyReg" value="@companyDetails(companyDetailsFields.companyReg).value">
+		</div>
+		<div class="form-group corporation-ref-group @if(companyDetails.errors(companyDetailsFields.corporationRef)) {form-group-error}">
+			<label for="corporationRef" class="form-label" id="corporationRefLbl">
+				<span>@Messages("ers_manual_company_details.corporation_tax_ref")</span>
+				<span class="form-hint text">@Messages("ers_manual_company_details.corporation_tax_ref.hint")</span>
+				@if(companyDetails.errors(companyDetailsFields.corporationRef)) {<span class="error-message">@companyDetails.errors(companyDetailsFields.corporationRef).head.message</span>}
+			</label>
+			<input id="corporationRef" type="text" class="form-control" name="corporationRef" value="@companyDetails(companyDetailsFields.corporationRef).value">
+		</div>
 	<input role="button" id="continue" class="button" type="submit" value="@Html(Messages("ers_manual_company_details.continue"))" >
 	}
 

@@ -29,10 +29,9 @@
 
 	@header(getPageElement(schemeId, PAGE_GROUP_SUMMARY, "title"))
 
-	<div class="clear">
 		@uk.gov.hmrc.play.views.html.helpers.form(action = routes.GroupSchemeController.groupPlanSummaryContinue(schemeId)) {
 			@if(groupSchemeType == OPTION_MANUAL) {
-			<div class="panel-indent">
+			<div class="panel panel-border-wide">
 				<a href="@routes.GroupSchemeController.manualCompanyDetailsPage()">@Html(getPageElement(schemeId, PAGE_GROUP_SUMMARY, "add_company"))</a>
 			</div>
 			}
@@ -74,9 +73,8 @@
 			<p class="text">@Html(getPageElement(schemeId, PAGE_GROUP_SUMMARY, "notice_info"))&nbsp;<a href="routes.GroupSchemeController.groupCheckCSVFilePage()" id="check-another-return-file-link">@Html(Messages("ers_group_summary.notice_info2"))</a>.<p/>
 			}
 			<div @if(groupSchemeType == OPTION_MANUAL) {class="group-plan-summary-margin"}>
-			<button role="button" id="continue" class="button" type="submit" @if(companies.companies.length == 0) {disabled="disabled"}>@Html(Messages("ers.continue"))</button>
+				<button role="button" id="continue" class="button" type="submit" @if(companies.companies.length == 0) {disabled="disabled"}>@Html(Messages("ers.continue"))</button>
 			</div>
 		}
-	</div>
 
 }

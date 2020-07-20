@@ -27,21 +27,23 @@
 	@reference(requestObject.getPageTitle)
 	<p class="font-xsmall"><a href="@routes.ReportableEventsController.reportableEventsPage()" class="link-back">@Html(Messages("ers.back"))</a></p>
 	@uk.gov.hmrc.play.views.html.helpers.form(action = routes.CheckFileTypeController.checkFileTypeSelected()) {
-		@header(Messages("ers_check_file_type.title"))
 		@error_overview(checkFileTypeForm)
-		<div class="form-group @if(checkFileTypeForm.hasErrors) {error}">
+		<div class="form-group @if(checkFileTypeForm.hasErrors) {form-group-error}">
 			<fieldset>
 				<legend id="checkFileTypeLbl">
-					@if(checkFileTypeForm.hasErrors){<span class="error-message">@Html(Messages("ers_check_file_type.err.message"))</span>}
+					@header(Messages("ers_check_file_type.title"))
 				</legend>
-				<div class="form-field">
+				@if(checkFileTypeForm.hasErrors){<span class="error-message">@Html(Messages("ers_check_file_type.err.message"))</span>}
+				<div class="multiple-choice">
+					<input id="csv" type="radio" name="checkFileType" value=@OPTION_CSV @(if(checkFileType.get == OPTION_CSV) "checked" else "")>
 					<label for="csv" class="block-label @(if(checkFileType == OPTION_CSV) "selected")">
-						<input id="csv" type="radio" name="checkFileType" value=@OPTION_CSV @(if(checkFileType.get == OPTION_CSV) "checked" else "")>
-						@Html(Messages("ers_check_file_type.option_1"))<br>
+						@Html(Messages("ers_check_file_type.option_1"))
 					</label>
+				</div>
+				<div class="multiple-choice">
+					<input id="ods" type="radio" name="checkFileType" value=@OPTION_ODS @(if(checkFileType.get == OPTION_ODS) "checked" else "")>
 					<label for="ods" class="block-label @(if(checkFileType == OPTION_ODS) "selected")">
-						<input id="ods" type="radio" name="checkFileType" value=@OPTION_ODS @(if(checkFileType.get == OPTION_ODS) "checked" else "")>
-						@Html(Messages("ers_check_file_type.option_2"))<br>
+						@Html(Messages("ers_check_file_type.option_2"))
 					</label>
 				</div>
 			</fieldset>

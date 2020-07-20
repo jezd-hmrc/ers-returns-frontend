@@ -27,20 +27,20 @@
     @reference(requestObject.getPageTitle)
     <p class="font-xsmall"><a href="@getPageBackLink(schemeId, PAGE_ALT_AMENDS)" class="link-back">@Html(Messages("ers.back"))</a></p>
 
-    @header(getPageElement(schemeId, PAGE_ALT_AMENDS, "question"))
     @if(flash.get("alt-amends-not-selected-error").isDefined) {
-    <div id="errors" class="validation-summary" role="group" aria-labelledby="error-summary-heading" tabindex="-1">
-        <h1 class="heading-medium error-summary-heading" id="error-summary-heading">
+    <div id="errors" class="error-summary" role="group" aria-labelledby="error-summary-heading" tabindex="-1">
+        <h2 class="heading-medium error-summary-heading" id="error-summary-heading">
             @Html(Messages("validation.summary.heading"))
-        </h1>
-        <ul class="validation-summary-message">
-            <li class=validation-summary-message"><a href="#error-summary" data-focuses="error-summary">@Html(getPageElement(schemeId, PAGE_ALT_AMENDS, "err.message"))</a></li>
+        </h2>
+        <ul class="error-summary-list">
+            <li class=error-message"><a href="#error-summary" data-focuses="error-summary">@Html(getPageElement(schemeId, PAGE_ALT_AMENDS, "err.message"))</a></li>
         </ul>
     </div>
     }
+    @header(getPageElement(schemeId, PAGE_ALT_AMENDS, "question"))
 
     @uk.gov.hmrc.play.views.html.helpers.form(action = routes.AltAmendsController.altAmendsSelected()) {
-        <div class="form-group @if(flash.get("alt-amends-not-selected-error").isDefined) {error}">
+        <div class="form-group @if(flash.get("alt-amends-not-selected-error").isDefined) {form-group-error}">
             <fieldset>
                 <legend>
                     <span>@Html(getPageElement(schemeId, PAGE_ALT_AMENDS, "instruction"))</span>
@@ -51,31 +51,42 @@
                 </div>
                 }
                 <div class="form-field">
-                    <label for="alt-terms-check-box" class="block-label @if(altAmends.altAmendsTerms != None){@(if(altAmends.altAmendsTerms.get == OPTION_YES) "selected")}">
+                    <div class="multiple-choice">
                         <input id="alt-terms-check-box" type="checkbox" name="altAmendsTerms" value=@OPTION_YES @if(altAmends.altAmendsTerms != None){@(if(altAmends.altAmendsTerms.get == OPTION_YES) "checked" else "")} else {""}>
-                        @Html(getPageElement(schemeId, PAGE_ALT_AMENDS, "option_1"))<br>
-                    </label>
-                    <label for="alt-eligibility-check-box" class="block-label @if(altAmends.altAmendsEligibility != None){@(if(altAmends.altAmendsEligibility.get == OPTION_YES) "selected")}">
+                        <label for="alt-terms-check-box" class="@if(altAmends.altAmendsTerms != None){@(if(altAmends.altAmendsTerms.get == OPTION_YES) "selected")}">
+                            @Html(getPageElement(schemeId, PAGE_ALT_AMENDS, "option_1"))
+                        </label>
+                    </div>
+                    <div class="multiple-choice">
                         <input id="alt-eligibility-check-box" type="checkbox" name="altAmendsEligibility" value=@OPTION_YES @if(altAmends.altAmendsEligibility != None){@(if(altAmends.altAmendsEligibility.get == OPTION_YES) "checked" else "")} else {""}>
-                        @Html(getPageElement(schemeId, PAGE_ALT_AMENDS, "option_2"))<br>
-                    </label>
-                    <label for="alt-exchange-check-box" class="block-label @if(altAmends.altAmendsExchange != None){@(if(altAmends.altAmendsExchange.get == OPTION_YES) "selected")}">
+                        <label for="alt-eligibility-check-box" class="@if(altAmends.altAmendsEligibility != None){@(if(altAmends.altAmendsEligibility.get == OPTION_YES) "selected")}">
+                            @Html(getPageElement(schemeId, PAGE_ALT_AMENDS, "option_2"))
+                        </label>
+                    </div>
+                    <div class="multiple-choice">
                         <input id="alt-exchange-check-box" type="checkbox" name="altAmendsExchange" value=@OPTION_YES @if(altAmends.altAmendsExchange != None){@(if(altAmends.altAmendsExchange.get == OPTION_YES) "checked" else "")} else {""}>
-                        @Html(getPageElement(schemeId, PAGE_ALT_AMENDS, "option_3"))<br>
-                    </label>
-                    <label for="variations-check-box" class="block-label @if(altAmends.altAmendsVariations != None){@(if(altAmends.altAmendsVariations.get == OPTION_YES) "selected")}">
+                        <label for="alt-exchange-check-box" class="@if(altAmends.altAmendsExchange != None){@(if(altAmends.altAmendsExchange.get == OPTION_YES) "selected")}">
+                            @Html(getPageElement(schemeId, PAGE_ALT_AMENDS, "option_3"))
+                        </label>
+                    </div>
+                    <div class="multiple-choice">
                         <input id="variations-check-box" type="checkbox" name="altAmendsVariations" value=@OPTION_YES @if(altAmends.altAmendsVariations != None){@(if(altAmends.altAmendsVariations.get == OPTION_YES) "checked" else "")} else {""}>
-                        @Html(getPageElement(schemeId, PAGE_ALT_AMENDS, "option_4"))<br>
-                    </label>
-                    <label for="other-check-box" class="block-label @if(altAmends.altAmendsOther != None){@(if(altAmends.altAmendsOther.get == OPTION_YES) "selected")}">
+                        <label for="variations-check-box" class="@if(altAmends.altAmendsVariations != None){@(if(altAmends.altAmendsVariations.get == OPTION_YES) "selected")}">
+                            @Html(getPageElement(schemeId, PAGE_ALT_AMENDS, "option_4"))
+                        </label>
+                    </div>
+                    <div class="multiple-choice">
                         <input id="other-check-box" type="checkbox" name="altAmendsOther" value=@OPTION_YES @if(altAmends.altAmendsOther != None){@(if(altAmends.altAmendsOther.get == OPTION_YES) "checked" else "")} else {""}>
-                        @Html(getPageElement(schemeId, PAGE_ALT_AMENDS, "option_5"))<br>
-                    </label>
+                        <label for="other-check-box" class="@if(altAmends.altAmendsOther != None){@(if(altAmends.altAmendsOther.get == OPTION_YES) "selected")}">
+                            @Html(getPageElement(schemeId, PAGE_ALT_AMENDS, "option_5"))
+                        </label>
+                    </div>
+
                 </div>
             </fieldset>
         </div>
         <!--div class="application-notice help-notice clear text"-->
-        <div class="panel-indent">
+        <div class="panel panel-border-wide">
             <p id="declaration">@Html(getPageElement(schemeId, PAGE_ALT_AMENDS, "alert"))</p>
         </div>
         <input role="button" id="continue" class="button" type="submit" value="@Html(Messages("ers_alt_amends.continue"))">

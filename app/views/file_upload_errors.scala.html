@@ -30,7 +30,7 @@
 
 	@header(Messages("file_upload_errors.title"))
 
-	<div class="panel-indent">
+	<div class="panel panel-border-wide">
 		@if(fileType == OPTION_ODS) {
 			<p>@Html(Messages("file_upload_errors.para1")) <a href="@routes.FileUploadController.uploadFilePage()">@Html(Messages("file_upload_errors.upload_link"))</a>.</p>
 		} else {

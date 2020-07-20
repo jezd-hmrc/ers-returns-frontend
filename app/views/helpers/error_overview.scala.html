@@ -16,13 +16,12 @@
 
 @(form: Form[_], OptionalErrMsg:Option[String] = None)(implicit messages: Messages)
 @if(form.hasErrors) {
-        <div id="errors" class="validation-summary" role="group" aria-labelledby="summary-heading" tabindex="-1">
-            <h1 id="summary-heading" class="heading-medium error-summary-heading">@messages("validation.summary.heading")</h1>
-            @messages("validation.summary.info")
+        <div id="errors" class="error-summary" role="group" aria-labelledby="summary-heading" tabindex="-1">
+            <h2 id="summary-heading" class="heading-medium error-summary-heading">@messages("validation.summary.heading")</h2>
             <ul>
                 @form.errors.map { error =>
-                <li class="validation-summary-message" id='@error.key.replaceAll("""[\.\[\]]""", "_")Error'>
-                    <a href='#@error.key.replaceAll("""[\.\[\]]""", "_")Lbl' data-focuses='@error.key.replaceAll("""[\.\[\]]""", "_")Lbl'>
+                <li class="error-summary-list" id='@error.key.replaceAll("""[\.\[\]]""", "_")Error'>
+                    <a href='#@error.key.replaceAll("""[\.\[\]]""", "_")Lbl' data-focuses='@error.key.replaceAll("""[\.\[\]]""", "_")Lbl' class="error-message">
                         @messages(if (OptionalErrMsg.isDefined) OptionalErrMsg.get else error.message, error.args : _*)
                     </a>
                 </li>
