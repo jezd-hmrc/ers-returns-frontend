@@ -635,7 +635,7 @@ ers_alt_amends.csop.option_2 = Alterations to the eligibility of individuals to 
 ers_alt_amends.csop.option_3 = Alterations arising from an exchange of share options on a company reorganisation
 ers_alt_amends.csop.option_4 = A variation in the share capital of which the shares form a part
 ers_alt_amends.csop.option_5 = Other
-ers_alt_amends.csop.alert = The company secretary, or the person acting as the company secretary, declares that the alteration or the variation in any share capital hasn’t caused the requirements of parts 2 to 6 of Schedule 4 Income Tax (Earnings and Pensions) Act 2003 not to be met in relation to the Company Share Option Plan.
+ers_alt_amends.csop.alert = The person acting as the company secretary, declares that the alteration or the variation in any share capital hasn’t caused the requirements of parts 2 to 6 of Schedule 4 Income Tax (Earnings and Pensions) Act 2003 not to be met in relation to the Company Share Option Plan.
 ers_alt_amends.csop.err.message = Select all of the alterations or variations that apply
 
 ers_alt_amends.saye.title = Select scheme alterations and variations
