@@ -156,7 +156,7 @@ ers_choose.sip.question = Have shares been awarded or have shares ceased to be p
 ers_choose.other.question = Have there been any events in relation to options or securities (including shares) during the tax year?
 ers_choose.option_1 = Yes
 ers_choose.option_2 = No (nil return)
-ers_choose.err.message = Confirm if there have been any reportable events
+ers_choose.err.message = Select yes if options have been granted, exercised, released (including exchanges), lapsed or cancelled during the tax year.
 
 ers_scheme_organiser.csop.title = Add scheme organiser details
 ers_scheme_organiser.sip.title = Add establishing company details
@@ -614,7 +614,7 @@ ers.bulk.success.saye.info = If there are no errors in {0}, you’ll add the sch
 # Validation
 #********************************************************************
 
-validation.summary.heading = There’s a problem
+validation.summary.heading = There is a problem
 validation.summary.info = Check your information is correct, in the right place and in the right format.
 validation.summary.info2 = You need to:
 
