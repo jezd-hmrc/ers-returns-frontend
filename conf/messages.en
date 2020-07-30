@@ -618,14 +618,14 @@ validation.summary.info = Check your information is correct, in the right place 
 validation.summary.info2 = You need to:
 
 ers_alt_activity.csop.title = Have alterations been made to key features of this scheme or has there been a variation in the share capital?
-ers_alt_activity.csop.err.message = Confirm if alterations have been made or there’s been a variation in the share capital
+ers_alt_activity.csop.err.message = Select yes if alterations have been made to key features of this scheme or there has been a variation in the share capital
 ers_alt_activity.csop.question = Have alterations been made to key features of this scheme or has there been a variation in the share capital?
-ers_alt_activity.csop.intro_para = A ’key feature’ is anything that’s needed for the scheme to meet its legal requirements (for example, the eligibility of an individual to take part in the scheme).
+ers_alt_activity.csop.intro_para = A ‘key feature’ is anything that’s needed for the scheme to meet its legal requirements (for example, the eligibility of an individual to take part in the scheme).
 
 ers_alt_activity.saye.title = Have alterations been made to key features of this scheme or has there been a variation in the share capital?
-ers_alt_activity.saye.err.message = Confirm if alterations have been made or there’s been a variation in the share capital
+ers_alt_activity.saye.err.message = Select yes if alterations have been made to key features of this scheme or there has been a variation in the share capital
 ers_alt_activity.saye.question = Have alterations been made to key features of this scheme or has there been a variation in the share capital?
-ers_alt_activity.saye.intro_para = A ’key feature’ is anything that’s needed for the scheme to meet its legal requirements (for example, the eligibility of an individual to take part in the scheme).
+ers_alt_activity.saye.intro_para = A ‘key feature’ is anything that’s needed for the scheme to meet its legal requirements (for example, the eligibility of an individual to take part in the scheme).
 
 ers_alt_amends.csop.title = Select scheme alterations and variations
 ers_alt_amends.csop.question = What alterations or variations have been made?
