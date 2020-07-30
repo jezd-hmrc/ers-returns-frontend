@@ -433,7 +433,7 @@ file_upload.emi.info = Choose the {0} file you want to upload as part of your En
 file_upload.other.info = Choose the {0} file you want to upload as part of your Other annual return.
 file_upload.sip.info = Choose the {0} file you want to upload as part of your Share Incentive Plan annual return.
 file_upload.saye.info = Choose the {0} file you want to upload as part of your Save As You Earn annual return.
-file_upload.delay = Your file may take a few minutes to upload. You will have to wait until it has uploaded before you continue.
+file_upload.delay.csv = If your CSV file is larger than 100MB you will not be able to upload it. Email shareschemes@hmrc.gsi.gov.uk for any help with your submission.
 file_upload.delay.ods = If your ODS file is larger than 10MB you will not be able to upload it. Email shareschemes@hmrc.gsi.gov.uk for any help with your submission.
 
 file_upload_errors.title = Errors have been found
