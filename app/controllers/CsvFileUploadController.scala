@@ -132,10 +132,13 @@ trait CsvFileUploadController extends FrontendController with Authenticator with
   def extractCsvCallbackData(schemeInfo: SchemeInfo)(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
     cacheUtil.fetch[UpscanCsvFilesList](CacheUtil.CSV_FILES_UPLOAD, schemeInfo.schemeRef).flatMap {
       data =>
+        logger.error(s"weGotAFetch \n\n\n $data")
         cacheUtil.fetchAll(schemeInfo.schemeRef).map {
           cacheMap =>
+            logger.error(s"weAllGotAFetchAll \n\n\n $cacheMap")
             data.ids.foldLeft(Option(List.empty[UpscanCsvFilesCallback])) {
-              case(Some(upscanCallbackList), UpscanIds(uploadId, fileId, _)) =>
+              case(Some(upscanCallbackList), UpscanIds(uploadId, fileId, uploadStatus)) =>
+                logger.error(s"wowWeFolding, $upscanCallbackList, $uploadId, $fileId, $uploadStatus")
                 cacheMap.getEntry[UploadStatus](s"${CacheUtil.CHECK_CSV_FILES}-${uploadId.value}").map {
                   UpscanCsvFilesCallback(uploadId, fileId, _):: upscanCallbackList
                 }
