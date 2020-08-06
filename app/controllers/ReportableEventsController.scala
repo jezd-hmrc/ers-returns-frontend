@@ -46,6 +46,8 @@ trait ReportableEventsController extends ERSReturnBaseController with Authentica
           updateErsMetaData(requestObj)(user, request, hc).flatMap {
             case e: Exception => Future.successful(getGlobalErrorPage)
             case _ => showReportableEventsPage(requestObj)(user, request, hc)
+          }.recoverWith {
+            case _ => Future.successful(getGlobalErrorPage)
           }
         }
   }
@@ -116,7 +118,7 @@ trait ReportableEventsController extends ERSReturnBaseController with Authentica
   }
 
   def getGlobalErrorPage(implicit request: Request[_], messages: Messages) = Ok(views.html.global_error(
-    messages("ers.global_errors.title"),
-    messages("ers.global_errors.heading"),
-    messages("ers.global_errors.message"))(request, messages))
+      messages("ers.global_errors.title"),
+      messages("ers.global_errors.heading"),
+      messages("ers.global_errors.message"))(request, messages))
 }
