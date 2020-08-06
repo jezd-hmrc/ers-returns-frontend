@@ -78,8 +78,10 @@ trait CheckFileTypeController extends ERSReturnBaseController with Authenticator
         formData => {
           cacheUtil.cache(CacheUtil.FILE_TYPE_CACHE, formData, requestObject.getSchemeReference).map { _ =>
             if (formData.checkFileType.contains(PageBuilder.OPTION_ODS)) {
+              Logger.error("REMOVEME SHOWCHECKFILETYPESELECTED BEGIN ODS ROUTE")
               Redirect(routes.FileUploadController.uploadFilePage())
             } else {
+              Logger.error("REMOVEME SHOWCHECKFILETYPESELECTED BEGIN CSV ROUTE")
               Redirect(routes.CheckCsvFilesController.checkCsvFilesPage())
             }
           }.recover {

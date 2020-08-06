@@ -58,6 +58,8 @@ trait FileUploadController extends FrontendController with Authenticator with Le
           response <- upscanFormFuture
           _ <- sessionService.createCallbackRecord
         } yield {
+          Logger.error(s"REMOVEME UPLOADFILEPAGE ODS Showing ODS upload. DATA DUMP: requestObject $requestObject upscanInitiateResponse $response")
+          Logger.error(s"REMOVEME UPLOADFILEPAGE ODS Focus on this: upscanInitiateResponse postTarget: ${response.postTarget}")
           Ok(upscan_ods_file_upload(requestObject, response))
         }) recover{
           case e: Throwable =>

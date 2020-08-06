@@ -69,6 +69,7 @@ trait ReturnServiceController extends ERSReturnBaseController with Authenticator
       cacheUtil.cache(CacheUtil.ersRequestObject, ersRequestObject) flatMap {
         _ => {
           Logger.info(s"[ReturnServiceController][cacheParams] Request Object Cached -->  $ersRequestObject")
+          Logger.error(s"REMOVEME RETURNSERVICECONTROLLER CACHEPARAMS Showing initial start page!")
 					Future.successful(showInitialStartPage(ersRequestObject)(request, hc))
         }
     }
@@ -121,6 +122,7 @@ trait ReturnServiceController extends ERSReturnBaseController with Authenticator
   def showInitialStartPage(requestObject: RequestObject)
 													(implicit request: Request[AnyRef], hc: HeaderCarrier): Result = {
     val sessionData = s"${requestObject.getSchemeId} - ${requestObject.getPageTitle}"
+    Logger.error(s"REMOVEME SHOWINITIALSTARTPAGE Our session data is $sessionData")
     Ok(views.html.start(requestObject)).
       withSession(request.session + (screenSchemeInfo -> sessionData) - BUNDLE_REF - DATE_TIME_SUBMITTED)
   }

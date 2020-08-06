@@ -20,8 +20,10 @@
 @import play.api.Play.current
 @import uk.gov.hmrc.play.views.html.{layouts => uiLayouts}
 @import controllers.auth.ExternalUrls
+@import play.api.Logger
 
-@commonLinkElement = {
+
+    @commonLinkElement = {
     @includes.commonLinkElements()
 }
 
@@ -83,7 +85,9 @@
         None,
         navLinks = Some(signoutLink))
 }
-@afterHeader = {}
+@afterHeader = {@{
+    Logger.error("REMOVEME GLOBALERROR Got to globalerror page!")
+}}
 
 
 @hmrcGovUkTemplate(Some(pageTitle), None)(head, bodyEnd, insideHeader, afterHeader, footerTop, Some(uiLayouts.footer_links()), true)(content)
