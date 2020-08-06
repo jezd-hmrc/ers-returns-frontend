@@ -43,8 +43,10 @@ trait ReportableEventsController extends ERSReturnBaseController with Authentica
       implicit request =>
         cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObj =>
 
-          updateErsMetaData(requestObj)(user, request, hc)
-          showReportableEventsPage(requestObj)(user, request, hc)
+          updateErsMetaData(requestObj)(user, request, hc).flatMap {
+            case e: Exception => Future.successful(getGlobalErrorPage)
+            case _ => showReportableEventsPage(requestObj)(user, request, hc)
+          }
         }
   }
 
