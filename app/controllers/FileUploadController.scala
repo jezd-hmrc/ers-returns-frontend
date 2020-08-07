@@ -117,12 +117,14 @@ trait FileUploadController extends FrontendController with Authenticator with Le
           callbackData <- futureCallbackData
           validationResponse <-
             if (connectorResponse.status == OK) {
+              logger.error(s"REMOVEME validationResults ODS: got a response from connector and it's all good and nice, it is $connectorResponse")
               handleValidationResponse(callbackData.get.asInstanceOf[UploadedSuccessfully], all.schemeInfo)
             } else {
               logger.error(s"validationResults: removePresubmissionData failed with status ${connectorResponse.status}, timestamp: ${System.currentTimeMillis()}.")
               Future.successful(getGlobalErrorPage)
             }
         } yield {
+          logger.error(s"REMOVEME validationResults ODS: it's yielding! validationResponse $validationResponse")
           validationResponse
         }) recover {
           case e: LoopException[Option[UploadStatus]] =>
@@ -183,10 +185,14 @@ trait FileUploadController extends FrontendController with Authenticator with Le
         Future.successful(getGlobalErrorPage)
   }
 
-  def getGlobalErrorPage(implicit request: Request[_], messages: Messages): Result = Ok(views.html.global_error(
-    messages("ers.global_errors.title"),
-    messages("ers.global_errors.heading"),
-    messages("ers.global_errors.message"))(request, messages))
+  def getGlobalErrorPage(implicit request: Request[_], messages: Messages): Result = {
+    logger.error("REMOVEME GETGLOBALERRORPAGE ODS Got to globalerror page!")
+
+    Ok(views.html.global_error(
+      messages("ers.global_errors.title"),
+      messages("ers.global_errors.heading"),
+      messages("ers.global_errors.message"))(request, messages))
+  }
 
 }
 

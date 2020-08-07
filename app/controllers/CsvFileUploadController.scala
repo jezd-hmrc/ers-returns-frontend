@@ -57,6 +57,8 @@ trait CsvFileUploadController extends FrontendController with Authenticator with
           if currentCsvFile.isDefined
           upscanFormData  <- upscanService.getUpscanFormDataCsv(currentCsvFile.get.uploadId, requestObject.getSchemeReference)
         } yield {
+          logger.error(s"REMOVEME UPLOADFILEPAGE CSV Showing CSV upload. DATA DUMP: requestObject $requestObject upscanInitiateResponse $upscanFormData csvFilesList $csvFilesList currentCsvFile $currentCsvFile")
+          logger.error(s"REMOVEME UPLOADFILEPAGE CSV Focus on this: upscanInitiateResponse postTarget: ${upscanFormData.postTarget}")
           Ok(views.html.upscan_csv_file_upload(requestObject, upscanFormData, currentCsvFile.get.fileId))
         }) recover {
           case _: NoSuchElementException =>
