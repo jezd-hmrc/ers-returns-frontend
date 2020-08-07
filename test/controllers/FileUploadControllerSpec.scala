@@ -47,6 +47,7 @@ import uk.gov.hmrc.play.frontend.auth.connectors.AuthConnector
 import utils.{AuthHelper, CacheUtil, ERSFakeApplicationConfig, Fixtures}
 
 import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 
 class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
   with MockitoSugar with ErsConstants with LegacyI18nSupport
@@ -288,7 +289,7 @@ class FileUploadControllerSpec extends PlaySpec with OneAppPerSuite
 
 
   def checkGlobalErrorPage(result: Future[Result]) = {
-    status(result) mustBe OK
+    status(result)(Duration(30, "seconds")) mustBe OK
     contentAsString(result) must include (messages("ers.global_errors.title"))
   }
 }
