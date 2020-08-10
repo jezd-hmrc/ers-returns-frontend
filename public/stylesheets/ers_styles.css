@@ -247,9 +247,6 @@ article .help-notice {
 
 .input-csv-file-name-heading {float:left; clear:both; margin-bottom:2px; margin-top:0px;}
 #fileToUpload, .input-csv-file-name { float:left; min-width:450px; max-width:450px; clear:both;}
-#file-uploader button {
-    float:left;
-}
 
 #fileToUpload {
     border: 0px;

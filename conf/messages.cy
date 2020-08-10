@@ -332,6 +332,7 @@ file_upload.other.info = Dewiswch y ffeil {0} rydych am ei huwchlwytho fel rhan 
 file_upload.sip.info = Dewiswch y ffeil {0} rydych am ei huwchlwytho fel rhan o’ch Datganiad Blynyddol ar gyfer Cynllun Cymell Cyfranddaliadau.
 file_upload.saye.info = Dewiswch y ffeil {0} rydych am ei huwchlwytho fel rhan o’ch Datganiad Blynyddol ar gyfer Cynilo Wrth Ennill.
 file_upload.delay = Gall eich ffeil gymryd ychydig o funudau i’w huwchlwytho. Bydd yn rhaid i chi ddisgwyl hyd nes ei bod wedi uwchlwytho cyn y gallwch fynd yn eich blaen.
+file_upload.delay.ods = Os yw’ch ffeil ODS yn fwy na 10MB, ni fyddwch yn gallu ei huwchlwytho. E-bostiwch gwasanaeth.cymraeg@hmrc.gov.uk i gael help gyda’ch cyflwyniad.
 file_upload_errors.title = Mae gwallau wedi eu canfod
 file_upload_errors.para1 = Cywirwch y gwallau cyn i chi ddefnyddio’r gwasanaeth hwn eto neu
 file_upload_errors.upload_link = dewiswch ffeil wahanol i’w huwchlwytho
