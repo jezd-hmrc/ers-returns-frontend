@@ -18,7 +18,6 @@
 @if(form.hasErrors) {
         <div id="errors" class="validation-summary" role="group" aria-labelledby="summary-heading" tabindex="-1">
             <h1 id="summary-heading" class="heading-medium error-summary-heading">@messages("validation.summary.heading")</h1>
-            @messages("validation.summary.info")
             <ul>
                 @form.errors.map { error =>
                 <li class="validation-summary-message" id='@error.key.replaceAll("""[\.\[\]]""", "_")Error'>
