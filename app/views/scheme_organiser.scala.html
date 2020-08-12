@@ -85,6 +85,7 @@
 	<div class="form-group postcode-group @if(schemeOrganiser.errors(schemeOrganiserFields.postcode)) {error}">
 		<label for="postcode" class="form-label" id="postcodeLbl">
 			<span>@Messages("ers_scheme_organiser.postcode")</span><br/>
+			<span class="form-hint text">@Messages("ers_scheme_organiser.postcode.hint")</span>
 			@if(schemeOrganiser.errors(schemeOrganiserFields.postcode)) {<span class="error-message">@schemeOrganiser.errors(schemeOrganiserFields.postcode).head.message</span>}
 		</label>
 		<input id="postcode" type="text" class="form-control" name="postcode" value="@schemeOrganiser(schemeOrganiserFields.postcode).value">
