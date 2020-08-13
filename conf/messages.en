@@ -186,29 +186,33 @@ ers_scheme_organiser.continue = Continue
 # Error messages
 #********************************************************************
 
-ers_scheme_organiser.err.summary.company_name_required = Enter the company name
+ers_scheme_organiser.err.summary.company_name_required = Enter the scheme organiser’s company name
 ers_scheme_organiser.err.summary.company_name_size = Reduce the number of characters entered for the company name
-ers_scheme_organiser.err.summary.address_line1_required = Enter the first line of the address
+ers_scheme_organiser.err.summary.address_line1_required = Enter the first line of scheme organiser’s company address
 ers_scheme_organiser.err.summary.address_line1_size = Reduce the number of characters in this address line
 ers_scheme_organiser.err.summary.address_line2_size = Reduce the number of characters in this address line
 ers_scheme_organiser.err.summary.address_line3_size = Reduce the number of characters in this address line
 ers_scheme_organiser.err.summary.address_line4_size = Reduce the number of characters in this address line
 ers_scheme_organiser.err.summary.postcode_size = Reduce the number of characters entered for the postcode
-ers_scheme_organiser.err.summary.company_reg_pattern = Enter a valid Company Registration Number
-ers_scheme_organiser.err.summary.corporation_ref_pattern = Enter a valid Corporation Tax reference
+ers_scheme_organiser.err.summary.company_reg = Company Registration Number must be 8 characters
+ers_scheme_organiser.err.summary.invalidChars.company_reg_pattern = Company Registration Number must only include letters a to z and numbers 0 to 9
+ers_scheme_organiser.err.summary.invalidChars.corporation_ref_pattern = Corporation Tax Reference must only include numbers 0 to 9
+ers_scheme_organiser.err.summary.corporation_ref = Corporation Tax Reference must be 10 digits
 ers_scheme_organiser.err.summary.invalid_country = Select a valid Country
 
-ers_scheme_organiser.err.company_name = Check the company name (it must be less than 36 characters)
-ers_scheme_organiser.err.invalidChars.company_name = Check the company name (it contains invalid characters)
-ers_scheme_organiser.err.address_line1 = Check the first line of the address (it must be less than 28 characters)
-ers_scheme_organiser.err.invalidChars.address_line1 = Check the first line of the address (it contains invalid characters)
+ers_scheme_organiser.err.company_name = Company name must be less than 36 characters
+ers_scheme_organiser.err.invalidChars.company_name = Company name must only include letters a to z, numbers 0 to 9, hyphens, spaces and apostrophes
+ers_scheme_organiser.err.address_line1 = First line of the address must be less than 28 characters
+ers_scheme_organiser.err.invalidChars.address_line1 = Company address must only include letters a to z, numbers 0 to 9, hyphens, spaces and apostrophes
 ers_scheme_organiser.err.address_line2 = Check the second line of the address (it must be less than 28 characters)
 ers_scheme_organiser.err.invalidChars.address_line2 = Check the second line of the address (it contains invalid characters)
 ers_scheme_organiser.err.address_line3 = Check the third line of the address (it must be less than 28 characters)
 ers_scheme_organiser.err.invalidChars.address_line3 = Check the third line of the address (it contains invalid characters)
 ers_scheme_organiser.err.address_line4 = Check the fourth line of the address (it must be less than 19 characters)
 ers_scheme_organiser.err.invalidChars.address_line4 = Check the fourth line of the address (it contains invalid characters)
-ers_scheme_organiser.err.postcode = Check the postcode (it must be valid and less than 9 characters)
+ers_scheme_organiser.err.postcode = Postcode must be between 6 and 8 characters
+ers_scheme_organiser.err.invalidChars.postcode = Postcode must only include letters a to z and numbers 0 to 9
+ers_scheme_organiser.err.invalidFormat.postcode = Enter postcode, like AA1 1AA
 ers_scheme_organiser.err.company_reg = Enter a valid Company Registration Number
 ers_scheme_organiser.err.corporation_ref = Enter a valid Corporation Tax reference
 

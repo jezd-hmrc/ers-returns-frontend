@@ -133,9 +133,11 @@ object RsFormMappings {
     schemeOrganiserFields.country -> optional(text verifying pattern(fieldValidationPatterns.addresssRegx.r, error = Messages("ers_scheme_organiser.err.summary.invalid_country"))),
     schemeOrganiserFields.postcode -> optional(text)
       .transform((x: Option[String]) => x.map(_.toUpperCase()), (z: Option[String]) => z.map(_.toUpperCase()))
-      .verifying(Messages("ers_scheme_organiser.err.postcode"), so => isValidPostcode(so)),
-    schemeOrganiserFields.companyReg -> optional(text verifying pattern(fieldValidationPatterns.companyRegPattern.r, error = Messages("ers_scheme_organiser.err.summary.company_reg_pattern"))),
-    schemeOrganiserFields.corporationRef -> optional(text verifying pattern(fieldValidationPatterns.corporationRefPattern.r, error = Messages("ers_scheme_organiser.err.summary.corporation_ref_pattern")))
+      .verifying(Messages("ers_scheme_organiser.err.postcode"), so => isValidLengthPostcode(so))
+      .verifying(Messages("ers_scheme_organiser.err.invalidChars.postcode"), so => isValidPostcodeSchemeOrganiser(so))
+      .verifying(Messages("ers_scheme_organiser.err.invalidFormat.postcode"), so => isValidFormatPostcodeSchemeOrganiser(so)),
+    schemeOrganiserFields.companyReg -> optional(text.verifying(Messages("ers_scheme_organiser.err.summary.company_reg"), so => checklength(so.toString, "schemeOrganiserFields.companyRegistrationNum")) verifying pattern(fieldValidationPatterns.onlyCharsAndDigitsRegex.r, error = Messages("ers_scheme_organiser.err.summary.invalidChars.company_reg_pattern"))),
+    schemeOrganiserFields.corporationRef -> optional(text verifying(Messages("ers_scheme_organiser.err.summary.corporation_ref"), so => checklength(so.toString, "schemeOrganiserFields.corporationTaxReference")) verifying pattern(fieldValidationPatterns.corporationRefPatternSchemeOrg.r, error = Messages("ers_scheme_organiser.err.summary.invalidChars.corporation_ref_pattern")))
   )(SchemeOrganiserDetails.apply)(SchemeOrganiserDetails.unapply))
 
   /*
@@ -171,10 +173,10 @@ object RsFormMappings {
       so.length match {
         case x => if (x <= 18) true else false
       }
-    case "schemeOrganiserFields.postcode" | "companyDetailsFields.postcode" | "trusteeDetailsFields.postcode" =>
-      so.length match {
-        case x => if (x <= 8) true else false
-      }
+    case "schemeOrganiserFields.companyRegistrationNum" =>
+      so.length <= 8
+    case "schemeOrganiserFields.corporationTaxReference" =>
+      so.length == 10
     case _ => true
   }
 
@@ -182,6 +184,21 @@ object RsFormMappings {
 
   def isValidPostcode(input: Option[String]): Boolean = input match {
     case Some(postcode) => postcode.matches(fieldValidationPatterns.postCodeRegx) && isValidLengthIfPopulated(postcode, postcodeMinLength, postcodeMaxLength)
+    case None => true //Postcode is assumed to be optional so return true if missing
+  }
+
+  def isValidPostcodeSchemeOrganiser(input: Option[String]): Boolean = input match {
+    case Some(postcode) => postcode.replaceAll(" ","").matches(fieldValidationPatterns.onlyCharsAndDigitsRegex)
+    case None => true //Postcode is assumed to be optional so return true if missing
+  }
+
+  def isValidLengthPostcode(input: Option[String]): Boolean = input match {
+    case Some(postcode) => isValidLengthIfPopulated(postcode, postcodeMinLength, postcodeMaxLength)
+    case None => true //Postcode is assumed to be optional so return true if missing
+  }
+
+  def isValidFormatPostcodeSchemeOrganiser(input: Option[String]): Boolean = input match {
+    case Some(postcode) => postcode.matches(fieldValidationPatterns.postCodeRegx)
     case None => true //Postcode is assumed to be optional so return true if missing
   }
 
@@ -235,7 +252,11 @@ object fieldValidationPatterns {
 
   def companyRegPattern = "(^[a-zA-Z0-9]{1,10})$"
 
+  def onlyCharsAndDigitsRegex = "^[a-zA-Z0-9]*$"
+
   def corporationRefPattern = "^([0-9]{10})$"
+
+  def corporationRefPatternSchemeOrg = "^[0-9]*$"
 
   def addresssRegx = """^[A-Za-zÂ-ȳ0-9 &'(),-./]{0,}$"""
 

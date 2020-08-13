@@ -264,6 +264,239 @@ class SchemeOrganiserControllerTest extends UnitSpec with GuiceOneAppPerSuite wi
       contentAsString(result) shouldBe contentAsString(buildFakeSchemeOrganiserController().getGlobalErrorPage)
     }
 
+    "check error for empty company name" in {
+      val controllerUnderTest = buildFakeSchemeOrganiserController(schemeOrganiserDataCachedOk = false)
+      val schemeOrganiserData = Map("companyName" -> "",
+        "addressLine1" -> "Add1",
+        "addressLine2" -> "Add2",
+        "addressLine3" -> "Add3",
+        "addressLine4" -> "Add4",
+        "postcode" -> "AA11 1AA",
+        "country" -> "United Kingdom",
+        "companyReg" -> "AB123456",
+        "corporationRef" -> "1234567890"
+      )
+      val form = _root_.models.RsFormMappings.schemeOrganiserForm.bind(schemeOrganiserData)
+      val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
+      val result = controllerUnderTest.showSchemeOrganiserSubmit(ersRequestObject)(Fixtures.buildFakeUser, request, hc)
+      contentAsString(result) should include(messages("ers_scheme_organiser.err.summary.company_name_required"))
+    }
+    "check error for company name more than 36 characters" in {
+      val controllerUnderTest = buildFakeSchemeOrganiserController(schemeOrganiserDataCachedOk = false)
+      val schemeOrganiserData = Map("companyName" -> "Company Name more than thirty six characters",
+        "addressLine1" -> "Add1",
+        "addressLine2" -> "Add2",
+        "addressLine3" -> "Add3",
+        "addressLine4" -> "Add4",
+        "postcode" -> "AA11 1AA",
+        "country" -> "United Kingdom",
+        "companyReg" -> "AB123456",
+        "corporationRef" -> "1234567890"
+      )
+      val form = _root_.models.RsFormMappings.schemeOrganiserForm.bind(schemeOrganiserData)
+      val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
+      val result = controllerUnderTest.showSchemeOrganiserSubmit(ersRequestObject)(Fixtures.buildFakeUser, request, hc)
+      contentAsString(result) should include(messages("ers_scheme_organiser.err.company_name"))
+    }
+
+    "check error for invalid company name" in {
+      val controllerUnderTest = buildFakeSchemeOrganiserController(schemeOrganiserDataCachedOk = false)
+      val schemeOrganiserData = Map("companyName" -> "Inv@lid Company name",
+        "addressLine1" -> "Add1",
+        "addressLine2" -> "Add2",
+        "addressLine3" -> "Add3",
+        "addressLine4" -> "Add4",
+        "postcode" -> "AA11 1AA",
+        "country" -> "United Kingdom",
+        "companyReg" -> "AB123456",
+        "corporationRef" -> "1234567890"
+      )
+      val form = _root_.models.RsFormMappings.schemeOrganiserForm.bind(schemeOrganiserData)
+      val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
+      val result = controllerUnderTest.showSchemeOrganiserSubmit(ersRequestObject)(Fixtures.buildFakeUser, request, hc)
+      contentAsString(result) should include(messages("ers_scheme_organiser.err.invalidChars.company_name"))
+    }
+
+    "check error for empty Address" in {
+      val controllerUnderTest = buildFakeSchemeOrganiserController(schemeOrganiserDataCachedOk = false)
+      val schemeOrganiserData = Map("companyName" -> Fixtures.companyName,
+        "addressLine1" -> "",
+        "addressLine2" -> "Add2",
+        "addressLine3" -> "Add3",
+        "addressLine4" -> "Add4",
+        "postcode" -> "AA11 1AA",
+        "country" -> "United Kingdom",
+        "companyReg" -> "AB123456",
+        "corporationRef" -> "1234567890"
+      )
+      val form = _root_.models.RsFormMappings.schemeOrganiserForm.bind(schemeOrganiserData)
+      val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
+      val result = controllerUnderTest.showSchemeOrganiserSubmit(ersRequestObject)(Fixtures.buildFakeUser, request, hc)
+      contentAsString(result) should include(messages("ers_scheme_organiser.err.summary.address_line1_required"))
+    }
+
+    "check error for address more than 28 characters" in {
+      val controllerUnderTest = buildFakeSchemeOrganiserController(schemeOrganiserDataCachedOk = false)
+      val schemeOrganiserData = Map("companyName" -> Fixtures.companyName,
+        "addressLine1" -> "Add1 more than Twenty Eight characters",
+        "addressLine2" -> "Add2",
+        "addressLine3" -> "Add3",
+        "addressLine4" -> "Add4",
+        "postcode" -> "AA11 1AA",
+        "country" -> "United Kingdom",
+        "companyReg" -> "AB123456",
+        "corporationRef" -> "1234567890"
+      )
+      val form = _root_.models.RsFormMappings.schemeOrganiserForm.bind(schemeOrganiserData)
+      val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
+      val result = controllerUnderTest.showSchemeOrganiserSubmit(ersRequestObject)(Fixtures.buildFakeUser, request, hc)
+      contentAsString(result) should include(messages("ers_scheme_organiser.err.address_line1"))
+    }
+
+    "check error for invalid address" in {
+      val controllerUnderTest = buildFakeSchemeOrganiserController(schemeOrganiserDataCachedOk = false)
+      val schemeOrganiserData = Map("companyName" -> Fixtures.companyName,
+        "addressLine1" -> "Add1 Inv@lid",
+        "addressLine2" -> "Add2",
+        "addressLine3" -> "Add3",
+        "addressLine4" -> "Add4",
+        "postcode" -> "AA11 1AA",
+        "country" -> "United Kingdom",
+        "companyReg" -> "AB123456",
+        "corporationRef" -> "1234567890"
+      )
+      val form = _root_.models.RsFormMappings.schemeOrganiserForm.bind(schemeOrganiserData)
+      val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
+      val result = controllerUnderTest.showSchemeOrganiserSubmit(ersRequestObject)(Fixtures.buildFakeUser, request, hc)
+      contentAsString(result) should include(messages("ers_scheme_organiser.err.invalidChars.address_line1"))
+    }
+
+    "check error for postcode more than 8 characters" in {
+      val controllerUnderTest = buildFakeSchemeOrganiserController(schemeOrganiserDataCachedOk = false)
+      val schemeOrganiserData = Map("companyName" -> Fixtures.companyName,
+        "addressLine1" -> "Add1",
+        "addressLine2" -> "Add2",
+        "addressLine3" -> "Add3",
+        "addressLine4" -> "Add4",
+        "postcode" -> "AA11 1AAAA",
+        "country" -> "United Kingdom",
+        "companyReg" -> "AB123456",
+        "corporationRef" -> "1234567890"
+      )
+      val form = _root_.models.RsFormMappings.schemeOrganiserForm.bind(schemeOrganiserData)
+      val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
+      val result = controllerUnderTest.showSchemeOrganiserSubmit(ersRequestObject)(Fixtures.buildFakeUser, request, hc)
+      contentAsString(result) should include(messages("ers_scheme_organiser.err.postcode"))
+    }
+
+    "check error for invalid postcode" in {
+      val controllerUnderTest = buildFakeSchemeOrganiserController(schemeOrganiserDataCachedOk = false)
+      val schemeOrganiserData = Map("companyName" -> Fixtures.companyName,
+        "addressLine1" -> "Add1",
+        "addressLine2" -> "Add2",
+        "addressLine3" -> "Add3",
+        "addressLine4" -> "Add4",
+        "postcode" -> "AA11*1A",
+        "country" -> "United Kingdom",
+        "companyReg" -> "AB123456",
+        "corporationRef" -> "1234567890"
+      )
+      val form = _root_.models.RsFormMappings.schemeOrganiserForm.bind(schemeOrganiserData)
+      val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
+      val result = controllerUnderTest.showSchemeOrganiserSubmit(ersRequestObject)(Fixtures.buildFakeUser, request, hc)
+      contentAsString(result) should include(messages("ers_scheme_organiser.err.invalidChars.postcode"))
+    }
+
+    "check error for CRN more than 8 characters" in {
+      val controllerUnderTest = buildFakeSchemeOrganiserController(schemeOrganiserDataCachedOk = false)
+      val schemeOrganiserData = Map("companyName" -> Fixtures.companyName,
+        "addressLine1" -> "Add1",
+        "addressLine2" -> "Add2",
+        "addressLine3" -> "Add3",
+        "addressLine4" -> "Add4",
+        "postcode" -> "AA11 1AA",
+        "country" -> "United Kingdom",
+        "companyReg" -> "AB12345612",
+        "corporationRef" -> "1234567890"
+      )
+      val form = _root_.models.RsFormMappings.schemeOrganiserForm.bind(schemeOrganiserData)
+      val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
+      val result = controllerUnderTest.showSchemeOrganiserSubmit(ersRequestObject)(Fixtures.buildFakeUser, request, hc)
+      contentAsString(result) should include(messages("ers_scheme_organiser.err.summary.company_reg"))
+    }
+
+    "check error for invalid CRN" in {
+      val controllerUnderTest = buildFakeSchemeOrganiserController(schemeOrganiserDataCachedOk = false)
+      val schemeOrganiserData = Map("companyName" -> Fixtures.companyName,
+        "addressLine1" -> "Add1",
+        "addressLine2" -> "Add2",
+        "addressLine3" -> "Add3",
+        "addressLine4" -> "Add4",
+        "postcode" -> "AA11 1AA",
+        "country" -> "United Kingdom",
+        "companyReg" -> "AB12345)",
+        "corporationRef" -> "1234567890"
+      )
+      val form = _root_.models.RsFormMappings.schemeOrganiserForm.bind(schemeOrganiserData)
+      val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
+      val result = controllerUnderTest.showSchemeOrganiserSubmit(ersRequestObject)(Fixtures.buildFakeUser, request, hc)
+      contentAsString(result) should include(messages("ers_scheme_organiser.err.summary.invalidChars.company_reg_pattern"))
+    }
+
+    "check error for corporation number more than 10 digits" in {
+      val controllerUnderTest = buildFakeSchemeOrganiserController(schemeOrganiserDataCachedOk = false)
+      val schemeOrganiserData = Map("companyName" -> Fixtures.companyName,
+        "addressLine1" -> "Add1",
+        "addressLine2" -> "Add2",
+        "addressLine3" -> "Add3",
+        "addressLine4" -> "Add4",
+        "postcode" -> "AA11 1AA",
+        "country" -> "United Kingdom",
+        "companyReg" -> "AB123456",
+        "corporationRef" -> "12345678901"
+      )
+      val form = _root_.models.RsFormMappings.schemeOrganiserForm.bind(schemeOrganiserData)
+      val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
+      val result = controllerUnderTest.showSchemeOrganiserSubmit(ersRequestObject)(Fixtures.buildFakeUser, request, hc)
+      contentAsString(result) should include(messages("ers_scheme_organiser.err.summary.corporation_ref"))
+    }
+
+    "check error for invalid corporation number" in {
+      val controllerUnderTest = buildFakeSchemeOrganiserController(schemeOrganiserDataCachedOk = false)
+      val schemeOrganiserData = Map("companyName" -> Fixtures.companyName,
+        "addressLine1" -> "Add1",
+        "addressLine2" -> "Add2",
+        "addressLine3" -> "Add3",
+        "addressLine4" -> "Add4",
+        "postcode" -> "AA11 1AA",
+        "country" -> "United Kingdom",
+        "companyReg" -> "AB123456",
+        "corporationRef" -> "1234567-89"
+      )
+      val form = _root_.models.RsFormMappings.schemeOrganiserForm.bind(schemeOrganiserData)
+      val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
+      val result = controllerUnderTest.showSchemeOrganiserSubmit(ersRequestObject)(Fixtures.buildFakeUser, request, hc)
+      contentAsString(result) should include(messages("ers_scheme_organiser.err.summary.invalidChars.corporation_ref_pattern"))
+    }
+
+    "check error for invalid format of postcode" in {
+      val controllerUnderTest = buildFakeSchemeOrganiserController(schemeOrganiserDataCachedOk = false)
+      val schemeOrganiserData = Map("companyName" -> Fixtures.companyName,
+        "addressLine1" -> "Add1",
+        "addressLine2" -> "Add2",
+        "addressLine3" -> "Add3",
+        "addressLine4" -> "Add4",
+        "postcode" -> "123456",
+        "country" -> "United Kingdom",
+        "companyReg" -> "AB123456",
+        "corporationRef" -> "1234567890"
+      )
+      val form = _root_.models.RsFormMappings.schemeOrganiserForm.bind(schemeOrganiserData)
+      val request = Fixtures.buildFakeRequestWithSessionId("POST").withFormUrlEncodedBody(form.data.toSeq: _*)
+      val result = controllerUnderTest.showSchemeOrganiserSubmit(ersRequestObject)(Fixtures.buildFakeUser, request, hc)
+      contentAsString(result) should include(messages("ers_scheme_organiser.err.invalidFormat.postcode"))
+    }
+
   }
 
 }
