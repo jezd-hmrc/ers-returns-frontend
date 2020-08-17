@@ -484,7 +484,7 @@ ers_check_file_type.title = Which type of file are you using to report events?
 ers_check_file_type.question = What type of file do you want to check?
 ers_check_file_type.option_1 = Comma separated values (.csv)
 ers_check_file_type.option_2 = OpenDocument Spreadsheet (.ods)
-ers_check_file_type.err.message = Choose the type of file you are using to report events
+ers_check_file_type.err.message = Select if you are using CSV or ODS file type.
 
 ers_check_csv_file.title = Choose the .csv files you need to upload as part of your annual return
 ers_check_csv_file.sip.intro = Choose the comma separated values (.csv) files you need to upload as part of your Share Incentive Plan annual return.
@@ -620,7 +620,6 @@ ers.bulk.success.saye.info = If there are no errors in {0}, you’ll add the sch
 #********************************************************************
 
 validation.summary.heading = There is a problem
-validation.summary.info = Check your information is correct, in the right place and in the right format.
 validation.summary.info2 = You need to:
 
 ers_alt_activity.csop.title = Have alterations been made to key features of this scheme or has there been a variation in the share capital?
