@@ -35,7 +35,6 @@
 
 	@header(Messages("ers_summary_declaration.title"))
 
-	<p>@Html(Messages("ers_summary_declaration.info"))</p>
 	<table>
 	  <thead>
 		<tr>
@@ -139,9 +138,15 @@
 		}
 	  </tbody>
 	</table>
-	<div class="panel-indent application-notice help-notice clear">
-		<p id="declaration">@Html(Messages("ers_summary_declaration.alert"))</p>
+	<div class="subsection">
+		<div class="notice">
+			<i class="icon icon-important"></i>
+			<strong class="bold-small">
+				@Html(Messages("ers_summary_declaration.alert"))
+			</strong>
+		</div>
 	</div>
+
 	<a role="button" id="continue" class="button summary-button" href="@routes.ConfirmationPageController.confirmationPage()">@Html(Messages("ers_summary_declaration.button"))</a>
 	@spinner()
 }
