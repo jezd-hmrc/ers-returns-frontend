@@ -16,42 +16,36 @@
 
 package controllers
 
+import config.ApplicationConfig
+import javax.inject.{Inject, Singleton}
 import models.{RsFormMappings, _}
 import play.api.Logger
-import play.api.Play.current
-import play.api.i18n.Messages
-import play.api.i18n.Messages.Implicits._
-import play.api.mvc.{LegacyI18nSupport, _}
-import uk.gov.hmrc.play.frontend.auth.AuthContext
-import utils.{PageBuilder, _}
+import play.api.i18n.{I18nSupport, Messages, MessagesApi}
+import play.api.mvc._
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
+import uk.gov.hmrc.play.bootstrap.controller.FrontendController
+import utils._
 
 import scala.concurrent.Future
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.cache.client.CacheMap
 
-
-object CheckFileTypeController extends CheckFileTypeController {
-  override val cacheUtil: CacheUtil = CacheUtil
-}
-
-trait CheckFileTypeController extends ERSReturnBaseController with Authenticator with LegacyI18nSupport {
-
-  val jsonParser = JsonParser
-  val contentUtil = ContentUtil
-  val cacheUtil: CacheUtil
+@Singleton
+class CheckFileTypeController @Inject()(val messagesApi: MessagesApi,
+																				val authConnector: DefaultAuthConnector,
+																				implicit val ersUtil: ERSUtil,
+																				implicit val appConfig: ApplicationConfig
+																			 ) extends FrontendController with Authenticator with I18nSupport {
 
   def checkFileTypePage(): Action[AnyContent] = authorisedByGG {
     implicit authContext =>
       implicit request =>
           showCheckFileTypePage()(authContext, request, hc)
-
   }
 
   def showCheckFileTypePage()(implicit authContext: ERSAuthData, request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-
     (for {
-      requestObject <- cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject)
-      fileType      <- cacheUtil.fetch[CheckFileType](CacheUtil.FILE_TYPE_CACHE, requestObject.getSchemeReference).recover{
+      requestObject <- ersUtil.fetch[RequestObject](ersUtil.ersRequestObject)
+      fileType      <- ersUtil.fetch[CheckFileType](ersUtil.FILE_TYPE_CACHE, requestObject.getSchemeReference).recover{
         case _: NoSuchElementException => CheckFileType(Some(""))
       }
     } yield {
@@ -70,14 +64,14 @@ trait CheckFileTypeController extends ERSReturnBaseController with Authenticator
   }
 
   def showCheckFileTypeSelected()(implicit request: Request[AnyRef], hc: HeaderCarrier): Future[Result] = {
-    cacheUtil.fetch[RequestObject](cacheUtil.ersRequestObject).flatMap { requestObject =>
+    ersUtil.fetch[RequestObject](ersUtil.ersRequestObject).flatMap { requestObject =>
       RsFormMappings.checkFileTypeForm.bindFromRequest.fold(
         errors => {
           Future.successful(Ok(views.html.check_file_type(requestObject, Some(""), errors)))
         },
         formData => {
-          cacheUtil.cache(CacheUtil.FILE_TYPE_CACHE, formData, requestObject.getSchemeReference).map { _ =>
-            if (formData.checkFileType.contains(PageBuilder.OPTION_ODS)) {
+          ersUtil.cache(ersUtil.FILE_TYPE_CACHE, formData, requestObject.getSchemeReference).map { _ =>
+            if (formData.checkFileType.contains(ersUtil.OPTION_ODS)) {
               Redirect(routes.FileUploadController.uploadFilePage())
             } else {
               Redirect(routes.CheckCsvFilesController.checkCsvFilesPage())
@@ -92,9 +86,11 @@ trait CheckFileTypeController extends ERSReturnBaseController with Authenticator
     }
   }
 
-  def getGlobalErrorPage(implicit request: Request[_], messages: Messages): Result = Ok(views.html.global_error(
-    messages("ers.global_errors.title"),
-    messages("ers.global_errors.heading"),
-    messages("ers.global_errors.message"))(request, messages))
-
+	def getGlobalErrorPage(implicit request: Request[_], messages: Messages): Result = {
+		Ok(views.html.global_error(
+			"ers.global_errors.title",
+			"ers.global_errors.heading",
+			"ers.global_errors.message"
+		)(request, messages, appConfig))
+	}
 }
